@@ -61,18 +61,26 @@ def enviar_asiento(factura, mapeo_cuentas):
             ". Regístralas en el admin (Mapeos de cuenta Alegra)."
         )
 
-    movimientos = [
-        {
-            "account": {"id": mapeo_cuentas[r["cuenta"]]},
-            "debit": float(Decimal(r["debito"])),
-            "credit": float(Decimal(r["credito"])),
+    # Formato del endpoint /journals: cada movimiento lleva el id de la cuenta
+    # en "id" y SOLO debit o credit (nunca ambos, aunque sea en cero).
+    movimientos = []
+    for r in factura.asiento:
+        movimiento = {
+            "id": mapeo_cuentas[r["cuenta"]],
+            "description": f"{r['cuenta']} {r['nombre']}"[:255],
         }
-        for r in factura.asiento
-    ]
+        debito = Decimal(r["debito"])
+        if debito > 0:
+            movimiento["debit"] = float(debito)
+        else:
+            movimiento["credit"] = float(Decimal(r["credito"]))
+        movimientos.append(movimiento)
+
     cuerpo = {
         "date": factura.fecha_emision.isoformat(),
-        "observations": f"Causación factura {factura.numero} — {factura.nombre_emisor} "
-                        f"(NIT {factura.nit_emisor}). Generado por Auxiliar Contable Digital.",
+        "reference": f"Factura {factura.numero}"[:255],
+        "observations": (f"Causación factura {factura.numero} — {factura.nombre_emisor} "
+                         f"(NIT {factura.nit_emisor}). Generado por Auxiliar Contable Digital.")[:500],
         "entries": movimientos,
     }
 

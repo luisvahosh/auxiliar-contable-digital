@@ -229,11 +229,14 @@ class PruebasExportSiigoYAlegra(TestCase):
         self.factura.refresh_from_db()
         self.assertEqual(self.factura.id_alegra, "777")
         self.assertIsNotNone(self.factura.enviada_alegra)
-        # Lo enviado a Alegra balancea y trae las 4 cuentas mapeadas
+        # Lo enviado a Alegra balancea, trae las 4 cuentas mapeadas y cada
+        # movimiento lleva solo débito o crédito (regla del endpoint /journals)
         cuerpo = envio.call_args.kwargs["json"]
         self.assertEqual(len(cuerpo["entries"]), 4)
-        self.assertEqual(sum(e["debit"] for e in cuerpo["entries"]),
-                         sum(e["credit"] for e in cuerpo["entries"]))
+        for movimiento in cuerpo["entries"]:
+            self.assertTrue(("debit" in movimiento) != ("credit" in movimiento))
+        self.assertEqual(sum(e.get("debit", 0) for e in cuerpo["entries"]),
+                         sum(e.get("credit", 0) for e in cuerpo["entries"]))
         # Reenviar no duplica: la app avisa que ya está en Alegra
         respuesta = self.client.post(
             reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
