@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ARCHIVO SIMULADO — Caso P1.6 (seguridad): intento de XXE. defusedxml debe
+     rechazarlo (EntitiesForbidden); xml.etree lo procesaría — por eso la
+     convención del proyecto prohíbe xml.etree para XML externo. -->
+<!DOCTYPE Invoice [
+  <!ENTITY archivo_local SYSTEM "file:///C:/Windows/win.ini">
+]>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:ID>XXE-001</cbc:ID>
+  <cbc:IssueDate>2026-06-30</cbc:IssueDate>
+  <cbc:Note>&archivo_local;</cbc:Note>
+</Invoice>

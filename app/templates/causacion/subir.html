@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block titulo %}Subir factura — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Subir factura electrónica</h1>
+  <div class="tarjeta">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="{{ formulario.archivo.id_for_label }}">{{ formulario.archivo.label }}</label>
+      <p class="ayuda">{{ formulario.archivo.help_text }}</p>
+      {{ formulario.archivo }}
+      {% if formulario.archivo.errors %}
+        <p class="mensajes"><span class="error">{{ formulario.archivo.errors|striptags }}</span></p>
+      {% endif %}
+      <button type="submit" class="boton">Procesar factura</button>
+    </form>
+  </div>
+  <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos),
+     se verifica que no esté causada dos veces (CUFE), se propone la cuenta PUC,
+     se calcula la retención en la fuente y se arma el asiento de causación.
+     Nada se contabiliza sin tu aprobación.</p>
+{% endblock %}

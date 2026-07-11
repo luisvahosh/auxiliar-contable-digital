@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Auxiliar Contable Digital{% endblock %}</title>
+  <style>
+    /* Tokens semánticos (PLAN.md §11) — mobile-first */
+    :root {
+      --primario: #1d4ed8; --primario-suave: #dbeafe;
+      --superficie: #f8fafc; --superficie-elevada: #ffffff;
+      --sobre-superficie: #0f172a; --sobre-superficie-suave: #475569;
+      --borde: #e2e8f0;
+      --exito: #15803d; --exito-fondo: #dcfce7;
+      --alerta: #b45309; --alerta-fondo: #fef3c7;
+      --error: #b91c1c; --error-fondo: #fee2e2;
+      --info: #1e40af; --info-fondo: #dbeafe;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.5;
+           background: var(--superficie); color: var(--sobre-superficie); margin: 0; }
+    header { background: var(--superficie-elevada); border-bottom: 1px solid var(--borde); }
+    nav { max-width: 960px; margin: 0 auto; padding: 12px 16px;
+          display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+    nav .marca { font-weight: 700; color: var(--primario); text-decoration: none; }
+    nav a { color: var(--sobre-superficie); text-decoration: none; }
+    nav a:hover { color: var(--primario); }
+    main { max-width: 960px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 24px; margin: 8px 0 16px; }
+    h2 { font-size: 18px; margin: 24px 0 8px; }
+
+    .mensajes { list-style: none; max-width: 960px; margin: 12px auto 0; padding: 0 16px; }
+    .mensajes li { padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+    .mensajes .success { background: var(--exito-fondo); color: var(--exito); }
+    .mensajes .warning { background: var(--alerta-fondo); color: var(--alerta); }
+    .mensajes .error   { background: var(--error-fondo); color: var(--error); }
+    .mensajes .info    { background: var(--info-fondo); color: var(--info); }
+
+    .tarjeta { background: var(--superficie-elevada); border: 1px solid var(--borde);
+               border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .tabla-envoltura { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse;
+            font-variant-numeric: tabular-nums; /* números contables alineados */ }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
+    th { font-size: 13px; text-transform: uppercase; letter-spacing: .03em;
+         color: var(--sobre-superficie-suave); }
+    .numero { text-align: right; white-space: nowrap; }
+    tfoot td { font-weight: 700; border-top: 2px solid var(--sobre-superficie); }
+
+    .insignia { display: inline-block; font-size: 13px; font-weight: 600;
+                padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+    .insignia-automatica { background: var(--exito-fondo);  color: var(--exito); }
+    .insignia-sugerida   { background: var(--alerta-fondo); color: var(--alerta); }
+    .insignia-manual     { background: var(--info-fondo);   color: var(--info); }
+    .insignia-pendiente  { background: var(--alerta-fondo); color: var(--alerta); }
+    .insignia-aprobada   { background: var(--exito-fondo);  color: var(--exito); }
+    .insignia-rechazada  { background: var(--error-fondo);  color: var(--error); }
+
+    label { display: block; font-weight: 600; margin-bottom: 4px; } /* labels visibles */
+    .ayuda { color: var(--sobre-superficie-suave); font-size: 14px; }
+    input[type="file"] { display: block; margin: 8px 0 16px; max-width: 100%; }
+    .boton { display: inline-block; background: var(--primario); color: #fff; border: 0;
+             padding: 10px 18px; border-radius: 8px; font-size: 16px; font-weight: 600;
+             cursor: pointer; text-decoration: none; }
+    .boton-secundario { background: var(--superficie-elevada); color: var(--sobre-superficie);
+                        border: 1px solid var(--borde); }
+    .boton-peligro { background: var(--error); }
+    .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .porque { white-space: pre-line; background: var(--primario-suave);
+              border-radius: 8px; padding: 12px 14px; }
+    .suave { color: var(--sobre-superficie-suave); }
+    a.fila-enlace { color: var(--primario); font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <a class="marca" href="{% url 'core:inicio' %}">Auxiliar Contable</a>
+      <a href="{% url 'causacion:bandeja' %}">Causación</a>
+      <a class="boton" href="{% url 'causacion:subir' %}">Subir factura</a>
+    </nav>
+  </header>
+  {% if messages %}
+    <ul class="mensajes">
+      {% for mensaje in messages %}<li class="{{ mensaje.tags }}">{{ mensaje }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  <main>{% block contenido %}{% endblock %}</main>
+</body>
+</html>

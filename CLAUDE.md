@@ -1,0 +1,78 @@
+# CLAUDE.md — Auxiliar Contable Digital
+
+Software que hace el trabajo del auxiliar contable colombiano sobre el software
+contable existente (Alegra/Siigo). Contexto completo: `PLAN.md`.
+Guía de pruebas de dominio: `PROCESO-AUXILIAR-CONTABLE.md`.
+
+## Cómo correr (Windows, desarrollo local — sin Docker por ahora)
+
+```
+cd app
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env   # y completar DJANGO_SECRET_KEY
+python manage.py migrate
+python manage.py runserver
+```
+
+Abrir http://127.0.0.1:8000 — debe verse la página de inicio.
+
+## Cómo probar
+
+```
+cd app
+python manage.py test
+```
+
+Toda funcionalidad de dominio se valida contra los casos de
+`PROCESO-AUXILIAR-CONTABLE.md` (P1–P7) con datos reales, no solo unit tests.
+
+## Convenciones (no negociables — PLAN.md §4, §10, §12)
+
+1. **12-factor:** toda configuración por `.env`. Nada quemado en código.
+   `.env` jamás se versiona; `.env.example` documenta cada variable.
+2. **Multi-tenant estricto:** toda query de datos de negocio filtra por tenant
+   (manager de Django dedicado). UUID en URLs públicas, nunca ids secuenciales.
+   Test de acceso cruzado entre tenants obligatorio en CI.
+3. **Humano en el circuito:** toda acción automática tiene nivel
+   automática/sugerida/manual y explica su porqué.
+4. **Seguridad:** validar toda entrada externa (XML DIAN = vector principal:
+   parsear con defusedxml, nunca xml.etree directo). No loguear datos
+   financieros de clientes. Minimizar datos enviados a la API de IA.
+5. **UI:** español, mobile-first, tokens semánticos de color, números tabulares
+   en tablas contables, labels visibles (PLAN.md §11).
+6. **Idioma:** código e identificadores en español donde sea natural del
+   dominio (causacion, retencion, tercero); comentarios en español.
+
+## Estructura
+
+- `app/config/` — settings, urls raíz.
+- `app/core/` — app base (inicio; luego: tenants, usuarios).
+- Próximas apps por vertical: `causacion/`, `calendario/`, `asistente/`.
+
+## Estado y siguiente paso
+
+- **Hecho (día 1):** proyecto corriendo con .env, página de inicio.
+- **Hecho (día 2):** vertical de causación P1 — subir XML DIAN (defusedxml) →
+  validar (totales, CUFE duplicado, XXE) → proponer cuenta PUC + retefuente
+  con explicación → asiento balanceado → aprobar/rechazar (humano en el
+  circuito). App `causacion/`, tenant `core.Empresa`, 17 tests (P1.1–P1.7 con
+  los XML de `datos-prueba/`). Derrotero manual: `DERROTERO-PRUEBAS-P1.md`.
+- **Sigue:** asiento aprobado → Alegra vía API + export CSV formato Siigo
+  (P1.9); matriz de terceros con RUT (P3).
+
+## Git
+
+El repo se versiona en Windows (git dentro del sandbox no opera sobre OneDrive).
+Primera vez:
+
+```
+git init -b main
+git add .
+git commit -m "Día 1: proyecto Django corriendo con configuración por .env"
+```
+
+Cada sesión termina con el proyecto corriendo y committeado (PLAN.md §8).
+Nota: OneDrive puede pelear con `.git/` — si molesta, mover el repo a una
+carpeta fuera de OneDrive y dejar aquí solo los documentos.

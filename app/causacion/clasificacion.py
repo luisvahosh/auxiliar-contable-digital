@@ -1,0 +1,148 @@
+"""
+Motor de clasificación PUC y retención en la fuente — reglas explícitas.
+
+Fase actual: reglas deterministas por palabras clave, cada una explicable.
+Después (PLAN.md): la IA propone y estas reglas validan y acotan.
+Humano en el circuito (CLAUDE.md §3): toda propuesta lleva nivel
+(automática/sugerida) y su porqué; nada se contabiliza sin aprobación.
+"""
+import re
+from dataclasses import dataclass, field
+from decimal import Decimal
+
+from .parametros import (
+    CONCEPTOS_RETENCION,
+    CUENTA_COSTOS_GASTOS_POR_PAGAR,
+    CUENTA_IVA_DESCONTABLE,
+    CUENTA_PROVEEDORES,
+    RESPONSABILIDADES_SIN_RETENCION,
+    uvt_del_anio,
+)
+
+# (patrón sobre nota+líneas en minúsculas, cuenta PUC, nombre de cuenta, concepto de retención)
+REGLAS_PUC = [
+    (r"honorario|asesor[ií]a|consultor[ií]a", "5110", "Honorarios", "honorarios"),
+    (r"mercanc[ií]a", "1435", "Mercancías no fabricadas por la empresa", "compras"),
+    (r"aseo|cafeter[ií]a|vigilancia|limpieza", "5135", "Servicios — aseo y vigilancia", "servicios"),
+    (r"mantenimiento|reparaci[oó]n", "5145", "Mantenimiento y reparaciones", "servicios"),
+    (r"instalaci[oó]n|adecuaci[oó]n", "5145", "Mantenimiento y reparaciones", "servicios"),
+    (r"arrendamiento|alquiler|canon", "5120", "Arrendamientos", "arrendamiento_inmueble"),
+    (r"aire acondicionado|computador|servidor|maquinaria|veh[ií]culo",
+     "1524", "Propiedad, planta y equipo — equipo de oficina", "compras"),
+]
+
+CUENTA_SIN_REGLA = ("5195", "Gastos diversos", "servicios")
+
+
+@dataclass
+class Propuesta:
+    cuenta: str
+    nombre_cuenta: str
+    concepto: str
+    nivel: str            # "automatica" | "sugerida"
+    explicacion: str
+    candidatas: list = field(default_factory=list)
+
+
+@dataclass
+class Retencion:
+    valor: Decimal
+    tarifa: Decimal | None
+    cuenta: str
+    nombre_cuenta: str
+    porque: str
+
+
+def clasificar(factura):
+    """Propone la cuenta PUC del gasto/activo a partir del texto de la factura."""
+    texto = factura.texto_clasificable
+    coincidencias = []  # (cuenta, nombre, concepto, palabra que disparó)
+    for patron, cuenta, nombre, concepto in REGLAS_PUC:
+        encontrado = re.search(patron, texto)
+        if encontrado and cuenta not in [c[0] for c in coincidencias]:
+            coincidencias.append((cuenta, nombre, concepto, encontrado.group(0)))
+
+    if not coincidencias:
+        cuenta, nombre, concepto = CUENTA_SIN_REGLA
+        return Propuesta(
+            cuenta, nombre, concepto, "sugerida",
+            "Ninguna regla reconoció el concepto de la factura. Se propone "
+            f"{cuenta} ({nombre}) como comodín: revisar y reclasificar antes de aprobar.",
+        )
+
+    if len(coincidencias) == 1:
+        cuenta, nombre, concepto, palabra = coincidencias[0]
+        return Propuesta(
+            cuenta, nombre, concepto, "automatica",
+            f"El texto de la factura menciona «{palabra}» → cuenta {cuenta} ({nombre}), "
+            f"concepto de retención: {CONCEPTOS_RETENCION[concepto]['nombre']}.",
+        )
+
+    cuenta, nombre, concepto, _ = coincidencias[0]
+    opciones = "; ".join(f"{c} ({n}, por «{p}»)" for c, n, _, p in coincidencias)
+    return Propuesta(
+        cuenta, nombre, concepto, "sugerida",
+        f"El concepto es ambiguo — admite más de una cuenta PUC: {opciones}. "
+        "La decisión (¿activo que se capitaliza o gasto del período?) cambia el "
+        "asiento y la tarifa de retención; requiere revisión humana.",
+        candidatas=[{"cuenta": c, "nombre": n} for c, n, _, _ in coincidencias],
+    )
+
+
+def calcular_retencion(factura, concepto):
+    """Retefuente a practicar según régimen del emisor, base mínima en UVT y tarifa."""
+    responsabilidad = factura.responsabilidad_emisor
+    if responsabilidad in RESPONSABILIDADES_SIN_RETENCION:
+        return Retencion(Decimal("0"), None, "", "",
+                         RESPONSABILIDADES_SIN_RETENCION[responsabilidad])
+
+    datos = CONCEPTOS_RETENCION[concepto]
+    anio = factura.fecha_emision.year
+    uvt = uvt_del_anio(anio)
+    base_minima = (datos["base_uvt"] * uvt).quantize(Decimal("1"))
+    if factura.subtotal < base_minima:
+        return Retencion(
+            Decimal("0"), None, "", "",
+            f"No aplica retención: la base (${factura.subtotal:,.0f}) es menor que "
+            f"la base mínima de {datos['base_uvt']} UVT para {datos['nombre'].lower()} "
+            f"(${base_minima:,.0f} en {anio}).",
+        )
+
+    es_natural = factura.tipo_persona_emisor == "2"
+    tarifa = datos["tarifa_persona_natural"] if es_natural else datos["tarifa_persona_juridica"]
+    valor = (factura.subtotal * tarifa / 100).quantize(Decimal("1"))
+    tipo = "persona natural" if es_natural else "persona jurídica"
+    return Retencion(
+        valor, tarifa, datos["cuenta"], datos["nombre_cuenta"],
+        f"Retefuente por {datos['nombre'].lower()}: {tarifa}% sobre "
+        f"${factura.subtotal:,.0f} = ${valor:,.0f} (emisor {tipo}; se asume "
+        "declarante — se refinará con el RUT del tercero en la matriz de terceros, P3).",
+    )
+
+
+def construir_asiento(factura, propuesta, retencion):
+    """Renglones del asiento de causación (partida doble). Los montos van como
+    texto para guardarse en JSON sin perder precisión decimal."""
+    renglones = []
+
+    def renglon(cuenta, nombre, debito=Decimal("0"), credito=Decimal("0")):
+        renglones.append({
+            "cuenta": cuenta, "nombre": nombre,
+            "debito": str(debito), "credito": str(credito),
+        })
+
+    renglon(propuesta.cuenta, propuesta.nombre_cuenta, debito=factura.subtotal)
+    if factura.iva > 0:
+        renglon(*CUENTA_IVA_DESCONTABLE, debito=factura.iva)
+    if retencion.valor > 0:
+        renglon(retencion.cuenta, retencion.nombre_cuenta, credito=retencion.valor)
+    contrapartida = (CUENTA_PROVEEDORES if propuesta.cuenta == "1435"
+                     else CUENTA_COSTOS_GASTOS_POR_PAGAR)
+    renglon(*contrapartida, credito=factura.total - retencion.valor)
+
+    debitos = sum(Decimal(r["debito"]) for r in renglones)
+    creditos = sum(Decimal(r["credito"]) for r in renglones)
+    if debitos != creditos:
+        # Control del auxiliar: jamás persistir un asiento desbalanceado.
+        raise ValueError(f"Asiento desbalanceado: débitos {debitos} ≠ créditos {creditos}.")
+    return renglones

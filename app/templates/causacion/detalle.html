@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block titulo %}Factura {{ factura.numero }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Factura {{ factura.numero }}
+    <span class="insignia insignia-{{ factura.estado }}">{{ factura.get_estado_display }}</span>
+  </h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Datos de la factura</h2>
+    <table>
+      <tbody>
+        <tr><th>Emisor</th><td>{{ factura.nombre_emisor }} (NIT {{ factura.nit_emisor }})</td></tr>
+        <tr><th>Fecha de emisión</th><td>{{ factura.fecha_emision }}</td></tr>
+        <tr><th>CUFE</th><td class="suave" style="word-break: break-all">{{ factura.cufe }}</td></tr>
+        <tr><th>Subtotal</th><td class="numero">${{ factura.subtotal|floatformat:"0g" }}</td></tr>
+        <tr><th>IVA</th><td class="numero">${{ factura.iva|floatformat:"0g" }}</td></tr>
+        <tr><th>Total factura</th><td class="numero">${{ factura.total|floatformat:"0g" }}</td></tr>
+        <tr><th>Retención calculada</th><td class="numero">${{ factura.retencion|floatformat:"0g" }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento propuesto
+      <span class="insignia insignia-{{ factura.nivel }}">{{ factura.get_nivel_display }}</span>
+    </h2>
+    <table>
+      <thead>
+        <tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr>
+      </thead>
+      <tbody>
+        {% for renglon in renglones %}
+          <tr>
+            <td>{{ renglon.cuenta }}</td>
+            <td>{{ renglon.nombre }}</td>
+            <td class="numero">{% if renglon.debito %}${{ renglon.debito|floatformat:"0g" }}{% endif %}</td>
+            <td class="numero">{% if renglon.credito %}${{ renglon.credito|floatformat:"0g" }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Sumas iguales</td>
+          <td class="numero">${{ total_debitos|floatformat:"0g" }}</td>
+          <td class="numero">${{ total_creditos|floatformat:"0g" }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Por qué se propone así</h2>
+    <p class="porque">{{ factura.explicacion }}</p>
+  </div>
+
+  {% if factura.estado == "pendiente" %}
+    <div class="acciones">
+      <form method="post" action="{% url 'causacion:aprobar' factura.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="boton">Aprobar asiento</button>
+      </form>
+      <form method="post" action="{% url 'causacion:rechazar' factura.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="boton boton-peligro">Rechazar</button>
+      </form>
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>
+    </div>
+    <p class="suave">Al aprobar, el siguiente paso del vertical enviará el asiento
+       a Alegra vía API y generará el CSV formato Siigo.</p>
+  {% else %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ARCHIVO SIMULADO — Caso P1.6: XML malformado. La app debe mostrar un error
+     claro, sin crash y sin asiento a medias. -->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:ID>ERR-001</cbc:ID>
+  <cbc:IssueDate>2026-06-3O</cbc:IssueDate>
+  <cbc:Note>Factura truncada: el archivo se corta a mitad de un elemento
+  <cac:AccountingSupplierParty>
+    <cbc:AdditionalAccountID>1</cbc:Additional

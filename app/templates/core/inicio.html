@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+  <h1>Auxiliar Contable Digital</h1>
+  <p>El auxiliar contable que trabaja sobre tu software contable (Alegra/Siigo).</p>
+  <div class="tarjeta">
+    <h2>Causación de facturas de compra</h2>
+    <p>Sube el XML de una factura electrónica descargada de la DIAN: la app la
+       valida, propone la cuenta PUC, calcula la retención en la fuente y arma
+       el asiento — tú apruebas.</p>
+    <div class="acciones">
+      <a class="boton" href="{% url 'causacion:subir' %}">Subir factura XML</a>
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Ver bandeja de causación</a>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,16 @@
+# Secretos y entorno — jamás versionar (PLAN.md §10)
+.env
+*.env
+!.env.example
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+# Django
+db.sqlite3
+staticfiles/
+media/
+# SO / editor
+.DS_Store
+Thumbs.db
