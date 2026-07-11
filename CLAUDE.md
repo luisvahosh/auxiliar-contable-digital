@@ -59,8 +59,12 @@ Toda funcionalidad de dominio se valida contra los casos de
   con explicación → asiento balanceado → aprobar/rechazar (humano en el
   circuito). App `causacion/`, tenant `core.Empresa`, 17 tests (P1.1–P1.7 con
   los XML de `datos-prueba/`). Derrotero manual: `DERROTERO-PRUEBAS-P1.md`.
-- **Sigue:** asiento aprobado → Alegra vía API + export CSV formato Siigo
-  (P1.9); matriz de terceros con RUT (P3).
+- **Hecho (día 2, P1.9):** asiento aprobado → descarga CSV formato Siigo y
+  envío a Alegra vía API (`causacion/siigo.py`, `causacion/alegra.py`;
+  credenciales por .env ALEGRA_EMAIL/ALEGRA_TOKEN; mapeo cuenta PUC → id
+  Alegra por empresa en admin). 21 tests.
+- **Sigue:** validar CSV contra importación real en Siigo y envío con cuenta
+  real de Alegra (crear cuenta gratuita); matriz de terceros con RUT (P3).
 
 ## Git
 

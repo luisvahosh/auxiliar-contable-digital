@@ -99,6 +99,24 @@ que se deprecia o gasto de mantenimiento? Eso lo decide un humano.*
 - [ ] Decidir tú: **Aprobar** (aceptas la propuesta) o **Rechazar** (quedará
   para reclasificación manual — llega en la siguiente iteración).
 
+## Paso 8 — Llevar el asiento al software contable (P1.9)
+
+*Escenario: el asiento ya está aprobado; ahora debe quedar en la contabilidad
+oficial (Siigo por archivo, Alegra por API).*
+
+- [ ] Entrar a una factura **Aprobada** (por ejemplo la FVS-847 del paso 1):
+  aparece la sección **"Llevar al software contable"**.
+- [ ] **Descargar CSV Siigo** → baja `siigo-FVS-847.csv`. Abrirlo en Excel:
+  un renglón por movimiento del asiento, con cuenta, NIT del tercero,
+  débito y crédito. *(La primera importación real a Siigo dirá si hay que
+  ajustar columnas a la plantilla oficial.)*
+- [ ] **Enviar a Alegra** sin credenciales configuradas → la app avisa con
+  claridad que faltan `ALEGRA_EMAIL` y `ALEGRA_TOKEN` en el `.env`, sin romperse.
+- [ ] *(Cuando tengas la cuenta de Alegra)*: poner las credenciales en el
+  `.env`, reiniciar, registrar el mapeo de cuentas PUC → Alegra en
+  http://127.0.0.1:8000/admin (Mapeos de cuenta Alegra) y reenviar: debe
+  quedar el aviso "✔ Enviada a Alegra — asiento #…". Reenviar no duplica.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/
@@ -108,8 +126,9 @@ que se deprecia o gasto de mantenimiento? Eso lo decide un humano.*
 
 ---
 
-## Qué NO hace todavía (siguiente paso del vertical)
+## Qué NO hace todavía (siguientes pasos)
 
-- Envío del asiento aprobado a **Alegra vía API** y **export CSV formato Siigo** (P1.9).
+- Validación del CSV contra una importación real en Siigo y del envío con una
+  cuenta real de Alegra (falta crear la cuenta y poner credenciales en `.env`).
 - Matriz de terceros con el RUT real (declarante/autorretenedor — P3).
 - Reclasificación manual de las rechazadas.

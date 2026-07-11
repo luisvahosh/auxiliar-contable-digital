@@ -69,6 +69,33 @@
     </div>
     <p class="suave">Al aprobar, el siguiente paso del vertical enviará el asiento
        a Alegra vía API y generará el CSV formato Siigo.</p>
+  {% elif factura.estado == "aprobada" %}
+    <div class="tarjeta">
+      <h2>Llevar al software contable</h2>
+      {% if factura.id_alegra %}
+        <p>✔ Enviada a Alegra — asiento <strong>#{{ factura.id_alegra }}</strong>
+           ({{ factura.enviada_alegra }}).</p>
+      {% endif %}
+      <div class="acciones">
+        <a class="boton" href="{% url 'causacion:exportar_siigo' factura.pk %}">Descargar CSV Siigo</a>
+        {% if not factura.id_alegra %}
+          <form method="post" action="{% url 'causacion:enviar_alegra' factura.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="boton boton-secundario" {% if not alegra_configurado %}title="Configura ALEGRA_EMAIL y ALEGRA_TOKEN en el .env"{% endif %}>
+              Enviar a Alegra
+            </button>
+          </form>
+        {% endif %}
+      </div>
+      {% if not alegra_configurado %}
+        <p class="suave">Alegra aún no está configurado: agrega <code>ALEGRA_EMAIL</code> y
+           <code>ALEGRA_TOKEN</code> al <code>.env</code> (Alegra → Configuración →
+           Integraciones → API) y reinicia el servidor.</p>
+      {% endif %}
+    </div>
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>
+    </div>
   {% else %}
     <div class="acciones">
       <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>

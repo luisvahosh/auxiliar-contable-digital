@@ -2,15 +2,19 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.db import IntegrityError
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.models import Empresa
 
+from . import alegra
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
 from .forms import FormularioSubirFactura
-from .models import FacturaCompra
+from .models import FacturaCompra, MapeoCuentaAlegra
 from .parser import FacturaInvalida, parsear_factura
+from .siigo import generar_csv_siigo
 
 
 def _empresa_activa(request):
@@ -111,6 +115,7 @@ def detalle(request, pk):
         "renglones": renglones,
         "total_debitos": sum(r["debito"] for r in renglones),
         "total_creditos": sum(r["credito"] for r in renglones),
+        "alegra_configurado": alegra.esta_configurado(),
     })
 
 
@@ -127,6 +132,52 @@ def aprobar(request, pk):
         f"Asiento de la factura {factura.numero} aprobado. "
         "El envío a Alegra y el export CSV Siigo llegan en el siguiente paso del vertical.",
     )
+    return redirect("causacion:detalle", pk=factura.pk)
+
+
+def exportar_siigo(request, pk):
+    """Descarga el asiento aprobado como CSV importable en Siigo (P1.9)."""
+    empresa = _empresa_activa(request)
+    factura = get_object_or_404(
+        FacturaCompra.objects.de_empresa(empresa), pk=pk, estado="aprobada"
+    )
+    contenido = generar_csv_siigo(factura)
+    respuesta = HttpResponse(
+        contenido.encode("utf-8-sig"),  # BOM: Excel abre bien las tildes
+        content_type="text/csv; charset=utf-8",
+    )
+    respuesta["Content-Disposition"] = f'attachment; filename="siigo-{factura.numero}.csv"'
+    return respuesta
+
+
+@require_POST
+def enviar_alegra(request, pk):
+    """Crea el asiento aprobado en Alegra vía API (P1.9)."""
+    empresa = _empresa_activa(request)
+    factura = get_object_or_404(
+        FacturaCompra.objects.de_empresa(empresa), pk=pk, estado="aprobada"
+    )
+    if factura.id_alegra:
+        messages.info(request, f"Esta factura ya está en Alegra (asiento #{factura.id_alegra}).")
+        return redirect("causacion:detalle", pk=factura.pk)
+
+    mapeo = dict(
+        MapeoCuentaAlegra.objects.de_empresa(empresa)
+        .values_list("cuenta_puc", "id_alegra")
+    )
+    try:
+        id_alegra = alegra.enviar_asiento(factura, mapeo)
+    except alegra.AlegraNoConfigurado as aviso:
+        messages.warning(request, str(aviso))
+        return redirect("causacion:detalle", pk=factura.pk)
+    except alegra.ErrorAlegra as error:
+        messages.error(request, str(error))
+        return redirect("causacion:detalle", pk=factura.pk)
+
+    factura.id_alegra = id_alegra
+    factura.enviada_alegra = timezone.now()
+    factura.save(update_fields=["id_alegra", "enviada_alegra", "actualizada"])
+    messages.success(request, f"Asiento creado en Alegra con id #{id_alegra}.")
     return redirect("causacion:detalle", pk=factura.pk)
 
 

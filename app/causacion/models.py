@@ -51,6 +51,10 @@ class FacturaCompra(models.Model):
     asiento = models.JSONField("renglones del asiento propuesto", default=list)
     xml_crudo = models.TextField("XML original (soporte)")
 
+    # Destino contable (P1.9): trazabilidad del envío a Alegra.
+    id_alegra = models.CharField("id del asiento en Alegra", max_length=30, blank=True, default="")
+    enviada_alegra = models.DateTimeField("enviada a Alegra", null=True, blank=True)
+
     creada = models.DateTimeField(auto_now_add=True)
     actualizada = models.DateTimeField(auto_now=True)
 
@@ -68,3 +72,31 @@ class FacturaCompra(models.Model):
 
     def __str__(self):
         return f"{self.numero} — {self.nombre_emisor}"
+
+
+class MapeoCuentaAlegra(models.Model):
+    """Equivalencia cuenta PUC local → id de cuenta contable en Alegra.
+
+    El plan de cuentas de Alegra usa ids propios por cuenta; cada empresa
+    registra aquí (vía admin, por ahora) el id que le corresponde a cada
+    cuenta PUC que usan sus asientos.
+    """
+
+    empresa = models.ForeignKey("core.Empresa", on_delete=models.CASCADE,
+                                related_name="mapeos_alegra")
+    cuenta_puc = models.CharField("cuenta PUC", max_length=6)
+    id_alegra = models.PositiveIntegerField("id de la cuenta en Alegra")
+    nombre_alegra = models.CharField("nombre en Alegra", max_length=120, blank=True)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "cuenta_puc"],
+                                    name="mapeo_unico_por_empresa"),
+        ]
+        verbose_name = "mapeo de cuenta Alegra"
+        verbose_name_plural = "mapeos de cuenta Alegra"
+
+    def __str__(self):
+        return f"{self.cuenta_puc} → Alegra #{self.id_alegra}"

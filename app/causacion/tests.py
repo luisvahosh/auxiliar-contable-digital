@@ -4,6 +4,7 @@ datos-prueba/ — casos P1 de PROCESO-AUXILIAR-CONTABLE.md.
 """
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -13,7 +14,7 @@ from django.urls import reverse
 from core.models import Empresa
 
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
-from .models import FacturaCompra
+from .models import FacturaCompra, MapeoCuentaAlegra
 from .parser import FacturaInvalida, parsear_factura
 
 DATOS_PRUEBA = Path(settings.BASE_DIR).parent / "datos-prueba"
@@ -161,6 +162,82 @@ class PruebasFlujoWeb(TestCase):
                                      follow=True)
         self.assertContains(respuesta, "no es el de")
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+
+class PruebasExportSiigoYAlegra(TestCase):
+    """P1.9: el asiento aprobado llega al software contable."""
+
+    def setUp(self):
+        self.empresa = Empresa.objects.get(nit="901234567")
+        archivo = SimpleUploadedFile("P1.1.xml", contenido("P1.1-factura-honorarios.xml"),
+                                     content_type="text/xml")
+        self.client.post(reverse("causacion:subir"), {"archivo": archivo})
+        self.factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+
+    def aprobar(self):
+        self.client.post(reverse("causacion:aprobar", args=[self.factura.pk]))
+        self.factura.refresh_from_db()
+
+    def test_csv_siigo_solo_para_aprobadas(self):
+        url = reverse("causacion:exportar_siigo", args=[self.factura.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)  # aún pendiente
+        self.aprobar()
+        respuesta = self.client.get(url)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("text/csv", respuesta["Content-Type"])
+        cuerpo = respuesta.content.decode("utf-8-sig")
+        self.assertIn("CODIGO CUENTA", cuerpo)
+        self.assertIn("5110", cuerpo)
+        self.assertIn("236515", cuerpo)
+        self.assertIn("79456123", cuerpo)  # NIT del tercero en cada renglón
+        # encabezado + 4 renglones del asiento
+        self.assertEqual(len([l for l in cuerpo.splitlines() if l.strip()]), 5)
+
+    def test_alegra_sin_configurar_avisa_sin_romperse(self):
+        self.aprobar()
+        with patch.dict("os.environ", {"ALEGRA_EMAIL": "", "ALEGRA_TOKEN": ""}):
+            respuesta = self.client.post(
+                reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
+        self.assertContains(respuesta, "Alegra no está configurado")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.id_alegra, "")
+
+    def test_alegra_exige_mapeo_de_cuentas(self):
+        self.aprobar()
+        entorno = {"ALEGRA_EMAIL": "x@y.co", "ALEGRA_TOKEN": "tok"}
+        with patch.dict("os.environ", entorno):
+            respuesta = self.client.post(
+                reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
+        self.assertContains(respuesta, "Faltan cuentas por mapear")
+        self.assertContains(respuesta, "5110")
+
+    def test_alegra_envia_el_asiento_mapeado(self):
+        self.aprobar()
+        for i, cuenta in enumerate(["5110", "240802", "236515", "2335"], start=1):
+            MapeoCuentaAlegra.objects.create(empresa=self.empresa,
+                                             cuenta_puc=cuenta, id_alegra=i)
+        entorno = {"ALEGRA_EMAIL": "x@y.co", "ALEGRA_TOKEN": "tok"}
+        with patch.dict("os.environ", entorno), \
+             patch("causacion.alegra.requests.post") as envio:
+            envio.return_value.ok = True
+            envio.return_value.status_code = 200
+            envio.return_value.json.return_value = {"id": 777}
+            respuesta = self.client.post(
+                reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
+
+        self.assertContains(respuesta, "#777")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.id_alegra, "777")
+        self.assertIsNotNone(self.factura.enviada_alegra)
+        # Lo enviado a Alegra balancea y trae las 4 cuentas mapeadas
+        cuerpo = envio.call_args.kwargs["json"]
+        self.assertEqual(len(cuerpo["entries"]), 4)
+        self.assertEqual(sum(e["debit"] for e in cuerpo["entries"]),
+                         sum(e["credit"] for e in cuerpo["entries"]))
+        # Reenviar no duplica: la app avisa que ya está en Alegra
+        respuesta = self.client.post(
+            reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
+        self.assertContains(respuesta, "ya está en Alegra")
 
 
 class PruebasMultiTenant(TestCase):
