@@ -10,8 +10,51 @@ from .tenancy import cambiar_empresa, rol_en_empresa
 
 
 def inicio(request):
-    """Página de inicio (requiere sesión: el middleware la protege)."""
-    return render(request, "core/inicio.html")
+    """Panel del día: lo que el auxiliar revisa al sentarse a trabajar.
+    (Requiere sesión: el middleware la protege.)"""
+    from datetime import date
+    from decimal import Decimal
+
+    from calendario.logica import alertas_de
+    from causacion.cartera import edades_de_cartera
+    from causacion.models import FacturaCompra, FacturaVenta
+    from cierre.logica import periodos_disponibles, resumen_cierre
+    from conciliacion.models import MovimientoBancario
+
+    empresa = request.empresa
+
+    compras_pendientes = (FacturaCompra.objects.de_empresa(empresa)
+                          .filter(estado="pendiente").count())
+    ventas_pendientes = (FacturaVenta.objects.de_empresa(empresa)
+                         .filter(estado="pendiente").count())
+
+    partidas, totales = edades_de_cartera(empresa)
+    total_cartera = sum(totales.values())
+    cartera_vencida = total_cartera - totales["corriente"]
+
+    movimientos = MovimientoBancario.objects.de_empresa(empresa)
+    sin_conciliar = movimientos.filter(estado="pendiente").count()
+
+    alertas = alertas_de(empresa)[:4]
+
+    periodos = periodos_disponibles(empresa)
+    cierre_mes = None
+    if periodos:
+        periodo = periodos[0]
+        cierre_mes = {"periodo": periodo,
+                      "resumen": resumen_cierre(empresa, periodo.year, periodo.month)}
+
+    return render(request, "core/inicio.html", {
+        "compras_pendientes": compras_pendientes,
+        "ventas_pendientes": ventas_pendientes,
+        "por_aprobar": compras_pendientes + ventas_pendientes,
+        "total_cartera": total_cartera,
+        "cartera_vencida": cartera_vencida,
+        "sin_conciliar": sin_conciliar,
+        "alertas": alertas,
+        "cierre_mes": cierre_mes,
+        "hoy": date.today(),
+    })
 
 
 def sin_empresa(request):

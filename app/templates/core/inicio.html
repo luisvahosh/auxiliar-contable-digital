@@ -1,16 +1,58 @@
 {% extends "base.html" %}
 
 {% block contenido %}
-  <h1>Auxiliar Contable Digital</h1>
-  <p>El auxiliar contable que trabaja sobre tu software contable (Alegra/Siigo).</p>
+  <h1>Tu día, {{ request.empresa.razon_social }}</h1>
+  <p class="suave">{{ hoy }} · lo que un auxiliar revisaría primero.</p>
+
+  <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom:16px">
+    <a class="tarjeta" href="{% url 'causacion:bandeja' %}" style="margin:0; text-decoration:none; color:inherit">
+      <p class="suave" style="margin:0">Por aprobar</p>
+      <p class="numero" style="font-size:26px; font-weight:700; margin:4px 0 0">{{ por_aprobar }}</p>
+      <p class="ayuda" style="margin:4px 0 0">{{ compras_pendientes }} compra{{ compras_pendientes|pluralize }} · {{ ventas_pendientes }} venta{{ ventas_pendientes|pluralize }}</p>
+    </a>
+    <a class="tarjeta" href="{% url 'causacion:cartera' %}" style="margin:0; text-decoration:none; color:inherit">
+      <p class="suave" style="margin:0">Cartera vencida</p>
+      <p class="numero" style="font-size:26px; font-weight:700; margin:4px 0 0; {% if cartera_vencida %}color: var(--error){% endif %}">${{ cartera_vencida|floatformat:"0g" }}</p>
+      <p class="ayuda" style="margin:4px 0 0">de ${{ total_cartera|floatformat:"0g" }} por cobrar</p>
+    </a>
+    <a class="tarjeta" href="{% url 'conciliacion:bancos' %}" style="margin:0; text-decoration:none; color:inherit">
+      <p class="suave" style="margin:0">Sin conciliar</p>
+      <p class="numero" style="font-size:26px; font-weight:700; margin:4px 0 0">{{ sin_conciliar }}</p>
+      <p class="ayuda" style="margin:4px 0 0">movimiento{{ sin_conciliar|pluralize }} del banco</p>
+    </a>
+    {% if cierre_mes %}
+      <a class="tarjeta" href="{% url 'cierre:cierre' %}?periodo={{ cierre_mes.periodo|date:'Y-m' }}" style="margin:0; text-decoration:none; color:inherit">
+        <p class="suave" style="margin:0">Cierre {{ cierre_mes.periodo|date:"Y-m" }}</p>
+        <p style="font-size:18px; font-weight:700; margin:8px 0 0">
+          {% if cierre_mes.resumen.listo %}
+            <span class="insignia insignia-aprobada">Listo para entrega</span>
+          {% else %}
+            <span class="insignia insignia-pendiente">Con pendientes</span>
+          {% endif %}
+        </p>
+      </a>
+    {% endif %}
+  </div>
+
+  {% if alertas %}
+    <div class="tarjeta">
+      <h2>Vence pronto</h2>
+      <ul style="margin:0; padding-left:20px">
+        {% for item in alertas %}
+          <li>{{ item.vencimiento.obligacion }} ({{ item.vencimiento.periodo }}) —
+            {% if item.dias == 0 %}<strong>HOY</strong>{% else %}en <strong>{{ item.dias }} día{{ item.dias|pluralize }}</strong>{% endif %}
+            ({{ item.vencimiento.fecha }})</li>
+        {% endfor %}
+      </ul>
+      <p class="ayuda" style="margin-bottom:0"><a class="fila-enlace" href="{% url 'calendario:calendario' %}">Ver el calendario completo</a></p>
+    </div>
+  {% endif %}
+
   <div class="tarjeta">
-    <h2>Causación de facturas de compra</h2>
-    <p>Sube el XML de una factura electrónica descargada de la DIAN: la app la
-       valida, propone la cuenta PUC, calcula la retención en la fuente y arma
-       el asiento — tú apruebas.</p>
-    <div class="acciones">
-      <a class="boton" href="{% url 'causacion:subir' %}">Subir factura XML</a>
-      <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Ver bandeja de causación</a>
+    <h2>Causar una factura</h2>
+    <div class="acciones" style="margin-top:8px">
+      <a class="boton" href="{% url 'causacion:subir' %}">Subir XML</a>
+      <a class="boton boton-secundario" href="{% url 'causacion:foto' %}">Tomar foto (papel)</a>
     </div>
   </div>
 {% endblock %}

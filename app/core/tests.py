@@ -118,6 +118,37 @@ class PruebasRecuperacionContrasena(TestCase):
         self.assertContains(respuesta, "no es válido")
 
 
+class PruebasPanelInicio(CasoConEmpresa):
+    """El inicio es el panel del día: pendientes, cartera, conciliación, alertas."""
+
+    def test_muestra_los_indicadores_del_dia(self):
+        from datetime import date, timedelta
+        from calendario.models import VencimientoTributario
+
+        FacturaCompra.objects.create(
+            empresa=self.empresa, cufe="aa" * 30, numero="PEND-1",
+            fecha_emision=date.today(), nit_emisor="1", nombre_emisor="X",
+            tipo_persona_emisor="1", subtotal=100, iva=0, total=100,
+            cuenta_puc="5195", nombre_cuenta_puc="Diversos",
+            explicacion="x", asiento=[], xml_crudo="<x/>")
+        VencimientoTributario.objects.create(
+            obligacion="Retención en la fuente", periodo="prueba",
+            ultimo_digito="7", fecha=date.today() + timedelta(days=2))
+
+        respuesta = self.client.get("/")
+        self.assertContains(respuesta, "Por aprobar")
+        self.assertContains(respuesta, "Cartera vencida")
+        self.assertContains(respuesta, "Sin conciliar")
+        self.assertContains(respuesta, "Vence pronto")
+        self.assertContains(respuesta, "Retención en la fuente")
+        self.assertContains(respuesta, "Cierre")  # hay un período con documentos
+
+    def test_sin_datos_no_se_rompe(self):
+        respuesta = self.client.get("/")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Causar una factura")
+
+
 class PruebasMultiEmpresa(CasoConEmpresa):
     def setUp(self):
         super().setUp()
