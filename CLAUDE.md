@@ -149,11 +149,17 @@ Toda funcionalidad de dominio se valida contra los casos de
   (SVG, sin pillow) en /seguridad/2fa/, verificación por sesión en el
   middleware, anti-repetición y throttling del propio django-otp, aviso
   persistente a admins sin 2FA en el panel. 108 tests.
+- **Hecho (día 5):** afinado de visión P1.10 — preprocesamiento de foto
+  (rotación EXIF + reducción a 1600px/JPEG con pillow), reintento
+  auto-correctivo cuando subtotal+iva≠total (con confianza degradada si
+  persiste), y cambio de modelo predeterminado por torneo (formal/tirilla/
+  torcida): nvidia/nemotron-nano-12b-v2-vl 17/18 campos vs llama-90b 7/18.
+  112 tests.
 - **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
   calendario contra decreto; CSV contra importación real Siigo; buzón
-  IMAP; P6.3 monitoreo DIAN. Afinar visión con casos reales que reporte
-  Luis (campo leído vs campo correcto). Futuro §12: forzar 2FA a admins
-  (hoy es aviso), códigos de respaldo.
+  IMAP; P6.3 monitoreo DIAN. Visión: seguir calibrando con fotos reales
+  de Luis. Futuro §12: forzar 2FA a admins (hoy es aviso), códigos de
+  respaldo.
 
 ## Git
 

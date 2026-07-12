@@ -257,6 +257,65 @@ class PruebasFacturaFisica(CasoConEmpresa):
         self.assertContains(respuesta, "UNO POR UNO")
 
 
+class PruebasVisionAfinada(TestCase):
+    """Afinado de P1.10: preprocesamiento de la foto y reintento auto-correctivo."""
+
+    def test_preparar_imagen_reduce_y_normaliza_a_jpeg(self):
+        import io
+        from PIL import Image
+        from .vision import LADO_MAXIMO, preparar_imagen
+        crudo = io.BytesIO()
+        Image.new("RGBA", (3200, 2400), "white").save(crudo, format="PNG")
+        preparada, mime = preparar_imagen(crudo.getvalue(), "image/png")
+        self.assertEqual(mime, "image/jpeg")
+        lados = Image.open(io.BytesIO(preparada)).size
+        self.assertLessEqual(max(lados), LADO_MAXIMO)
+
+    def test_bytes_no_imagen_pasan_sin_romper(self):
+        from .vision import preparar_imagen
+        preparada, mime = preparar_imagen(b"esto no es una imagen", "image/png")
+        self.assertEqual(preparada, b"esto no es una imagen")
+        self.assertEqual(mime, "image/png")
+
+    def test_reintenta_una_vez_si_los_totales_no_cuadran(self):
+        import json as json_
+        from . import vision
+
+        def respuesta_con(campos):
+            class Falsa:
+                ok, status_code = True, 200
+                def json(self):
+                    return {"choices": [{"message": {"content": json_.dumps(campos)}}]}
+            return Falsa()
+
+        malo = {"subtotal": 100, "iva": 19, "total": 200, "confianza": 90}
+        bueno = {"subtotal": 100, "iva": 19, "total": 119, "confianza": 90}
+        with patch.dict("os.environ", {"NVIDIA_API_KEY": "nvapi-prueba"}), \
+             patch("causacion.vision.requests.post",
+                   side_effect=[respuesta_con(malo), respuesta_con(bueno)]) as envio:
+            campos = vision.extraer_campos(b"img", "image/png")
+        self.assertEqual(envio.call_count, 2)
+        self.assertEqual(campos["total"], 119)
+        # El reintento lleva la corrección explícita en la instrucción
+        segundo_texto = envio.call_args_list[1].kwargs["json"]["messages"][0]["content"][0]["text"]
+        self.assertIn("NO cumplen", segundo_texto)
+
+    def test_si_nada_cuadra_degrada_la_confianza(self):
+        import json as json_
+        from . import vision
+
+        class Falsa:
+            ok, status_code = True, 200
+            def json(self):
+                return {"choices": [{"message": {"content": json_.dumps(
+                    {"subtotal": 100, "iva": 19, "total": 200, "confianza": 95})}}]}
+
+        with patch.dict("os.environ", {"NVIDIA_API_KEY": "nvapi-prueba"}), \
+             patch("causacion.vision.requests.post", return_value=Falsa()):
+            campos = vision.extraer_campos(b"img", "image/png")
+        self.assertLessEqual(campos["confianza"], 40)
+
+
 class PruebasMatrizDeTerceros(CasoConEmpresa):
     """Casos P3: la calidad tributaria real del proveedor manda sobre el XML."""
 

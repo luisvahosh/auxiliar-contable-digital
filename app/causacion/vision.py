@@ -13,13 +13,16 @@ Reglas P1.10:
   extracción; nada del tenant. No se loguea el contenido.
 """
 import base64
+import io
 import json
 import os
 import re
+from decimal import Decimal, InvalidOperation
 
 import requests
 
-TIEMPO_MAXIMO = 60  # los modelos de visión tardan más que los de texto
+TIEMPO_MAXIMO = 60   # los modelos de visión tardan más que los de texto
+LADO_MAXIMO = 1600   # px: suficiente para leer una factura, liviano para la API
 
 
 class VisionNoConfigurada(Exception):
@@ -38,7 +41,10 @@ def _configuracion():
             "(key gratuita en build.nvidia.com)."
         )
     url = os.environ.get("IA_VISION_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
-    modelo = os.environ.get("IA_VISION_MODELO", "meta/llama-3.2-90b-vision-instruct")
+    # Predeterminado elegido por torneo (jul 2026) sobre factura formal,
+    # tirilla POS y foto torcida: nemotron-nano-12b-v2-vl 17/18 campos vs
+    # llama-3.2-90b 7/18 — además más pequeño y rápido.
+    modelo = os.environ.get("IA_VISION_MODELO", "nvidia/nemotron-nano-12b-v2-vl")
     return url, modelo, key
 
 
@@ -79,8 +85,69 @@ CAMPOS_ESPERADOS = ("nit_emisor", "nombre_emisor", "numero", "fecha",
                     "subtotal", "iva", "total", "concepto", "confianza")
 
 
+def preparar_imagen(imagen_bytes, tipo_mime):
+    """Acondiciona la foto del celular antes de enviarla al modelo:
+
+    - Aplica la rotación EXIF (los celulares guardan la foto acostada y la
+      marcan girada en metadatos — muchos modelos leen fatal así).
+    - Reduce el lado mayor a LADO_MAXIMO px y recomprime a JPEG: más rápido
+      y lejos de los límites de tamaño de la API, sin perder legibilidad.
+    Si algo falla, se envía la imagen original tal cual.
+    """
+    try:
+        from PIL import Image, ImageOps
+        imagen = Image.open(io.BytesIO(imagen_bytes))
+        imagen = ImageOps.exif_transpose(imagen)
+        if max(imagen.size) > LADO_MAXIMO:
+            imagen.thumbnail((LADO_MAXIMO, LADO_MAXIMO))
+        if imagen.mode != "RGB":
+            imagen = imagen.convert("RGB")
+        salida = io.BytesIO()
+        imagen.save(salida, format="JPEG", quality=88)
+        return salida.getvalue(), "image/jpeg"
+    except Exception:
+        return imagen_bytes, tipo_mime
+
+
+def _totales_cuadran(campos):
+    """True si subtotal + iva == total (o si faltan datos para juzgar)."""
+    try:
+        subtotal = Decimal(str(campos["subtotal"]))
+        iva = Decimal(str(campos["iva"]))
+        total = Decimal(str(campos["total"]))
+    except (KeyError, TypeError, InvalidOperation):
+        return True
+    return subtotal + iva == total
+
+
 def extraer_campos(imagen_bytes, tipo_mime):
-    """Imagen → dict con los campos de la factura (o levanta ErrorVision)."""
+    """Imagen → dict con los campos de la factura (o levanta ErrorVision).
+
+    La imagen se acondiciona (rotación EXIF, tamaño) y, si el modelo devuelve
+    totales que no cuadran, se reintenta UNA vez diciéndole en qué se equivocó.
+    """
+    imagen_bytes, tipo_mime = preparar_imagen(imagen_bytes, tipo_mime)
+    campos = _extraer(imagen_bytes, tipo_mime, INSTRUCCION)
+    if not _totales_cuadran(campos):
+        correccion = (
+            f"{INSTRUCCION}\n\nOJO: en un intento anterior respondiste "
+            f"subtotal={campos.get('subtotal')}, iva={campos.get('iva')}, "
+            f"total={campos.get('total')}, y NO cumplen subtotal + iva = total. "
+            "Vuelve a leer los tres valores de la imagen con máximo cuidado."
+        )
+        segundo = _extraer(imagen_bytes, tipo_mime, correccion)
+        if _totales_cuadran(segundo):
+            return segundo
+        # Ninguno cuadró: se entrega el primero con confianza degradada;
+        # el usuario corrige en la pantalla de confirmación.
+        try:
+            campos["confianza"] = min(int(campos.get("confianza") or 50), 40)
+        except (TypeError, ValueError):
+            campos["confianza"] = 40
+    return campos
+
+
+def _extraer(imagen_bytes, tipo_mime, instruccion):
     url, modelo, key = _configuracion()
     imagen_b64 = base64.b64encode(imagen_bytes).decode()
     cuerpo = {
@@ -90,7 +157,7 @@ def extraer_campos(imagen_bytes, tipo_mime):
         "messages": [{
             "role": "user",
             "content": [
-                {"type": "text", "text": INSTRUCCION},
+                {"type": "text", "text": instruccion},
                 {"type": "image_url",
                  "image_url": {"url": f"data:{tipo_mime};base64,{imagen_b64}"}},
             ],

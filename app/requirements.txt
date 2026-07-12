@@ -10,5 +10,6 @@ gunicorn>=22     # servidor WSGI de producción (contenedor)
 whitenoise>=6.6  # estáticos servidos por la app (sin nginx aparte)
 django-otp>=1.5  # segundo factor TOTP (PLAN.md §12)
 qrcode>=7.4      # QR de aprovisionamiento 2FA (SVG, sin pillow)
+pillow>=10       # preprocesar fotos de facturas (rotación EXIF, tamaño) P1.10
 # Al pasar a PostgreSQL (PLAN.md §4): descomentar
 # psycopg[binary]>=3.1
