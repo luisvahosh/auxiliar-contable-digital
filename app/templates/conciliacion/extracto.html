@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ extracto.nombre }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>{{ extracto.nombre }}
+    {% if resumen.cuadrada %}<span class="insignia insignia-aprobada">Conciliación cuadrada</span>{% endif %}
+  </h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Formato de conciliación</h2>
+    <table>
+      <tbody>
+        <tr><th>Abonos del extracto</th><td class="numero">${{ resumen.abonos|floatformat:"0g" }}</td></tr>
+        <tr><th>Cargos del extracto</th><td class="numero">${{ resumen.cargos|floatformat:"0g" }}</td></tr>
+        <tr><th>Movimiento neto del extracto</th><td class="numero">${{ resumen.neto_extracto|floatformat:"0g" }}</td></tr>
+        <tr><th>Explicado (conciliado)</th><td class="numero">${{ resumen.conciliado|floatformat:"0g" }}</td></tr>
+        <tr><th>Diferencia por explicar</th>
+            <td class="numero"><strong>${{ resumen.diferencia|floatformat:"0g" }}</strong>
+            {% if not resumen.cuadrada %}<span class="suave">({{ resumen.cuantos_pendientes }} pendiente{{ resumen.cuantos_pendientes|pluralize }}, {{ resumen.cuantas_excepciones }} excepci{{ resumen.cuantas_excepciones|pluralize:"ón,ones" }})</span>{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% for movimiento in movimientos %}
+    <div class="tarjeta">
+      <h2 style="display:flex; flex-wrap:wrap; gap:8px; align-items:center">
+        {{ movimiento.fecha }} · {{ movimiento.descripcion }}
+        <span class="numero" style="margin-left:auto">${{ movimiento.valor|floatformat:"0g" }}</span>
+      </h2>
+      <p>
+        <span class="insignia insignia-{% if movimiento.sugerencia == 'sin_identificar' %}sugerida{% else %}manual{% endif %}">{{ movimiento.get_sugerencia_display }}</span>
+        <span class="insignia insignia-{{ movimiento.estado }}">{{ movimiento.get_estado_display }}</span>
+        {% if movimiento.factura_venta %}
+          <a class="fila-enlace" href="{% url 'causacion:detalle_venta' movimiento.factura_venta.pk %}">{{ movimiento.factura_venta.numero }}</a>
+        {% elif movimiento.factura_compra %}
+          <a class="fila-enlace" href="{% url 'causacion:detalle' movimiento.factura_compra.pk %}">{{ movimiento.factura_compra.numero }}</a>
+        {% endif %}
+      </p>
+      <p class="porque">{{ movimiento.explicacion }}</p>
+      {% if movimiento.asiento %}
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr></thead>
+            <tbody>
+              {% for renglon in movimiento.asiento %}
+                <tr>
+                  <td>{{ renglon.cuenta }}</td>
+                  <td>{{ renglon.nombre }}</td>
+                  <td class="numero">{% if renglon.debito != "0" %}${{ renglon.debito|floatformat:"0g" }}{% endif %}</td>
+                  <td class="numero">{% if renglon.credito != "0" %}${{ renglon.credito|floatformat:"0g" }}{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      {% if movimiento.estado == "pendiente" %}
+        <div class="acciones">
+          {% if movimiento.conciliable %}
+            <form method="post" action="{% url 'conciliacion:conciliar' movimiento.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="boton">Conciliar</button>
+            </form>
+          {% endif %}
+          <form method="post" action="{% url 'conciliacion:excepcion' movimiento.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="boton boton-secundario">Marcar excepción</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <div class="acciones">
+    <a class="boton boton-secundario" href="{% url 'conciliacion:bancos' %}">Volver a bancos</a>
+  </div>
+{% endblock %}

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     # Apps del producto
     "core",
     "causacion",
+    "conciliacion",
 ]
 
 MIDDLEWARE = [

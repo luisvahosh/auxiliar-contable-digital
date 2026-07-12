@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block titulo %}Bancos — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Conciliación bancaria</h1>
+
+  <div class="tarjeta">
+    <h2>Subir extracto del mes</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="{{ formulario.archivo.id_for_label }}">{{ formulario.archivo.label }}</label>
+      <p class="ayuda">{{ formulario.archivo.help_text }}</p>
+      {{ formulario.archivo }}
+      {% if formulario.archivo.errors %}
+        <p class="ayuda" style="color: var(--error)">{{ formulario.archivo.errors|striptags }}</p>
+      {% endif %}
+      <button type="submit" class="boton">Procesar extracto</button>
+    </form>
+  </div>
+
+  <p class="suave">Qué pasa al procesar: cada movimiento se cruza contra los
+     asientos aprobados — pagos de clientes (por el neto de cartera, exactos o
+     parciales), pagos a proveedores y gastos bancarios (comisiones, GMF) con
+     su asiento propuesto. Lo que no cruza va a excepciones con el candidato
+     más probable. Tú concilias uno a uno.</p>
+
+  {% if extractos %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Extractos cargados</h2>
+      <table>
+        <thead><tr><th>Extracto</th><th>Cargado</th><th></th></tr></thead>
+        <tbody>
+          {% for extracto in extractos %}
+            <tr>
+              <td>{{ extracto.nombre }}</td>
+              <td>{{ extracto.creado|date:"Y-m-d H:i" }}</td>
+              <td><a class="fila-enlace" href="{% url 'conciliacion:extracto' extracto.pk %}">Ver conciliación</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

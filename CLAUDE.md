@@ -48,8 +48,10 @@ Toda funcionalidad de dominio se valida contra los casos de
 ## Estructura
 
 - `app/config/` — settings, urls raíz.
-- `app/core/` — app base (inicio; luego: tenants, usuarios).
-- Próximas apps por vertical: `causacion/`, `calendario/`, `asistente/`.
+- `app/core/` — app base (inicio, tenant Empresa; luego: usuarios).
+- `app/causacion/` — P1/P2/P3: compras, ventas, terceros, Alegra/Siigo.
+- `app/conciliacion/` — P4: extractos bancarios y cruce contra libros.
+- Próximas apps por vertical: `calendario/`, `asistente/`.
 
 ## Estado y siguiente paso
 
@@ -72,9 +74,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   (declarante/autorretenedor/RST/verificado), se crea solo con la primera
   factura del proveedor, UI en /causacion/terceros/, y manda sobre el XML en
   calcular_retencion (tarifas no declarante incluidas). 34 tests.
-- **Sigue:** P4 conciliación bancaria (extracto vs libros); notas crédito de
-  proveedores; validar CSV contra importación real en Siigo; reteICA por
-  municipio (P3 pendiente).
+- **Hecho (día 3, P4):** conciliación bancaria — app `conciliacion/`: extracto
+  CSV (fecha;descripcion;valor) → cruce contra facturas aprobadas (pago
+  cliente exacto/parcial por neto de cartera, pago proveedor, gastos
+  bancarios 530505/531595 con asiento propuesto), excepciones con candidato
+  más probable, formato de cuadre P4.6. 44 tests.
+- **Planeado (P1.10, PLAN.md §4):** causación desde foto de factura física —
+  modelo de visión extrae campos → formulario editable → flujo normal como
+  "sugerida"; antiduplicado NIT+número+fecha.
+- **Sigue:** P4.5 extracto PDF; P1.10 foto de factura; notas crédito de
+  proveedores; validar CSV contra importación real en Siigo; reteICA (P3).
 
 ## Git
 

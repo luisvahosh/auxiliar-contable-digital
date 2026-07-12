@@ -58,6 +58,7 @@ El trabajo del auxiliar no es una lista de tareas sueltas: es un **ciclo mensual
 | P1.7 | Concepto ambiguo | Factura cuyo concepto admite 2+ cuentas PUC | Va a bandeja de revisión como "sugerida", no se causa automática |
 | P1.8 | Volumen | 100 XML de un mes real en lote | Todas procesadas; ≥85% aceptadas sin corrección; <30 seg de revisión c/u (métricas PLAN.md §9) |
 | P1.9 | Export/API | Asiento aprobado | Llega correcto a Alegra vía API (cuenta de prueba) y el CSV formato Siigo importa sin errores |
+| P1.10 | Factura física fotografiada | Foto de una factura de papel (o PDF escaneado) tomada con el celular | La IA de visión extrae los campos (NIT, fecha, número, totales, concepto), el usuario los confirma en un formulario editable y entra al flujo normal de causación **siempre como "sugerida"** (nunca automática por venir de OCR); antiduplicado por NIT+número+fecha al no haber CUFE |
 
 ### P2. Causación de ventas (ingresos)
 

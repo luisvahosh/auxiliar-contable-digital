@@ -1,4 +1,4 @@
-# Derrotero de pruebas — Causación (P1, P2 y P3) como lo vive un auxiliar contable
+# Derrotero de pruebas — P1 a P4, como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -177,6 +177,30 @@ tributaria según el RUT. La app la construye sola y tú la verificas.*
   XML no diga nada (la explicación citará "la matriz de terceros").
 - [ ] Nota: si un proveedor queda **"No declarante"**, la tarifa de servicios
   sube del 4% al 6% y la de compras del 2.5% al 3.5% automáticamente.
+
+## Paso 14 — Llega el extracto del banco (P4)
+
+*Escenario: fin de mes. El auxiliar cruza cada movimiento del extracto contra
+lo que está en libros: pagos de clientes, pagos a proveedores y los cobros
+del banco que nadie registró.*
+
+Requisito: tener **aprobadas** la FVS-847 (paso 1), la FE-104 (paso 9) y la
+FE-106 (paso 10) — el extracto se cruza contra lo aprobado.
+
+- [ ] Abrir **Bancos** en el menú → subir `P4-extracto-junio.csv`.
+- [ ] Revisar las sugerencias movimiento por movimiento:
+  - **$3.570.000 Comercializadora Andina** → cruce exacto con FE-104 (pago de cliente).
+  - **$4.600.000 Grandes Superficies** → **pago parcial** de FE-106 (neto
+    $9.200.000): propone aplicar solo lo pagado, el saldo queda en cartera (P4.4).
+  - **-$2.180.000 Carlos Pérez** → pago del neto de la FVS-847 (pago a proveedor).
+  - **-$14.900 cuota de manejo** y **-$35.000 GMF** → gastos bancarios no
+    registrados: proponen su asiento (530505 / 531595 contra bancos) (P4.2).
+  - **$1.100.000 consignación en efectivo** → **sin identificar**: va a
+    excepciones con el cliente más probable por valor (P4.3). No se puede
+    conciliar a la fuerza.
+- [ ] Conciliar los 5 identificados y marcar la consignación como excepción.
+- [ ] El **formato de conciliación** de arriba muestra el cuadre: abonos,
+  cargos, lo explicado y la **diferencia por explicar** (la excepción) (P4.6).
 
 ## Cierre — revisión de bandeja
 
