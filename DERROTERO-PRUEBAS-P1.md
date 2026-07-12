@@ -364,6 +364,24 @@ subir 100 facturas una por una.*
   la digitación, no reemplaza tu revisión (humano en el circuito).
 - [ ] Correrlo dos veces: la segunda pasada no duplica nada.
 
+## Paso 24 — El humano decide: reclasificar (cierra P1.7)
+
+*Escenario: la app propuso "activo fijo" para el aire acondicionado (paso 7),
+pero el contador decide que es gasto de instalación. La decisión es humana;
+la app recalcula todo.*
+
+- [ ] Abrir la factura ambigua del paso 7 (TS-3391, pendiente o rechazada) →
+  botón **"Reclasificar cuenta"**.
+- [ ] La pantalla muestra el porqué de la propuesta original y un selector de
+  cuentas con su concepto de retención. Elegir **5145 — Mantenimiento y
+  reparaciones** y escribir el motivo.
+- [ ] Al guardar: la retención se recalcula (de compras 2.5% a servicios 4%,
+  respetando la matriz de terceros), el asiento completo se rearma
+  balanceado, y la factura vuelve a la bandeja como propuesta **Manual**
+  pendiente de tu aprobación — con tu motivo en la explicación.
+- [ ] Una factura **rechazada** también se puede reclasificar (vuelve a la
+  bandeja); una **aprobada** no (el asiento ya está en firme).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

@@ -34,6 +34,16 @@ REGLAS_PUC = [
 CUENTA_SIN_REGLA = ("5195", "Gastos diversos", "servicios")
 
 
+def cuentas_reclasificables():
+    """Las cuentas que el usuario puede elegir al reclasificar a mano:
+    todas las de las reglas más el comodín. [(cuenta, nombre, concepto)]"""
+    vistas = {}
+    for _, cuenta, nombre, concepto in REGLAS_PUC:
+        vistas.setdefault(cuenta, (cuenta, nombre, concepto))
+    vistas.setdefault(CUENTA_SIN_REGLA[0], CUENTA_SIN_REGLA)
+    return sorted(vistas.values())
+
+
 @dataclass
 class Propuesta:
     cuenta: str

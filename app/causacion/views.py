@@ -14,10 +14,12 @@ from django.views.decorators.http import require_POST
 from . import alegra, vision
 from .cartera import RANGOS, edades_de_cartera
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
+from .clasificacion import Propuesta, cuentas_reclasificables
 from .forms import (
     TIPOS_IMAGEN,
     FormularioFacturaFisica,
     FormularioFotoFactura,
+    FormularioReclasificacion,
     FormularioSubirFactura,
     FormularioTercero,
 )
@@ -255,6 +257,63 @@ def foto_causar(request):
     messages.success(request, f"Factura física {factura.numero} causada como sugerida, "
                               "pendiente de tu aprobación.")
     return redirect("causacion:detalle", pk=factura.pk)
+
+
+# ---------- Reclasificación manual (cierra P1.7) ----------
+
+def reclasificar(request, pk):
+    """El usuario corrige la cuenta PUC de una compra pendiente o rechazada:
+    se recalculan retención y asiento y vuelve a la bandeja como manual."""
+    empresa = _empresa_activa(request)
+    factura = get_object_or_404(
+        FacturaCompra.objects.de_empresa(empresa), pk=pk,
+        tipo="compra", estado__in=["pendiente", "rechazada"])
+
+    formulario = FormularioReclasificacion(
+        request.POST or None, initial={"cuenta": factura.cuenta_puc})
+    if request.method == "POST" and formulario.is_valid():
+        elegida = formulario.cleaned_data["cuenta"]
+        cuenta, nombre, concepto = next(
+            fila for fila in cuentas_reclasificables() if fila[0] == elegida)
+
+        # Reconstruir los datos mínimos para recalcular retención y asiento
+        datos = FacturaParseada(
+            cufe=factura.cufe, numero=factura.numero,
+            fecha_emision=factura.fecha_emision, nota="",
+            nit_emisor=factura.nit_emisor, nombre_emisor=factura.nombre_emisor,
+            tipo_persona_emisor=factura.tipo_persona_emisor,
+            responsabilidad_emisor=factura.responsabilidad_emisor,
+            nit_adquiriente=empresa.nit, nombre_adquiriente=empresa.razon_social,
+            subtotal=factura.subtotal, iva=factura.iva, total=factura.total,
+            lineas=[], tipo_documento="factura",
+            retefuente_practicada=Decimal("0"),
+            referencia_numero="", referencia_cufe="",
+        )
+        tercero = Tercero.objects.de_empresa(empresa).filter(
+            nit=factura.nit_emisor).first()
+        motivo = formulario.cleaned_data["motivo"] or "sin motivo registrado"
+        propuesta = Propuesta(
+            cuenta, nombre, concepto, "manual",
+            f"Reclasificada manualmente a {cuenta} ({nombre}) por el usuario: "
+            f"{motivo}.")
+        retencion = calcular_retencion(datos, concepto, tercero)
+        factura.cuenta_puc = cuenta
+        factura.nombre_cuenta_puc = nombre
+        factura.concepto_retencion = concepto
+        factura.retencion = retencion.valor
+        factura.nivel = "manual"
+        factura.estado = "pendiente"
+        factura.explicacion = f"{propuesta.explicacion}\n{retencion.porque}"
+        factura.asiento = construir_asiento(datos, propuesta, retencion)
+        factura.save()
+        messages.success(request, f"Factura {factura.numero} reclasificada a "
+                                  f"{cuenta} y devuelta a la bandeja para tu aprobación.")
+        return redirect("causacion:detalle", pk=factura.pk)
+
+    return render(request, "causacion/reclasificar.html", {
+        "factura": factura,
+        "formulario": formulario,
+    })
 
 
 # ---------- Cartera (P5.1) ----------

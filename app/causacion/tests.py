@@ -497,6 +497,63 @@ class PruebasCartera(CasoConEmpresa):
         self.assertContains(respuesta, "Cartera por edades")
 
 
+class PruebasReclasificacion(CasoConEmpresa):
+    """Reclasificación manual: cierra el ciclo de P1.7 (el humano decide)."""
+
+    def setUp(self):
+        super().setUp()
+        archivo = SimpleUploadedFile("P1.7.xml",
+                                     contenido("P1.7-factura-concepto-ambiguo.xml"),
+                                     content_type="text/xml")
+        self.client.post(reverse("causacion:subir"), {"archivo": archivo})
+        self.factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+
+    def reclasificar(self, cuenta, motivo="decisión del contador"):
+        return self.client.post(
+            reverse("causacion:reclasificar", args=[self.factura.pk]),
+            {"cuenta": cuenta, "motivo": motivo}, follow=True)
+
+    def test_reclasificar_recalcula_retencion_y_asiento(self):
+        # La ambigua propuso 1524 (activo, compras 2.5%); el contador decide
+        # que es gasto de instalación: 5145 (servicios 4%).
+        respuesta = self.reclasificar("5145")
+        self.assertEqual(respuesta.status_code, 200)
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.cuenta_puc, "5145")
+        self.assertEqual(self.factura.nivel, "manual")
+        self.assertEqual(self.factura.estado, "pendiente")
+        # 4% de 4.800.000 = 192.000 (antes era compras 2.5% = 120.000)
+        self.assertEqual(self.factura.retencion, Decimal("192000"))
+        por_cuenta = {r["cuenta"]: r for r in self.factura.asiento}
+        self.assertEqual(Decimal(por_cuenta["5145"]["debito"]), Decimal("4800000.00"))
+        self.assertIn("236525", por_cuenta)  # retefuente servicios
+        self.assertIn("decisión del contador", self.factura.explicacion)
+        debitos = sum(Decimal(r["debito"]) for r in self.factura.asiento)
+        creditos = sum(Decimal(r["credito"]) for r in self.factura.asiento)
+        self.assertEqual(debitos, creditos)
+
+    def test_una_rechazada_vuelve_a_la_bandeja(self):
+        self.client.post(reverse("causacion:rechazar", args=[self.factura.pk]))
+        self.reclasificar("5145")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.estado, "pendiente")
+
+    def test_una_aprobada_no_se_reclasifica(self):
+        self.client.post(reverse("causacion:aprobar", args=[self.factura.pk]))
+        respuesta = self.client.get(
+            reverse("causacion:reclasificar", args=[self.factura.pk]))
+        self.assertEqual(respuesta.status_code, 404)
+
+    def test_respeta_la_matriz_de_terceros(self):
+        # Si el proveedor es RST según la matriz, la reclasificación no retiene
+        Tercero.objects.de_empresa(self.empresa).filter(
+            nit=self.factura.nit_emisor).update(regimen_simple=True, verificado=True)
+        self.reclasificar("5145")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.retencion, Decimal("0"))
+        self.assertIn("Régimen Simple", self.factura.explicacion)
+
+
 class PruebasNotaCreditoProveedor(CasoConEmpresa):
     """NC de proveedor: reversa de una compra ya causada, vinculada a la original."""
 

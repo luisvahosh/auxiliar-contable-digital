@@ -83,6 +83,25 @@ class FormularioFacturaFisica(forms.Form):
         return datos
 
 
+class FormularioReclasificacion(forms.Form):
+    """El usuario corrige la cuenta PUC propuesta; retención y asiento se
+    recalculan (humano en el circuito, nivel manual)."""
+
+    cuenta = forms.ChoiceField(label="Cuenta PUC correcta")
+    motivo = forms.CharField(
+        label="¿Por qué la reclasificas? (queda en la explicación)",
+        max_length=200, required=False)
+
+    def __init__(self, *args, **kwargs):
+        from .clasificacion import CONCEPTOS_RETENCION, cuentas_reclasificables
+        super().__init__(*args, **kwargs)
+        self.fields["cuenta"].choices = [
+            (cuenta, f"{cuenta} — {nombre} (retención: "
+                     f"{CONCEPTOS_RETENCION[concepto]['nombre'].lower()})")
+            for cuenta, nombre, concepto in cuentas_reclasificables()
+        ]
+
+
 class FormularioTercero(forms.ModelForm):
     """Edición de la calidad tributaria de un tercero, cotejada con su RUT."""
 

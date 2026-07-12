@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reclasificar {{ factura.numero }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Reclasificar la factura {{ factura.numero }}</h1>
+  <p class="suave">{{ factura.nombre_emisor }} · ${{ factura.total|floatformat:"0g" }} ·
+     propuesta actual: <strong>{{ factura.cuenta_puc }} {{ factura.nombre_cuenta_puc }}</strong></p>
+
+  <div class="tarjeta">
+    <h2>Por qué se propuso así</h2>
+    <p class="porque">{{ factura.explicacion }}</p>
+  </div>
+
+  <div class="tarjeta">
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom:16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <p class="ayuda">Al guardar se recalculan la retención (según el concepto de
+         la cuenta y la matriz de terceros) y el asiento completo, y la factura
+         vuelve a la bandeja como propuesta <strong>manual</strong> para tu aprobación.</p>
+      <div class="acciones">
+        <button type="submit" class="boton">Reclasificar y recalcular</button>
+        <a class="boton boton-secundario" href="{% url 'causacion:detalle' factura.pk %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -129,6 +129,11 @@ Toda funcionalidad de dominio se valida contra los casos de
   (pypdf, PDF de texto; escaneos rechazados con instrucción), mismo motor de
   cruce; `parsear_extracto_archivo` decide por extensión. Fixture
   P4-extracto-junio.pdf idéntico al CSV. 97 tests.
+- **Hecho (día 4):** reclasificación manual — vista `reclasificar` para
+  compras pendientes/rechazadas: el usuario elige la cuenta PUC correcta
+  (selector con concepto de retención), se recalculan retención (con matriz
+  de terceros) y asiento, y vuelve a bandeja como nivel "manual" con el
+  motivo en la explicación. Cierra el ciclo de P1.7. 101 tests.
 - **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
   (XML reales del portal DIAN); confirmar fechas del calendario contra el
   decreto; CSV contra importación real Siigo. Luego: buzón IMAP (lee

@@ -74,6 +74,9 @@
         {% csrf_token %}
         <button type="submit" class="boton boton-peligro">Rechazar</button>
       </form>
+      {% if factura.tipo == "compra" %}
+        <a class="boton boton-secundario" href="{% url 'causacion:reclasificar' factura.pk %}">Reclasificar cuenta</a>
+      {% endif %}
       <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>
     </div>
     <p class="suave">Al aprobar, el siguiente paso del vertical enviará el asiento
@@ -107,6 +110,9 @@
     </div>
   {% else %}
     <div class="acciones">
+      {% if factura.estado == "rechazada" and factura.tipo == "compra" %}
+        <a class="boton" href="{% url 'causacion:reclasificar' factura.pk %}">Reclasificar y volver a la bandeja</a>
+      {% endif %}
       <a class="boton boton-secundario" href="{% url 'causacion:bandeja' %}">Volver a la bandeja</a>
     </div>
   {% endif %}
