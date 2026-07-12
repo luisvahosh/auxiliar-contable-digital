@@ -413,6 +413,29 @@ contable) — las credenciales viven por tenant, no en el servidor.*
 - [ ] Siigo sigue por archivo (CSV del cierre o por factura); su API
   llegará cuando la cuenta tenga plan con credenciales.
 
+## Paso 27 — La nómina del mes (P8)
+
+*Escenario: fin de mes, hay que pagar a la gente. El auxiliar liquida,
+revisa y solo entonces se contabiliza.*
+
+- [ ] Abrir **Nómina** en el menú → **Agregar empleado**: registrar uno con
+  salario mínimo (1.623.500) y otro con 3 SMMLV.
+- [ ] **Liquidar nómina** del mes: la app calcula por empleado el devengado
+  (el de salario mínimo lleva **auxilio de transporte**; el de 3 SMMLV no),
+  las deducciones (salud 4% + pensión 4%), el neto, los aportes del
+  empleador y las provisiones de prestaciones.
+- [ ] Revisar el **asiento consolidado**: gasto de personal contra salarios
+  por pagar, aportes por pagar y provisiones — sumas iguales.
+- [ ] La explicación dice con qué SMMLV/auxilio se liquidó y si la empresa
+  está **exonerada de parafiscales** (art. 114-1, se cambia en el admin de
+  la empresa) — probar desmarcarla y comparar los aportes.
+- [ ] Liquidar el mismo mes otra vez: rechazado ("ya fue liquidada").
+- [ ] **Aprobar nómina** — y leer la letra pequeña: la PILA y la nómina
+  electrónica DIAN las presenta el humano; las novedades (horas extra,
+  incapacidades, retiros) llegan en la siguiente iteración.
+- [ ] **OJO:** el SMMLV y auxilio 2026 son ESTIMADOS — confirmarlos contra
+  los decretos antes de liquidar nómina real (nomina/parametros.py).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

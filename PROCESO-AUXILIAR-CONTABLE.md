@@ -154,6 +154,34 @@ El trabajo del auxiliar no es una lista de tareas sueltas: es un **ciclo mensual
 | P7.2 | Cuadre de retenciones | El mes cerrado | Suma de retenciones practicadas = saldo de las cuentas 2365/2367 = base del formulario 350 |
 | P7.3 | Aislamiento multi-tenant | Dos empresas cerrando el mismo mes | Ningún dato cruzado; test automatizado de acceso cruzado pasa (PLAN.md §10.3) |
 
+### P8. Nómina (fase 4 — núcleo primero, lo regulatorio después)
+
+**Disparador:** fin de mes (liquidación) + novedades del período.
+
+**Cómo lo hace el auxiliar:** mantiene la planta de personal con salario y
+fecha de ingreso; cada mes liquida: devengado (salario + auxilio de transporte
+si gana ≤ 2 SMMLV), deducciones del empleado (salud 4%, pensión 4%), neto a
+pagar, aportes del empleador (pensión 12%, ARL, caja 4%, y salud/SENA/ICBF
+solo si la empresa no está exonerada por art. 114-1 E.T. o el salario es
+≥ 10 SMMLV) y provisiones de prestaciones (cesantías, intereses, prima,
+vacaciones). Registra el asiento y prepara los totales para PILA. **La app
+liquida y propone; el humano aprueba; la PILA y la nómina electrónica DIAN
+las presenta el humano (v1 no presenta nada ante entidades).**
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P8.1 | Salario mínimo | Empleado con 1 SMMLV | Con auxilio de transporte; deducciones 8%; neto correcto al peso |
+| P8.2 | Salario alto | Empleado con 3 SMMLV | Sin auxilio de transporte |
+| P8.3 | Exoneración 114-1 | Empresa exonerada vs no exonerada | La exonerada no aporta salud 8.5% ni SENA/ICBF (para salarios < 10 SMMLV); la no exonerada sí |
+| P8.4 | Asiento balanceado | Liquidación del mes | Débitos (gasto de personal) = créditos (neto + aportes por pagar + provisiones) |
+| P8.5 | Un mes, una liquidación | Liquidar dos veces el mismo mes | La segunda se rechaza: ya existe |
+| P8.6 | Humano en el circuito | Liquidación creada | Queda pendiente; nada se contabiliza sin aprobación |
+| P8.7 | Parámetros por año | SMMLV/auxilio del año correcto | Cambiar de año usa los valores de ese año (VERIFICAR contra decretos) |
+| P8.8 | Novedades | Horas extra, incapacidades, retiros | *Pendiente de la siguiente iteración* |
+| P8.9 | Nómina electrónica DIAN y pre-PILA | Liquidación aprobada | *Pendiente: exportes para el operador de PILA y el proveedor de nómina electrónica* |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.

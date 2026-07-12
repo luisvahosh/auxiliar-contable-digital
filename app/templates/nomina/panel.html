@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nómina — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Nómina</h1>
+  <p class="suave">{{ empresa }} ·
+     {% if empresa.exonerada_parafiscales %}exonerada de parafiscales (art. 114-1){% else %}NO exonerada de parafiscales{% endif %}
+     — se cambia en el admin de la empresa.</p>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Planta de personal</h2>
+    {% if empleados %}
+      <table>
+        <thead><tr><th>Empleado</th><th>Cédula</th><th class="numero">Salario</th><th>Ingreso</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          {% for empleado in empleados %}
+            <tr>
+              <td>{{ empleado.nombre }}</td>
+              <td>{{ empleado.cedula }}</td>
+              <td class="numero">${{ empleado.salario|floatformat:"0g" }}</td>
+              <td>{{ empleado.fecha_ingreso }}</td>
+              <td>{% if empleado.activo %}<span class="insignia insignia-aprobada">Activo</span>{% else %}<span class="insignia insignia-rechazada">Retirado</span>{% endif %}</td>
+              <td><a class="fila-enlace" href="{% url 'nomina:empleado_editar' empleado.pk %}">Editar</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Aún no hay empleados registrados.</p>
+    {% endif %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'nomina:empleado_nuevo' %}">Agregar empleado</a>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Liquidar el mes</h2>
+    <form method="post" action="{% url 'nomina:liquidar' %}">
+      {% csrf_token %}
+      <label for="{{ formulario_liquidar.periodo.id_for_label }}">{{ formulario_liquidar.periodo.label }}</label>
+      {{ formulario_liquidar.periodo }}
+      <button type="submit" class="boton" style="margin-left:8px">Liquidar nómina</button>
+    </form>
+    <p class="ayuda">Liquida a todos los empleados activos por mes completo
+       (las novedades — horas extra, incapacidades, retiros — llegan en la
+       siguiente iteración). La liquidación queda pendiente de tu aprobación.</p>
+  </div>
+
+  {% if liquidaciones %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Liquidaciones</h2>
+      <table>
+        <thead><tr><th>Período</th><th class="numero">Devengado</th><th class="numero">Neto a pagar</th><th>Estado</th></tr></thead>
+        <tbody>
+          {% for liquidacion in liquidaciones %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'nomina:detalle' liquidacion.pk %}">{{ liquidacion.anio }}-{{ liquidacion.mes|stringformat:"02d" }}</a></td>
+              <td class="numero">${{ liquidacion.total_devengado|floatformat:"0g" }}</td>
+              <td class="numero">${{ liquidacion.total_neto|floatformat:"0g" }}</td>
+              <td><span class="insignia insignia-{{ liquidacion.estado }}">{{ liquidacion.get_estado_display }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

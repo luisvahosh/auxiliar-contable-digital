@@ -53,6 +53,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/conciliacion/` — P4: extractos bancarios y cruce contra libros.
 - `app/calendario/` — P6: calendario tributario por NIT y alertas por correo.
 - `app/cierre/` — P7: lista de chequeo del mes y paquete ZIP del contador.
+- `app/nomina/` — P8: planta de personal y liquidación mensual con asiento.
 - Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
@@ -170,10 +171,19 @@ Toda funcionalidad de dominio se valida contra los casos de
   de respaldo del 2FA (otp_static: 8 códigos de un solo uso al activar,
   regenerables desde 2FA activo; /verificar/ acepta app o respaldo).
   122 tests.
-- **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
-  calendario contra decreto; CSV contra importación real Siigo; buzón
-  IMAP; P6.3 monitoreo DIAN. Visión: seguir calibrando con fotos reales
-  de Luis. Futuro §12: forzar 2FA a admins (hoy es aviso).
+- **Hecho (día 6, P8 núcleo):** nómina — app `nomina/`: Empleado y
+  LiquidacionNomina por tenant, motor de liquidación mensual (auxilio si
+  ≤2 SMMLV, deducciones 4+4, aportes patronales con exoneración art.
+  114-1 configurable en Empresa, provisiones), asiento consolidado
+  balanceado, un mes = una liquidación, aprobación humana. Casos P8 en la
+  guía. SMMLV/auxilio 2026 ESTIMADOS (nomina/parametros.py — confirmar
+  decretos). 132 tests.
+- **Sigue:** P8.8 novedades (horas extra, incapacidades, retiros) y P8.9
+  exportes pre-PILA/nómina electrónica; fase 3 tributario profundo
+  (certificados de retención, exógena, caja menor, activos fijos);
+  validación con mes real de XML DIAN (P7.1); confirmar calendario y
+  SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3
+  monitoreo DIAN; forzar 2FA a admins.
 
 ## Git
 

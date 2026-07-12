@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block titulo %}Empleado — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width:480px; margin:0 auto">
+    <h1>{% if instancia %}Editar a {{ instancia.nombre }}{% else %}Nuevo empleado{% endif %}</h1>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% for campo in formulario %}
+          <div style="margin-bottom:16px">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <div class="acciones">
+          <button type="submit" class="boton">Guardar</button>
+          <a class="boton boton-secundario" href="{% url 'nomina:panel' %}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <p class="ayuda">Para un retiro, desmarca «Activo» (dejará de entrar en las
+       liquidaciones; la liquidación definitiva de prestaciones llega después).</p>
+  </div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nómina {{ liquidacion.anio }}-{{ liquidacion.mes|stringformat:"02d" }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Nómina {{ liquidacion.anio }}-{{ liquidacion.mes|stringformat:"02d" }}
+    <span class="insignia insignia-{{ liquidacion.estado }}">{{ liquidacion.get_estado_display }}</span>
+  </h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Liquidación por empleado</h2>
+    <table>
+      <thead>
+        <tr><th>Empleado</th><th class="numero">Salario</th><th class="numero">Auxilio</th>
+            <th class="numero">Devengado</th><th class="numero">Salud 4%</th>
+            <th class="numero">Pensión 4%</th><th class="numero">Neto</th></tr>
+      </thead>
+      <tbody>
+        {% for fila in liquidacion.detalle %}
+          <tr>
+            <td>{{ fila.empleado }}</td>
+            <td class="numero">${{ fila.salario|floatformat:"0g" }}</td>
+            <td class="numero">{% if fila.auxilio != "0" %}${{ fila.auxilio|floatformat:"0g" }}{% endif %}</td>
+            <td class="numero">${{ fila.devengado|floatformat:"0g" }}</td>
+            <td class="numero">${{ fila.salud_empleado|floatformat:"0g" }}</td>
+            <td class="numero">${{ fila.pension_empleado|floatformat:"0g" }}</td>
+            <td class="numero"><strong>${{ fila.neto|floatformat:"0g" }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td>Totales</td><td></td><td></td>
+            <td class="numero">${{ liquidacion.total_devengado|floatformat:"0g" }}</td>
+            <td class="numero" colspan="2">${{ liquidacion.total_deducciones|floatformat:"0g" }}</td>
+            <td class="numero">${{ liquidacion.total_neto|floatformat:"0g" }}</td></tr>
+      </tfoot>
+    </table>
+    <p class="ayuda">Aportes del empleador: ${{ liquidacion.total_aportes_empleador|floatformat:"0g" }}
+       · Provisiones de prestaciones: ${{ liquidacion.total_provisiones|floatformat:"0g" }}</p>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento propuesto</h2>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr></thead>
+      <tbody>
+        {% for renglon in renglones %}
+          <tr>
+            <td>{{ renglon.cuenta }}</td>
+            <td>{{ renglon.nombre }}</td>
+            <td class="numero">{% if renglon.debito %}${{ renglon.debito|floatformat:"0g" }}{% endif %}</td>
+            <td class="numero">{% if renglon.credito %}${{ renglon.credito|floatformat:"0g" }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="2">Sumas iguales</td>
+            <td class="numero">${{ total_debitos|floatformat:"0g" }}</td>
+            <td class="numero">${{ total_creditos|floatformat:"0g" }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Cómo se liquidó</h2>
+    <p class="porque">{{ liquidacion.explicacion }}</p>
+  </div>
+
+  {% if liquidacion.estado == "pendiente" %}
+    <div class="acciones">
+      <form method="post" action="{% url 'nomina:decidir' liquidacion.pk 'aprobada' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton">Aprobar nómina</button>
+      </form>
+      <form method="post" action="{% url 'nomina:decidir' liquidacion.pk 'rechazada' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton boton-peligro">Rechazar</button>
+      </form>
+      <a class="boton boton-secundario" href="{% url 'nomina:panel' %}">Volver</a>
+    </div>
+  {% else %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'nomina:panel' %}">Volver</a>
+    </div>
+  {% endif %}
+{% endblock %}

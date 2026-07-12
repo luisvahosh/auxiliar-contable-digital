@@ -28,6 +28,11 @@ class Empresa(models.Model):
     enviar_recordatorios_cobro = models.BooleanField(
         "enviar recordatorios de cobro", default=False,
         help_text="Correo con el estado de cuenta a clientes con facturas vencidas")
+    # Nómina (guía P8): beneficio del art. 114-1 E.T.
+    exonerada_parafiscales = models.BooleanField(
+        "exonerada de parafiscales (art. 114-1)", default=True,
+        help_text="PJ contribuyente de renta: no aporta salud 8.5%, SENA ni "
+                  "ICBF por empleados que ganen menos de 10 SMMLV")
     creada = models.DateTimeField(auto_now_add=True)
 
     class Meta:

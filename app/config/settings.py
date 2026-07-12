@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "conciliacion",
     "calendario",
     "cierre",
+    "nomina",
 ]
 
 MIDDLEWARE = [
