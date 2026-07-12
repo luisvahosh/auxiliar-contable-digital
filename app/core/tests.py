@@ -149,6 +149,64 @@ class PruebasPanelInicio(CasoConEmpresa):
         self.assertContains(respuesta, "Causar una factura")
 
 
+class Pruebas2FA(CasoConEmpresa):
+    """§12: segundo factor TOTP — activación con QR y validación por sesión."""
+
+    def token_de(self, dispositivo, corrimiento=0):
+        # corrimiento=1 → código de la SIGUIENTE ventana de 30 s (el TOTP
+        # rechaza reusar un código ya consumido — protección anti-repetición)
+        from django_otp.oath import totp
+        return f"{totp(dispositivo.bin_key, step=dispositivo.step, digits=dispositivo.digits, drift=corrimiento):06d}"
+
+    def activar(self):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        self.client.get("/seguridad/2fa/")  # crea el dispositivo sin confirmar
+        dispositivo = TOTPDevice.objects.get(user=self.usuario)
+        self.client.post("/seguridad/2fa/", {"token": self.token_de(dispositivo)})
+        dispositivo.refresh_from_db()
+        return dispositivo
+
+    def test_el_admin_ve_el_aviso_hasta_activarlo(self):
+        self.assertContains(self.client.get("/"), "segundo factor")
+
+    def test_activacion_con_codigo_correcto(self):
+        dispositivo = self.activar()
+        self.assertTrue(dispositivo.confirmed)
+        # Ya activo: el aviso desaparece y la sesión queda verificada
+        respuesta = self.client.get("/")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertNotContains(respuesta, "aún no tienes segundo factor")
+
+    def test_codigo_malo_no_activa(self):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        self.client.get("/seguridad/2fa/")
+        respuesta = self.client.post("/seguridad/2fa/", {"token": "000000"})
+        self.assertContains(respuesta, "Código incorrecto")
+        self.assertFalse(TOTPDevice.objects.get(user=self.usuario).confirmed)
+
+    def test_sesion_nueva_exige_el_codigo(self):
+        dispositivo = self.activar()
+        # Sesión nueva: contraseña sí, código todavía no
+        self.client.logout()
+        self.client.force_login(self.usuario)
+        respuesta = self.client.get("/")
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn("/verificar/", respuesta.url)
+        # Código malo: sigue afuera
+        respuesta = self.client.post("/verificar/", {"token": "000000"})
+        self.assertContains(respuesta, "incorrecto")
+        # El intento fallido activa el freno anti fuerza bruta (~1 s):
+        # en la vida real se espera; en el test se resetea.
+        dispositivo.refresh_from_db()
+        dispositivo.throttle_reset()
+        # Código bueno (de la ventana siguiente, el anterior ya se consumió): entra
+        self.client.post("/verificar/", {"token": self.token_de(dispositivo, corrimiento=1)})
+        self.assertEqual(self.client.get("/").status_code, 200)
+
+    def test_sin_2fa_activo_no_se_exige_codigo(self):
+        self.assertEqual(self.client.get("/").status_code, 200)
+
+
 class PruebasMultiEmpresa(CasoConEmpresa):
     def setUp(self):
         super().setUp()

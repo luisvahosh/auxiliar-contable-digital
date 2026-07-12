@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titulo %}Activar segundo factor — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 480px; margin: 24px auto">
+    <h1>Activar el segundo factor (2FA)</h1>
+    <p class="suave">Con esto, entrar requiere tu contraseña <strong>y</strong> un
+       código de tu teléfono — aunque roben la contraseña, no entran.</p>
+
+    <div class="tarjeta">
+      <h2>1 · Escanea con tu app de autenticación</h2>
+      <p class="ayuda">Google Authenticator, Microsoft Authenticator, Aegis o similar.</p>
+      <div style="background:#fff; padding:12px; display:inline-block; border:1px solid var(--borde); border-radius:8px">{{ qr|safe }}</div>
+      <p class="ayuda">¿No puedes escanear? Ingresa esta clave a mano:
+         <code style="word-break: break-all">{{ clave }}</code></p>
+    </div>
+
+    <div class="tarjeta">
+      <h2>2 · Confirma con el código</h2>
+      <form method="post">
+        {% csrf_token %}
+        <label for="{{ formulario.token.id_for_label }}">{{ formulario.token.label }}</label>
+        {{ formulario.token }}
+        {% if formulario.token.errors %}<p class="ayuda" style="color: var(--error)">{{ formulario.token.errors|striptags }}</p>{% endif %}
+        <div class="acciones">
+          <button type="submit" class="boton">Activar 2FA</button>
+          <a class="boton boton-secundario" href="{% url 'core:inicio' %}">Después</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

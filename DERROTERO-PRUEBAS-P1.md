@@ -382,6 +382,22 @@ la app recalcula todo.*
 - [ ] Una factura **rechazada** también se puede reclasificar (vuelve a la
   bandeja); una **aprobada** no (el asiento ya está en firme).
 
+## Paso 25 — Segundo factor (2FA)
+
+*Escenario: la contraseña de un administrador se filtra. Con 2FA, el atacante
+igual no entra: falta el código del teléfono.*
+
+- [ ] En el panel de inicio, como administrador verás el aviso 🔐 →
+  **actívalo aquí** (o directo en `/seguridad/2fa/`).
+- [ ] Escanear el QR con Google/Microsoft Authenticator (o similar) y
+  confirmar con el código de 6 dígitos.
+- [ ] Salir y volver a entrar: tras la contraseña, la app **exige el código**.
+  Probar uno malo (rechaza; tras varios fallidos aplica freno anti fuerza
+  bruta) y el bueno (entra).
+- [ ] Detalles de seguridad ya incluidos: un código usado no sirve dos veces
+  (anti-repetición) y si cambias de teléfono, el dispositivo se restablece
+  desde el panel admin (dispositivos TOTP).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

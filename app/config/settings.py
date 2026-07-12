@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "axes",  # rate limiting de login (PLAN.md §12)
+    "django_otp",
+    "django_otp.plugins.otp_totp",  # segundo factor TOTP (PLAN.md §12)
     # Apps del producto
     "core",
     "causacion",
@@ -46,6 +48,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",  # request.user.is_verified()
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.AccesoPorEmpresaMiddleware",  # acceso cerrado por defecto (§12)

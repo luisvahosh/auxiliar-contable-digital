@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block titulo %}Segundo factor activo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto; text-align:center">
+    <h1>Tu segundo factor está activo ✔</h1>
+    <p>Cada ingreso pide el código de tu aplicación de autenticación.
+       Si cambias de teléfono, pide al administrador de la plataforma que
+       restablezca tu dispositivo (panel admin → dispositivos TOTP).</p>
+    <a class="boton boton-secundario" href="{% url 'core:inicio' %}">Volver al inicio</a>
+  </div>
+{% endblock %}

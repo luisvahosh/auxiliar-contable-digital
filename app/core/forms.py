@@ -40,6 +40,20 @@ class FormularioRegistro(forms.Form):
         return datos
 
 
+class FormularioToken2FA(forms.Form):
+    token = forms.CharField(
+        label="Código de 6 dígitos",
+        min_length=6, max_length=6,
+        widget=forms.TextInput(attrs={"inputmode": "numeric", "autocomplete":
+                                      "one-time-code", "autofocus": True}))
+
+    def clean_token(self):
+        token = self.cleaned_data["token"].strip()
+        if not token.isdigit():
+            raise forms.ValidationError("Solo dígitos.")
+        return token
+
+
 class FormularioInvitacion(forms.Form):
     correo = forms.EmailField(label="Correo del invitado")
     rol = forms.ChoiceField(label="Rol en la empresa", choices=ROLES,

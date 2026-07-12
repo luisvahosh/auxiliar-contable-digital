@@ -4,6 +4,14 @@
   <h1>Tu día, {{ request.empresa.razon_social }}</h1>
   <p class="suave">{{ hoy }} · lo que un auxiliar revisaría primero.</p>
 
+  {% if aviso_2fa %}
+    <ul class="mensajes" style="padding:0">
+      <li class="warning">🔐 Eres administrador y aún no tienes segundo factor:
+        <a class="fila-enlace" href="{% url 'core:configurar_2fa' %}">actívalo aquí</a>
+        (obligatorio para admins, PLAN §12).</li>
+    </ul>
+  {% endif %}
+
   <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom:16px">
     <a class="tarjeta" href="{% url 'causacion:bandeja' %}" style="margin:0; text-decoration:none; color:inherit">
       <p class="suave" style="margin:0">Por aprobar</p>

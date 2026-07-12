@@ -145,10 +145,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   VPS y la app vive en https://auxcontable.learnway.co (dominio en
   DJANGO_ALLOWED_HOSTS y DJANGO_CSRF_ORIGINS del .env del servidor, nunca
   editando settings.py en el clon). Panel del día en el inicio.
+- **Hecho (día 5, §12):** 2FA TOTP con django-otp — activación con QR
+  (SVG, sin pillow) en /seguridad/2fa/, verificación por sesión en el
+  middleware, anti-repetición y throttling del propio django-otp, aviso
+  persistente a admins sin 2FA en el panel. 108 tests.
 - **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
   calendario contra decreto; CSV contra importación real Siigo; buzón
-  IMAP; P6.3 monitoreo DIAN; 2FA admin. Afinar visión con casos reales
-  que reporte Luis (campo leído vs campo correcto).
+  IMAP; P6.3 monitoreo DIAN. Afinar visión con casos reales que reporte
+  Luis (campo leído vs campo correcto). Futuro §12: forzar 2FA a admins
+  (hoy es aviso), códigos de respaldo.
 
 ## Git
 
