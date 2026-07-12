@@ -15,6 +15,7 @@ Reglas P1.10:
 import base64
 import json
 import os
+import re
 
 import requests
 
@@ -97,11 +98,15 @@ def extraer_campos(imagen_bytes, tipo_mime):
     except (KeyError, IndexError, TypeError, ValueError):
         raise ErrorVision("respuesta inesperada del servicio de visión.")
 
-    texto = texto.strip()
-    if texto.startswith("```"):
-        texto = texto.strip("`").removeprefix("json").strip()
+    # El modelo a veces envuelve el JSON en prosa o en ```; tomar el primer {...}
+    encontrado = re.search(r"\{.*\}", texto, re.DOTALL)
+    if not encontrado:
+        raise ErrorVision(
+            "la IA no pudo leer una factura en esa imagen; intenta con una foto "
+            "más nítida y completa (o digita los campos manualmente)."
+        )
     try:
-        campos = json.loads(texto)
+        campos = json.loads(encontrado.group(0))
     except ValueError:
         raise ErrorVision("la IA no devolvió datos legibles; intenta con una foto más nítida.")
     if not isinstance(campos, dict):
