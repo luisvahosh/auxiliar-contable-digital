@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar tercero — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>{{ tercero.razon_social }}</h1>
+  <p class="suave">NIT {{ tercero.nit }} · Coteja estos datos con el RUT del
+     proveedor (casillas 53–57, responsabilidades). Lo que marques aquí define
+     la retención de sus próximas facturas.</p>
+
+  <div class="tarjeta">
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom: 16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="acciones">
+        <button type="submit" class="boton">Guardar</button>
+        <a class="boton boton-secundario" href="{% url 'causacion:terceros' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

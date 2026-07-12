@@ -68,8 +68,13 @@ Toda funcionalidad de dominio se valida contra los casos de
   compra/venta/nota crédito; asiento de venta (1305/4135/240801, retefuente
   practicada a 135515), alerta de huecos en consecutivo, nota crédito
   vinculada a la original. 27 tests.
-- **Sigue:** matriz de terceros con RUT (P3, quita el supuesto "declarante");
-  notas crédito de proveedores; validar CSV contra importación real en Siigo.
+- **Hecho (día 3, P3):** matriz de terceros — modelo Tercero por empresa
+  (declarante/autorretenedor/RST/verificado), se crea solo con la primera
+  factura del proveedor, UI en /causacion/terceros/, y manda sobre el XML en
+  calcular_retencion (tarifas no declarante incluidas). 34 tests.
+- **Sigue:** P4 conciliación bancaria (extracto vs libros); notas crédito de
+  proveedores; validar CSV contra importación real en Siigo; reteICA por
+  municipio (P3 pendiente).
 
 ## Git
 

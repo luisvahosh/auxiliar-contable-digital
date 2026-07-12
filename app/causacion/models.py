@@ -143,6 +143,65 @@ class FacturaVenta(models.Model):
         return self.nombre_cliente
 
 
+class Tercero(models.Model):
+    """Matriz de terceros (guía P3): la calidad tributaria real de cada
+    proveedor, tomada de su RUT.
+
+    Se crea automáticamente con la primera factura (a partir del TaxLevelCode
+    del XML, quedando "pendiente de verificar"); el auxiliar la corrige contra
+    el RUT y la marca verificada. En el cálculo de retenciones, esta matriz
+    manda sobre lo que diga el XML.
+    """
+
+    TIPOS_PERSONA = [("1", "Persona jurídica"), ("2", "Persona natural")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.ForeignKey("core.Empresa", on_delete=models.CASCADE,
+                                related_name="terceros")
+    nit = models.CharField("NIT o cédula", max_length=20)
+    razon_social = models.CharField("razón social / nombre", max_length=200)
+    tipo_persona = models.CharField(max_length=2, choices=TIPOS_PERSONA, default="1")
+    declarante = models.BooleanField(
+        "declarante de renta", default=True,
+        help_text="Si no declara, aplican tarifas de retención más altas")
+    autorretenedor = models.BooleanField(
+        "autorretenedor", default=False,
+        help_text="Se retiene a sí mismo: no se le practica retefuente")
+    regimen_simple = models.BooleanField(
+        "Régimen Simple de Tributación", default=False,
+        help_text="El RST no es sujeto de retención (art. 911 E.T.)")
+    verificado = models.BooleanField(
+        "verificado contra el RUT", default=False,
+        help_text="Marcar cuando la información se haya cotejado con el RUT del tercero")
+
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        ordering = ["razon_social"]
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "nit"],
+                                    name="tercero_unico_por_empresa"),
+        ]
+        verbose_name = "tercero"
+        verbose_name_plural = "terceros"
+
+    def __str__(self):
+        return f"{self.razon_social} (NIT {self.nit})"
+
+    @property
+    def calidades(self):
+        etiquetas = []
+        if self.regimen_simple:
+            etiquetas.append("Régimen Simple")
+        if self.autorretenedor:
+            etiquetas.append("Autorretenedor")
+        etiquetas.append("Declarante" if self.declarante else "No declarante")
+        return etiquetas
+
+
 class MapeoCuentaAlegra(models.Model):
     """Equivalencia cuenta PUC local → id de cuenta contable en Alegra.
 

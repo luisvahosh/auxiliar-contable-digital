@@ -89,12 +89,32 @@ def clasificar(factura):
     )
 
 
-def calcular_retencion(factura, concepto):
-    """Retefuente a practicar según régimen del emisor, base mínima en UVT y tarifa."""
-    responsabilidad = factura.responsabilidad_emisor
-    if responsabilidad in RESPONSABILIDADES_SIN_RETENCION:
+def calcular_retencion(factura, concepto, tercero=None):
+    """Retefuente a practicar según la calidad del proveedor, base mínima y tarifa.
+
+    Si hay tercero (matriz de terceros, P3), su calidad manda sobre el XML;
+    sin tercero se lee el TaxLevelCode del XML y se asume declarante.
+    """
+    if tercero is not None:
+        origen = ("la matriz de terceros" if tercero.verificado
+                  else "la matriz de terceros (pendiente de verificar contra el RUT)")
+        es_rst = tercero.regimen_simple
+        es_autorretenedor = tercero.autorretenedor
+        declarante = tercero.declarante
+        es_natural = tercero.tipo_persona == "2"
+    else:
+        origen = "el XML de la factura"
+        es_rst = factura.responsabilidad_emisor == "O-47"
+        es_autorretenedor = factura.responsabilidad_emisor == "O-15"
+        declarante = True
+        es_natural = factura.tipo_persona_emisor == "2"
+
+    if es_rst:
         return Retencion(Decimal("0"), None, "", "",
-                         RESPONSABILIDADES_SIN_RETENCION[responsabilidad])
+                         f"{RESPONSABILIDADES_SIN_RETENCION['O-47']} Fuente: {origen}.")
+    if es_autorretenedor:
+        return Retencion(Decimal("0"), None, "", "",
+                         f"{RESPONSABILIDADES_SIN_RETENCION['O-15']} Fuente: {origen}.")
 
     datos = CONCEPTOS_RETENCION[concepto]
     anio = factura.fecha_emision.year
@@ -108,15 +128,20 @@ def calcular_retencion(factura, concepto):
             f"(${base_minima:,.0f} en {anio}).",
         )
 
-    es_natural = factura.tipo_persona_emisor == "2"
-    tarifa = datos["tarifa_persona_natural"] if es_natural else datos["tarifa_persona_juridica"]
+    if not declarante:
+        tarifa = datos["tarifa_no_declarante"]
+        calidad = "no declarante"
+    elif es_natural:
+        tarifa = datos["tarifa_persona_natural"]
+        calidad = "persona natural declarante"
+    else:
+        tarifa = datos["tarifa_persona_juridica"]
+        calidad = "persona jurídica declarante"
     valor = (factura.subtotal * tarifa / 100).quantize(Decimal("1"))
-    tipo = "persona natural" if es_natural else "persona jurídica"
     return Retencion(
         valor, tarifa, datos["cuenta"], datos["nombre_cuenta"],
         f"Retefuente por {datos['nombre'].lower()}: {tarifa}% sobre "
-        f"${factura.subtotal:,.0f} = ${valor:,.0f} (emisor {tipo}; se asume "
-        "declarante — se refinará con el RUT del tercero en la matriz de terceros, P3).",
+        f"${factura.subtotal:,.0f} = ${valor:,.0f} ({calidad}, según {origen}).",
     )
 
 

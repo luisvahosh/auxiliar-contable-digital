@@ -1,6 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+from .models import Tercero
+
 TAMANO_MAXIMO = 2 * 1024 * 1024  # las facturas UBL reales pesan pocos KB
 
 
@@ -18,3 +20,12 @@ class FormularioSubirFactura(forms.Form):
         if archivo.size > TAMANO_MAXIMO:
             raise ValidationError("El archivo supera el tamaño máximo de 2 MB.")
         return archivo
+
+
+class FormularioTercero(forms.ModelForm):
+    """Edición de la calidad tributaria de un tercero, cotejada con su RUT."""
+
+    class Meta:
+        model = Tercero
+        fields = ["razon_social", "tipo_persona", "declarante",
+                  "autorretenedor", "regimen_simple", "verificado"]

@@ -11,8 +11,8 @@ from core.models import Empresa
 
 from . import alegra
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
-from .forms import FormularioSubirFactura
-from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra
+from .forms import FormularioSubirFactura, FormularioTercero
+from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
 from .parser import FacturaInvalida, parsear_factura
 from .siigo import generar_csv_siigo
 from .ventas import (
@@ -79,8 +79,22 @@ def _causar_compra(request, empresa, datos, contenido):
         )
         return redirect("causacion:detalle", pk=existente.pk)
 
+    # Matriz de terceros (P3): el proveedor se registra con su primera factura
+    # (calidad tomada del XML, pendiente de verificar contra el RUT) y en
+    # adelante su calidad registrada manda sobre lo que diga el XML.
+    tercero, _ = Tercero.objects.de_empresa(empresa).get_or_create(
+        nit=datos.nit_emisor,
+        defaults={
+            "empresa": empresa,
+            "razon_social": datos.nombre_emisor,
+            "tipo_persona": datos.tipo_persona_emisor,
+            "regimen_simple": datos.responsabilidad_emisor == "O-47",
+            "autorretenedor": datos.responsabilidad_emisor == "O-15",
+        },
+    )
+
     propuesta = clasificar(datos)
-    retencion = calcular_retencion(datos, propuesta.concepto)
+    retencion = calcular_retencion(datos, propuesta.concepto, tercero)
     renglones = construir_asiento(datos, propuesta, retencion)
     try:
         factura = FacturaCompra.objects.create(
@@ -261,6 +275,35 @@ def detalle_venta(request, pk):
         "venta": venta,
         "alegra_configurado": alegra.esta_configurado(),
         **_renglones_decimales(venta.asiento),
+    })
+
+
+# ---------- Matriz de terceros (P3) ----------
+
+def terceros(request):
+    empresa = _empresa_activa(request)
+    lista = Tercero.objects.de_empresa(empresa)
+    return render(request, "causacion/terceros.html", {
+        "terceros": lista,
+        "sin_verificar": lista.filter(verificado=False).count(),
+    })
+
+
+def editar_tercero(request, pk):
+    empresa = _empresa_activa(request)
+    tercero = get_object_or_404(Tercero.objects.de_empresa(empresa), pk=pk)
+    formulario = FormularioTercero(request.POST or None, instance=tercero)
+    if request.method == "POST" and formulario.is_valid():
+        formulario.save()
+        messages.success(
+            request,
+            f"Tercero {tercero.razon_social} actualizado. Las próximas facturas "
+            "de este proveedor usarán esta calidad tributaria.",
+        )
+        return redirect("causacion:terceros")
+    return render(request, "causacion/tercero_form.html", {
+        "formulario": formulario,
+        "tercero": tercero,
     })
 
 

@@ -27,15 +27,16 @@ def uvt_del_anio(anio):
 
 
 # Conceptos de retención en la fuente a título de renta.
-# Tarifas para declarantes: la calidad real del tercero (declarante,
-# autorretenedor, RST) saldrá del RUT en la matriz de terceros (guía P3);
-# mientras tanto se asume declarante y se dice en la explicación.
+# La calidad real del tercero (declarante, autorretenedor, RST) sale de la
+# matriz de terceros (guía P3), alimentada del RUT; si el tercero aún no está
+# verificado, se asume declarante y la explicación lo advierte.
 CONCEPTOS_RETENCION = {
     "honorarios": {
         "nombre": "Honorarios y comisiones",
         "base_uvt": Decimal("0"),
         "tarifa_persona_natural": Decimal("10"),
         "tarifa_persona_juridica": Decimal("11"),
+        "tarifa_no_declarante": Decimal("10"),
         "cuenta": "236515",
         "nombre_cuenta": "Retención en la fuente — honorarios",
     },
@@ -44,6 +45,7 @@ CONCEPTOS_RETENCION = {
         "base_uvt": Decimal("4"),
         "tarifa_persona_natural": Decimal("4"),
         "tarifa_persona_juridica": Decimal("4"),
+        "tarifa_no_declarante": Decimal("6"),
         "cuenta": "236525",
         "nombre_cuenta": "Retención en la fuente — servicios",
     },
@@ -52,6 +54,7 @@ CONCEPTOS_RETENCION = {
         "base_uvt": Decimal("27"),
         "tarifa_persona_natural": Decimal("2.5"),
         "tarifa_persona_juridica": Decimal("2.5"),
+        "tarifa_no_declarante": Decimal("3.5"),
         "cuenta": "236540",
         "nombre_cuenta": "Retención en la fuente — compras",
     },
@@ -60,6 +63,7 @@ CONCEPTOS_RETENCION = {
         "base_uvt": Decimal("27"),
         "tarifa_persona_natural": Decimal("3.5"),
         "tarifa_persona_juridica": Decimal("3.5"),
+        "tarifa_no_declarante": Decimal("3.5"),
         "cuenta": "236530",
         "nombre_cuenta": "Retención en la fuente — arrendamientos",
     },

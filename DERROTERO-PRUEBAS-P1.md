@@ -1,4 +1,4 @@
-# Derrotero de pruebas — Causación (P1 y P2) como lo vive un auxiliar contable
+# Derrotero de pruebas — Causación (P1, P2 y P3) como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -152,6 +152,31 @@ nota crédito NC-12 por $595.000.*
   crédito 1305 $595.000. La explicación dice que es **parcial**.
 - [ ] Verificación extra: si intentas subir la NC **antes** que su factura
   (en una base limpia), la app la rechaza pidiendo la original primero.
+
+## Paso 12 — El proveedor autorretenedor (P3.2)
+
+*Escenario: una consultora grande tiene calidad de autorretenedor en su RUT
+(responsabilidad O-15): retenerle sería un error que ella reclamaría.*
+
+- [ ] Subir `P3.2-factura-autorretenedor.xml` ($6.000.000 + IVA de consultoría).
+- [ ] El asiento **no tiene retención** (crédito 2335 por el total $7.140.000)
+  y la explicación dice que el proveedor es **autorretenedor**.
+
+## Paso 13 — La matriz de terceros (P3)
+
+*Escenario: el auxiliar mantiene una ficha por proveedor con su calidad
+tributaria según el RUT. La app la construye sola y tú la verificas.*
+
+- [ ] Abrir **Terceros** en el menú: están todos los proveedores de las
+  facturas que has subido, marcados **"Pendiente"** de verificar contra el RUT.
+- [ ] Entrar a **Editar** en Carlos Andrés Pérez (el contador de P1.1):
+  su calidad se cotejaría con el RUT real; marca **"Verificado contra el RUT"**
+  y guarda.
+- [ ] Prueba de que la matriz manda sobre el XML: edita un proveedor y márcalo
+  **Régimen Simple** — su próxima factura ya no llevará retención aunque el
+  XML no diga nada (la explicación citará "la matriz de terceros").
+- [ ] Nota: si un proveedor queda **"No declarante"**, la tarifa de servicios
+  sube del 4% al 6% y la de compras del 2.5% al 3.5% automáticamente.
 
 ## Cierre — revisión de bandeja
 

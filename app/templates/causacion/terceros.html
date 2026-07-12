@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block titulo %}Terceros — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Matriz de terceros</h1>
+  <p class="suave">La calidad tributaria de cada proveedor según su RUT. Cada
+     proveedor entra solo con su primera factura; verifícalo contra el RUT y
+     márcalo — la retención de sus próximas facturas se calcula con lo que
+     diga esta matriz.
+     {% if sin_verificar %}<strong>{{ sin_verificar }} pendiente{{ sin_verificar|pluralize }} de verificar.</strong>{% endif %}</p>
+
+  {% if terceros %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead>
+          <tr>
+            <th>Tercero</th>
+            <th>NIT</th>
+            <th>Tipo</th>
+            <th>Calidad tributaria</th>
+            <th>RUT verificado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tercero in terceros %}
+            <tr>
+              <td>{{ tercero.razon_social }}</td>
+              <td>{{ tercero.nit }}</td>
+              <td>{{ tercero.get_tipo_persona_display }}</td>
+              <td>
+                {% for calidad in tercero.calidades %}
+                  <span class="insignia insignia-manual">{{ calidad }}</span>
+                {% endfor %}
+              </td>
+              <td>
+                {% if tercero.verificado %}
+                  <span class="insignia insignia-aprobada">Verificado</span>
+                {% else %}
+                  <span class="insignia insignia-pendiente">Pendiente</span>
+                {% endif %}
+              </td>
+              <td><a class="fila-enlace" href="{% url 'causacion:editar_tercero' tercero.pk %}">Editar</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="tarjeta">
+      <p>Aún no hay terceros: se crean automáticamente al causar la primera
+         factura de cada proveedor.</p>
+      <a class="boton" href="{% url 'causacion:subir' %}">Subir factura XML</a>
+    </div>
+  {% endif %}
+{% endblock %}

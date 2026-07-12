@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra
+from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
+
+
+@admin.register(Tercero)
+class TerceroAdmin(admin.ModelAdmin):
+    list_display = ("razon_social", "nit", "tipo_persona", "declarante",
+                    "autorretenedor", "regimen_simple", "verificado", "empresa")
+    list_filter = ("verificado", "declarante", "autorretenedor", "regimen_simple", "empresa")
+    search_fields = ("razon_social", "nit")
 
 
 @admin.register(FacturaVenta)

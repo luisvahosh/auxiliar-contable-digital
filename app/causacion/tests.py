@@ -14,7 +14,7 @@ from django.urls import reverse
 from core.models import Empresa
 
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
-from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra
+from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
 from .parser import FacturaInvalida, parsear_factura
 from .ventas import consecutivos_faltantes
 
@@ -163,6 +163,95 @@ class PruebasFlujoWeb(TestCase):
                                      follow=True)
         self.assertContains(respuesta, "no menciona a")
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+
+class PruebasMatrizDeTerceros(TestCase):
+    """Casos P3: la calidad tributaria real del proveedor manda sobre el XML."""
+
+    def setUp(self):
+        self.empresa = Empresa.objects.get(nit="901234567")
+
+    def subir(self, nombre):
+        archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def test_p31_usa_la_uvt_del_anio_fiscal_correcto(self):
+        # $205.000 está entre la base mínima de 4 UVT de 2025 ($199.196)
+        # y la de 2026 ($209.496): retiene en 2025, no en 2026.
+        base = parsear_factura(contenido("P1.4-factura-bajo-base-minima.xml"))
+        base.subtotal = Decimal("205000")
+        base.fecha_emision = base.fecha_emision.replace(year=2025)
+        con_2025 = calcular_retencion(base, "servicios")
+        self.assertGreater(con_2025.valor, 0)
+        base.fecha_emision = base.fecha_emision.replace(year=2026)
+        con_2026 = calcular_retencion(base, "servicios")
+        self.assertEqual(con_2026.valor, Decimal("0"))
+        self.assertIn("2026", con_2026.porque)
+
+    def test_p32_autorretenedor_no_lleva_retefuente(self):
+        self.subir("P3.2-factura-autorretenedor.xml")
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get(numero="CEA-501")
+        self.assertEqual(factura.retencion, Decimal("0"))
+        self.assertIn("autorretenedor", factura.explicacion)
+        self.assertFalse({r["cuenta"] for r in factura.asiento} &
+                         {"236515", "236525", "236540"})
+
+    def test_el_tercero_se_crea_con_la_primera_factura(self):
+        self.subir("P3.2-factura-autorretenedor.xml")
+        tercero = Tercero.objects.de_empresa(self.empresa).get(nit="830444999")
+        self.assertTrue(tercero.autorretenedor)   # tomado del TaxLevelCode O-15
+        self.assertFalse(tercero.verificado)      # pendiente de cotejar con el RUT
+        self.assertIn("pendiente de verificar",
+                      FacturaCompra.objects.de_empresa(self.empresa).get().explicacion)
+
+    def test_la_matriz_manda_sobre_el_xml(self):
+        # El XML de P1.1 no trae calidad especial, pero el auxiliar registró
+        # al proveedor como autorretenedor tras revisar su RUT.
+        datos = parsear_factura(contenido("P1.1-factura-honorarios.xml"))
+        Tercero.objects.create(
+            empresa=self.empresa, nit=datos.nit_emisor, razon_social=datos.nombre_emisor,
+            tipo_persona="2", autorretenedor=True, verificado=True)
+        self.subir("P1.1-factura-honorarios.xml")
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.assertEqual(factura.retencion, Decimal("0"))
+        self.assertIn("autorretenedor", factura.explicacion)
+
+    def test_no_declarante_usa_tarifa_mas_alta(self):
+        datos = parsear_factura(contenido("P1.4-factura-bajo-base-minima.xml"))
+        datos.subtotal = Decimal("1000000")  # sobre la base mínima
+        tercero = Tercero(empresa=self.empresa, nit=datos.nit_emisor,
+                          razon_social="X", tipo_persona="2",
+                          declarante=False, verificado=True)
+        retencion = calcular_retencion(datos, "servicios", tercero)
+        self.assertEqual(retencion.tarifa, Decimal("6"))  # 6% no declarante vs 4%
+        self.assertEqual(retencion.valor, Decimal("60000"))
+        self.assertIn("no declarante", retencion.porque)
+
+    def test_editar_tercero_cambia_la_proxima_causacion(self):
+        self.subir("P1.1-factura-honorarios.xml")
+        tercero = Tercero.objects.de_empresa(self.empresa).get(nit="79456123")
+        respuesta = self.client.post(
+            reverse("causacion:editar_tercero", args=[tercero.pk]),
+            {"razon_social": tercero.razon_social, "tipo_persona": "2",
+             "regimen_simple": "on", "verificado": "on"},
+            follow=True)
+        self.assertContains(respuesta, "actualizado")
+        tercero.refresh_from_db()
+        self.assertTrue(tercero.regimen_simple)
+        # La siguiente factura del mismo proveedor ya no lleva retención
+        datos = parsear_factura(contenido("P1.1-factura-honorarios.xml"))
+        retencion = calcular_retencion(datos, "honorarios", tercero)
+        self.assertEqual(retencion.valor, Decimal("0"))
+
+    def test_terceros_aislados_por_tenant(self):
+        otra = Empresa.objects.create(nit="800111222", razon_social="OTRA SAS")
+        Tercero.objects.create(empresa=otra, nit="1", razon_social="Ajeno")
+        self.assertEqual(Tercero.objects.de_empresa(self.empresa).count(), 0)
+        ajeno = Tercero.objects.de_empresa(otra).get()
+        respuesta = self.client.get(
+            reverse("causacion:editar_tercero", args=[ajeno.pk]))
+        self.assertEqual(respuesta.status_code, 404)
 
 
 class PruebasVentas(TestCase):
