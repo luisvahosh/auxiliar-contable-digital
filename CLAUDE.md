@@ -141,12 +141,14 @@ Toda funcionalidad de dominio se valida contra los casos de
   a git). Primera foto real desde el celular contra el VPS funcionó;
   instrucción de visión afinada con lo aprendido; mapeo Alegra ahora es
   migración semilla (0009) para ambientes nuevos. 101 tests.
-- **Sigue:** HTTPS con dominio en el VPS (Caddy; Bitdefender bloquea el
-  HTTP plano — pendiente saber qué ocupa 80/443 y si hay dominio);
-  validación con mes real de XML DIAN (P7.1); confirmar calendario contra
-  decreto; CSV contra importación real Siigo; buzón IMAP; P6.3 monitoreo
-  DIAN; 2FA admin. Afinar visión con casos reales que reporte Luis
-  (campo leído vs campo correcto).
+- **Hecho (día 5):** HTTPS en producción — Luis montó proxy inverso en el
+  VPS y la app vive en https://auxcontable.learnway.co (dominio en
+  DJANGO_ALLOWED_HOSTS y DJANGO_CSRF_ORIGINS del .env del servidor, nunca
+  editando settings.py en el clon). Panel del día en el inicio.
+- **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
+  calendario contra decreto; CSV contra importación real Siigo; buzón
+  IMAP; P6.3 monitoreo DIAN; 2FA admin. Afinar visión con casos reales
+  que reporte Luis (campo leído vs campo correcto).
 
 ## Git
 
