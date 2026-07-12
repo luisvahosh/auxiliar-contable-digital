@@ -5,7 +5,9 @@ services:
   web:
     build: ./app
     ports:
-      - "8000:8000"
+      # Puerto público configurable: PUERTO_WEB en el .env (p. ej. 80 u 8080
+      # si el 8000 del servidor ya está ocupado). El interno siempre es 8000.
+      - "${PUERTO_WEB:-8000}:8000"
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
