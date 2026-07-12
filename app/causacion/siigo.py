@@ -23,7 +23,7 @@ def generar_csv_siigo(factura):
     escritor = csv.writer(salida, delimiter=";", lineterminator="\r\n")
     escritor.writerow(ENCABEZADOS)
     fecha = factura.fecha_emision.strftime("%d/%m/%Y")
-    descripcion = f"Causación factura {factura.numero} — {factura.nombre_emisor}"
+    descripcion = f"Causación factura {factura.numero} — {factura.nombre_tercero}"
     for renglon in factura.asiento:
         escritor.writerow([
             "CC",                      # comprobante de causación/contable
@@ -31,8 +31,8 @@ def generar_csv_siigo(factura):
             fecha,
             renglon["cuenta"],
             descripcion,
-            factura.nit_emisor,
-            factura.nombre_emisor,
+            factura.nit_tercero,
+            factura.nombre_tercero,
             renglon["debito"],
             renglon["credito"],
         ])

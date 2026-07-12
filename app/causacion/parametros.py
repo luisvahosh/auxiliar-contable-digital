@@ -73,7 +73,13 @@ RESPONSABILIDADES_SIN_RETENCION = {
             "retención; el comprador no retiene.",
 }
 
-# Cuentas PUC fijas del asiento de causación.
+# Cuentas PUC fijas del asiento de causación (compras).
 CUENTA_IVA_DESCONTABLE = ("240802", "IVA descontable")
 CUENTA_PROVEEDORES = ("2205", "Proveedores nacionales")
 CUENTA_COSTOS_GASTOS_POR_PAGAR = ("2335", "Costos y gastos por pagar")
+
+# Cuentas PUC fijas del registro de ventas (P2).
+CUENTA_CLIENTES = ("1305", "Clientes nacionales")
+CUENTA_INGRESOS = ("4135", "Ingresos por ventas y servicios")
+CUENTA_IVA_GENERADO = ("240801", "IVA generado por pagar")
+CUENTA_RETEFUENTE_A_FAVOR = ("135515", "Anticipo de impuestos — retefuente a favor")

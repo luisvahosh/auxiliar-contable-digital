@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ventas — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Ventas registradas</h1>
+  <p class="suave">{{ empresa }} · {{ pendientes }} documento{{ pendientes|pluralize }} pendiente{{ pendientes|pluralize }} de aprobación</p>
+
+  {% if faltantes %}
+    <ul class="mensajes" style="padding:0">
+      <li class="warning">⚠ Hueco en el consecutivo de facturación: falta
+        {{ faltantes|join:", " }}. Verifica en la DIAN si fueron anuladas o
+        no se han descargado.</li>
+    </ul>
+  {% endif %}
+
+  {% if ventas %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Tipo</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th class="numero">Total</th>
+            <th class="numero">Retenido</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for venta in ventas %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' venta.pk %}">{{ venta.numero }}</a></td>
+              <td><span class="insignia insignia-{% if venta.tipo == 'venta' %}automatica{% else %}sugerida{% endif %}">{{ venta.get_tipo_display }}</span></td>
+              <td>{{ venta.nombre_cliente }}</td>
+              <td>{{ venta.fecha_emision }}</td>
+              <td class="numero">${{ venta.total|floatformat:"0g" }}</td>
+              <td class="numero">{% if venta.retencion_practicada %}${{ venta.retencion_practicada|floatformat:"0g" }}{% endif %}</td>
+              <td><span class="insignia insignia-{{ venta.estado }}">{{ venta.get_estado_display }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="tarjeta">
+      <p>Aún no hay ventas registradas. Sube el XML de una factura emitida por tu
+         empresa — la app detecta sola que es una venta.</p>
+      <a class="boton" href="{% url 'causacion:subir' %}">Subir factura XML</a>
+    </div>
+  {% endif %}
+{% endblock %}

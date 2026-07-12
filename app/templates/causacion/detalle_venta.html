@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ venta.numero }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>{{ venta.get_tipo_display }} {{ venta.numero }}
+    <span class="insignia insignia-{{ venta.estado }}">{{ venta.get_estado_display }}</span>
+  </h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Datos del documento</h2>
+    <table>
+      <tbody>
+        <tr><th>Cliente</th><td>{{ venta.nombre_cliente }} (NIT {{ venta.nit_cliente }})</td></tr>
+        <tr><th>Fecha de emisión</th><td>{{ venta.fecha_emision }}</td></tr>
+        {% if venta.factura_original %}
+          <tr><th>Reversa a</th>
+              <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' venta.factura_original.pk %}">{{ venta.factura_original.numero }}</a></td></tr>
+        {% endif %}
+        <tr><th>CUFE</th><td class="suave" style="word-break: break-all">{{ venta.cufe }}</td></tr>
+        <tr><th>Subtotal</th><td class="numero">${{ venta.subtotal|floatformat:"0g" }}</td></tr>
+        <tr><th>IVA</th><td class="numero">${{ venta.iva|floatformat:"0g" }}</td></tr>
+        <tr><th>Total</th><td class="numero">${{ venta.total|floatformat:"0g" }}</td></tr>
+        {% if venta.retencion_practicada %}
+          <tr><th>Retefuente que practicó el cliente</th>
+              <td class="numero">${{ venta.retencion_practicada|floatformat:"0g" }}</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento propuesto</h2>
+    <table>
+      <thead>
+        <tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr>
+      </thead>
+      <tbody>
+        {% for renglon in renglones %}
+          <tr>
+            <td>{{ renglon.cuenta }}</td>
+            <td>{{ renglon.nombre }}</td>
+            <td class="numero">{% if renglon.debito %}${{ renglon.debito|floatformat:"0g" }}{% endif %}</td>
+            <td class="numero">{% if renglon.credito %}${{ renglon.credito|floatformat:"0g" }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Sumas iguales</td>
+          <td class="numero">${{ total_debitos|floatformat:"0g" }}</td>
+          <td class="numero">${{ total_creditos|floatformat:"0g" }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Por qué se registra así</h2>
+    <p class="porque">{{ venta.explicacion }}</p>
+  </div>
+
+  {% if venta.estado == "pendiente" %}
+    <div class="acciones">
+      <form method="post" action="{% url 'causacion:aprobar_venta' venta.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="boton">Aprobar asiento</button>
+      </form>
+      <form method="post" action="{% url 'causacion:rechazar_venta' venta.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="boton boton-peligro">Rechazar</button>
+      </form>
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja_ventas' %}">Volver a ventas</a>
+    </div>
+  {% elif venta.estado == "aprobada" %}
+    <div class="tarjeta">
+      <h2>Llevar al software contable</h2>
+      {% if venta.id_alegra %}
+        <p>✔ Enviada a Alegra — asiento <strong>#{{ venta.id_alegra }}</strong>
+           ({{ venta.enviada_alegra }}).</p>
+      {% endif %}
+      <div class="acciones">
+        <a class="boton" href="{% url 'causacion:exportar_siigo_venta' venta.pk %}">Descargar CSV Siigo</a>
+        {% if not venta.id_alegra %}
+          <form method="post" action="{% url 'causacion:enviar_alegra_venta' venta.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="boton boton-secundario">Enviar a Alegra</button>
+          </form>
+        {% endif %}
+      </div>
+      {% if not alegra_configurado %}
+        <p class="suave">Alegra no está configurado: faltan <code>ALEGRA_EMAIL</code> y
+           <code>ALEGRA_TOKEN</code> en el <code>.env</code>.</p>
+      {% endif %}
+    </div>
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja_ventas' %}">Volver a ventas</a>
+    </div>
+  {% else %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'causacion:bandeja_ventas' %}">Volver a ventas</a>
+    </div>
+  {% endif %}
+{% endblock %}

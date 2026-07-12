@@ -63,8 +63,13 @@ Toda funcionalidad de dominio se valida contra los casos de
   envío a Alegra vía API (`causacion/siigo.py`, `causacion/alegra.py`;
   credenciales por .env ALEGRA_EMAIL/ALEGRA_TOKEN; mapeo cuenta PUC → id
   Alegra por empresa en admin). 21 tests.
-- **Sigue:** validar CSV contra importación real en Siigo y envío con cuenta
-  real de Alegra (crear cuenta gratuita); matriz de terceros con RUT (P3).
+- **Hecho (día 3):** Alegra real conectado (credenciales en .env; primer
+  asiento #1 verificado). Vertical P2 ventas: el mismo "subir XML" detecta
+  compra/venta/nota crédito; asiento de venta (1305/4135/240801, retefuente
+  practicada a 135515), alerta de huecos en consecutivo, nota crédito
+  vinculada a la original. 27 tests.
+- **Sigue:** matriz de terceros con RUT (P3, quita el supuesto "declarante");
+  notas crédito de proveedores; validar CSV contra importación real en Siigo.
 
 ## Git
 

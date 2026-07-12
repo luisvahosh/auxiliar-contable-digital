@@ -16,8 +16,10 @@
       <button type="submit" class="boton">Procesar factura</button>
     </form>
   </div>
-  <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos),
-     se verifica que no esté causada dos veces (CUFE), se propone la cuenta PUC,
-     se calcula la retención en la fuente y se arma el asiento de causación.
+  <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos) y
+     la app detecta sola qué es — una <strong>compra</strong> (te la facturaron),
+     una <strong>venta</strong> (la emitió tu empresa) o una <strong>nota
+     crédito</strong> — y arma el asiento correspondiente: cuenta PUC y retefuente
+     en compras; ingreso, IVA generado y retención a favor en ventas.
      Nada se contabiliza sin tu aprobación.</p>
 {% endblock %}

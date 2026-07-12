@@ -1,4 +1,4 @@
-# Derrotero de pruebas — Causación (P1) como lo vive un auxiliar contable
+# Derrotero de pruebas — Causación (P1 y P2) como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -116,6 +116,42 @@ oficial (Siigo por archivo, Alegra por API).*
   `.env`, reiniciar, registrar el mapeo de cuentas PUC → Alegra en
   http://127.0.0.1:8000/admin (Mapeos de cuenta Alegra) y reenviar: debe
   quedar el aviso "✔ Enviada a Alegra — asiento #…". Reenviar no duplica.
+
+## Paso 9 — Registrar las ventas del mes (P2.1)
+
+*Escenario: tu empresa facturó formación corporativa por $3.000.000 + IVA.
+El auxiliar registra el ingreso y la cartera del cliente.*
+
+- [ ] **Subir factura** → `P2.1-venta-estandar.xml`. La app detecta sola que
+  es una **venta** (tu empresa es la emisora) y la manda a la bandeja de
+  **Ventas** (enlace nuevo del menú).
+- [ ] El asiento: débito **1305 Clientes** $3.570.000; crédito **4135
+  Ingresos** $3.000.000 y **240801 IVA generado** $570.000. Aprobar.
+
+## Paso 10 — El cliente grande te retuvo (P2.2) y falta una factura (P2.3)
+
+*Escenario: una gran superficie te compró un diplomado y te practicó
+retefuente del 4%. Además, entre FE-104 y FE-106 no aparece la FE-105.*
+
+- [ ] Subir `P2.2-venta-cliente-retiene.xml`.
+- [ ] En el asiento, la retención que te practicaron queda como anticipo a tu
+  favor: débito **135515** $320.000, y la cartera va por el **neto**
+  ($9.200.000). El ingreso completo se acredita ($8.000.000 + IVA).
+- [ ] Al procesarla aparece la **alerta: "falta FE-105"** — y queda visible
+  en la bandeja de Ventas. Así se detecta una factura anulada o no
+  descargada antes de que la DIAN pregunte.
+
+## Paso 11 — Nota crédito: un cliente devolvió parte (P2.4)
+
+*Escenario: un participante se retiró del programa de FE-104 y se emitió la
+nota crédito NC-12 por $595.000.*
+
+- [ ] Subir `P2.4-nota-credito.xml`.
+- [ ] La app la vincula a **FE-104** (visible en el detalle: "Reversa a
+  FE-104") y propone la reversa: débito 4135 $500.000 + 240801 $95.000,
+  crédito 1305 $595.000. La explicación dice que es **parcial**.
+- [ ] Verificación extra: si intentas subir la NC **antes** que su factura
+  (en una base limpia), la app la rechaza pidiendo la original primero.
 
 ## Cierre — revisión de bandeja
 

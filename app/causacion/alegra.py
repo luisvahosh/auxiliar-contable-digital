@@ -79,8 +79,8 @@ def enviar_asiento(factura, mapeo_cuentas):
     cuerpo = {
         "date": factura.fecha_emision.isoformat(),
         "reference": f"Factura {factura.numero}"[:255],
-        "observations": (f"Causación factura {factura.numero} — {factura.nombre_emisor} "
-                         f"(NIT {factura.nit_emisor}). Generado por Auxiliar Contable Digital.")[:500],
+        "observations": (f"Causación factura {factura.numero} — {factura.nombre_tercero} "
+                         f"(NIT {factura.nit_tercero}). Generado por Auxiliar Contable Digital.")[:500],
         "entries": movimientos,
     }
 

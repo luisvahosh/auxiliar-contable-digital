@@ -14,8 +14,9 @@ from django.urls import reverse
 from core.models import Empresa
 
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
-from .models import FacturaCompra, MapeoCuentaAlegra
+from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra
 from .parser import FacturaInvalida, parsear_factura
+from .ventas import consecutivos_faltantes
 
 DATOS_PRUEBA = Path(settings.BASE_DIR).parent / "datos-prueba"
 
@@ -154,14 +155,82 @@ class PruebasFlujoWeb(TestCase):
         self.assertNotContains(respuesta, "[fonts]")
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
 
-    def test_factura_dirigida_a_otro_nit_se_rechaza(self):
+    def test_factura_de_terceros_ajenos_se_rechaza(self):
         xml = contenido("P1.1-factura-honorarios.xml").replace(
             b'schemeID="3" schemeName="31">901234567<', b'schemeID="3" schemeName="31">899999999<')
         archivo = SimpleUploadedFile("otra.xml", xml, content_type="text/xml")
         respuesta = self.client.post(reverse("causacion:subir"), {"archivo": archivo},
                                      follow=True)
-        self.assertContains(respuesta, "no es el de")
+        self.assertContains(respuesta, "no menciona a")
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+
+class PruebasVentas(TestCase):
+    """Casos P2: registro de facturas emitidas, retenciones a favor,
+    consecutivo y notas crédito."""
+
+    def setUp(self):
+        self.empresa = Empresa.objects.get(nit="901234567")
+
+    def subir(self, nombre):
+        archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def test_p21_venta_estandar_registra_ingreso(self):
+        respuesta = self.subir("P2.1-venta-estandar.xml")
+        self.assertEqual(respuesta.status_code, 200)
+        venta = FacturaVenta.objects.de_empresa(self.empresa).get()
+        self.assertEqual(venta.tipo, "venta")
+        self.assertEqual(venta.estado, "pendiente")  # humano en el circuito
+        por_cuenta = {r["cuenta"]: r for r in venta.asiento}
+        self.assertEqual(Decimal(por_cuenta["1305"]["debito"]), Decimal("3570000.00"))
+        self.assertEqual(Decimal(por_cuenta["4135"]["credito"]), Decimal("3000000.00"))
+        self.assertEqual(Decimal(por_cuenta["240801"]["credito"]), Decimal("570000.00"))
+
+    def test_p22_retencion_del_cliente_queda_en_1355(self):
+        self.subir("P2.2-venta-cliente-retiene.xml")
+        venta = FacturaVenta.objects.de_empresa(self.empresa).get(numero="FE-106")
+        self.assertEqual(venta.retencion_practicada, Decimal("320000.00"))
+        por_cuenta = {r["cuenta"]: r for r in venta.asiento}
+        self.assertEqual(Decimal(por_cuenta["135515"]["debito"]), Decimal("320000.00"))
+        # Cartera por el neto
+        self.assertEqual(Decimal(por_cuenta["1305"]["debito"]), Decimal("9200000.00"))
+        debitos = sum(Decimal(r["debito"]) for r in venta.asiento)
+        creditos = sum(Decimal(r["credito"]) for r in venta.asiento)
+        self.assertEqual(debitos, creditos)
+
+    def test_p23_alerta_hueco_en_consecutivo(self):
+        self.subir("P2.1-venta-estandar.xml")   # FE-104
+        respuesta = self.subir("P2.2-venta-cliente-retiene.xml")  # FE-106
+        self.assertContains(respuesta, "falta FE-105")
+        self.assertEqual(consecutivos_faltantes(["FE-104", "FE-106"]), ["FE-105"])
+        # La bandeja de ventas también lo muestra
+        respuesta = self.client.get(reverse("causacion:bandeja_ventas"))
+        self.assertContains(respuesta, "FE-105")
+
+    def test_p24_nota_credito_sin_original_se_rechaza(self):
+        respuesta = self.subir("P2.4-nota-credito.xml")
+        self.assertContains(respuesta, "no está registrada")
+        self.assertEqual(FacturaVenta.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_p24_nota_credito_reversa_vinculada(self):
+        self.subir("P2.1-venta-estandar.xml")
+        respuesta = self.subir("P2.4-nota-credito.xml")
+        self.assertEqual(respuesta.status_code, 200)
+        nota = FacturaVenta.objects.de_empresa(self.empresa).get(tipo="nota_credito")
+        self.assertEqual(nota.factura_original.numero, "FE-104")
+        por_cuenta = {r["cuenta"]: r for r in nota.asiento}
+        self.assertEqual(Decimal(por_cuenta["4135"]["debito"]), Decimal("500000.00"))
+        self.assertEqual(Decimal(por_cuenta["240801"]["debito"]), Decimal("95000.00"))
+        self.assertEqual(Decimal(por_cuenta["1305"]["credito"]), Decimal("595000.00"))
+        self.assertIn("parcial", nota.explicacion)
+
+    def test_el_mismo_upload_distingue_compra_de_venta(self):
+        self.subir("P1.1-factura-honorarios.xml")   # LEARNWAY es adquiriente → compra
+        self.subir("P2.1-venta-estandar.xml")       # LEARNWAY es emisor → venta
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 1)
+        self.assertEqual(FacturaVenta.objects.de_empresa(self.empresa).count(), 1)
 
 
 class PruebasExportSiigoYAlegra(TestCase):
