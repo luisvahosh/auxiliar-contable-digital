@@ -8,6 +8,7 @@ urlpatterns = [
     path("causacion/", include("causacion.urls")),
     path("bancos/", include("conciliacion.urls")),
     path("calendario/", include("calendario.urls")),
+    path("cierre/", include("cierre.urls")),
     path("", include("core.urls")),
 ]
 

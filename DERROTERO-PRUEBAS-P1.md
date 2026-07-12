@@ -1,4 +1,4 @@
-# Derrotero de pruebas — P1 a P6, como lo vive un auxiliar contable
+# Derrotero de pruebas — P1 a P7, como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -260,6 +260,28 @@ llegar tarde a la retefuente cuesta sanción mínima + intereses.*
 - [ ] P6.1 (dos tenants ven fechas distintas) queda cubierto por test
   automático; el monitoreo de rechazos DIAN (P6.3) requiere la
   automatización del portal y está pendiente.
+
+## Paso 18 — Entregar el mes al contador (P7)
+
+*Escenario: fin de mes. El auxiliar repasa que no quede nada suelto y arma la
+carpeta que el contador revisa y firma.*
+
+- [ ] Abrir **Cierre** en el menú (elegir el período, p. ej. 2026-06).
+- [ ] La lista de chequeo muestra los 3 controles del cierre:
+  1. **Todo causado:** cuántas compras/ventas tiene el mes y cuáles siguen en
+     bandeja, cada una con su motivo (P7.1).
+  2. **Conciliación:** sin movimientos pendientes; las excepciones quedan
+     documentadas como partidas conciliatorias.
+  3. **Retenciones cuadradas (P7.2):** por cuenta 2365, total según asientos =
+     total según facturas — la base del formulario 350.
+- [ ] Si hay pendientes, el estado dice **"Con pendientes"**; aprueba/rechaza
+  lo que falte y verás el badge **"Listo para entrega"** en verde.
+- [ ] **Descargar paquete** → un ZIP con: resumen del cierre, auxiliar por
+  cuenta, auxiliar por tercero, CSV consolidado formato Siigo, partidas
+  conciliatorias y la carpeta `soportes/` con el XML (y foto) de cada
+  documento. Ábrelo y revisa que los auxiliares abran bien en Excel.
+- [ ] P7.3 (dos empresas cerrando el mismo mes sin cruzarse) queda cubierto
+  por test automático.
 
 ## Cierre — revisión de bandeja
 

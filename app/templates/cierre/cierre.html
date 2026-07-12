@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cierre mensual — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Cierre mensual
+    {% if resumen %}
+      {% if resumen.listo %}<span class="insignia insignia-aprobada">Listo para entrega</span>
+      {% else %}<span class="insignia insignia-pendiente">Con pendientes</span>{% endif %}
+    {% endif %}
+  </h1>
+
+  {% if periodos %}
+    <p class="suave">Período:
+      {% for p in periodos %}
+        {% if p == periodo %}<strong>{{ p|date:"Y-m" }}</strong>{% else %}<a class="fila-enlace" href="?periodo={{ p|date:"Y-m" }}">{{ p|date:"Y-m" }}</a>{% endif %}{% if not forloop.last %} · {% endif %}
+      {% endfor %}
+    </p>
+  {% endif %}
+
+  {% if not resumen %}
+    <div class="tarjeta"><p>Aún no hay documentos registrados: el cierre aparece
+       cuando exista el primer mes con movimientos.</p></div>
+  {% else %}
+
+    <div class="tarjeta">
+      <h2>1 · Todo el mes causado</h2>
+      <p>{{ resumen.compras|length }} compra{{ resumen.compras|length|pluralize }} y
+         {{ resumen.ventas|length }} venta{{ resumen.ventas|length|pluralize }} en el período;
+         {{ resumen.aprobadas_total }} aprobada{{ resumen.aprobadas_total|pluralize }},
+         {{ resumen.rechazadas }} rechazada{{ resumen.rechazadas|pluralize }}.</p>
+      {% if resumen.pendientes %}
+        <p><strong>{{ resumen.pendientes|length }} documento{{ resumen.pendientes|length|pluralize }} en bandeja, con motivo:</strong></p>
+        <ul>
+          {% for origen, documento in resumen.pendientes %}
+            <li>
+              {% if origen == "compra" %}
+                <a class="fila-enlace" href="{% url 'causacion:detalle' documento.pk %}">{{ documento.numero }}</a>
+              {% else %}
+                <a class="fila-enlace" href="{% url 'causacion:detalle_venta' documento.pk %}">{{ documento.numero }}</a>
+              {% endif %}
+              — {{ documento.explicacion|truncatechars:110 }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>✔ Nada pendiente de aprobación.</p>
+      {% endif %}
+    </div>
+
+    <div class="tarjeta">
+      <h2>2 · Conciliación bancaria</h2>
+      {% if resumen.movimientos_pendientes %}
+        <p><strong>{{ resumen.movimientos_pendientes|length }} movimiento{{ resumen.movimientos_pendientes|length|pluralize }} sin conciliar</strong> — resolver en <a class="fila-enlace" href="{% url 'conciliacion:bancos' %}">Bancos</a>.</p>
+      {% else %}
+        <p>✔ Sin movimientos pendientes.
+           {% if resumen.excepciones %}{{ resumen.excepciones|length }} partida{{ resumen.excepciones|length|pluralize }} conciliatoria{{ resumen.excepciones|length|pluralize }} documentada{{ resumen.excepciones|length|pluralize }} (va{{ resumen.excepciones|length|pluralize:",n" }} en el paquete).{% endif %}</p>
+      {% endif %}
+    </div>
+
+    <div class="tarjeta tabla-envoltura">
+      <h2>3 · Retenciones cuadradas (base del formulario 350)</h2>
+      <table>
+        <thead><tr><th>Cuenta</th><th>Concepto</th><th class="numero">Valor</th></tr></thead>
+        <tbody>
+          {% for fila in resumen.retenciones_por_cuenta %}
+            <tr><td>{{ fila.cuenta }}</td><td>{{ fila.nombre }}</td>
+                <td class="numero">${{ fila.valor|floatformat:"0g" }}</td></tr>
+          {% empty %}
+            <tr><td colspan="3">Sin retenciones practicadas en el período.</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2">Total según asientos / según facturas</td>
+              <td class="numero">${{ resumen.total_retenciones_asientos|floatformat:"0g" }} /
+                  ${{ resumen.total_retenciones_facturas|floatformat:"0g" }}
+                  {% if resumen.retenciones_cuadran %}✔{% else %}✖ NO CUADRA{% endif %}</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="tarjeta">
+      <h2>4 · Paquete para el contador</h2>
+      <p class="suave">ZIP con el resumen del cierre, auxiliares por cuenta y por
+         tercero, el CSV consolidado formato Siigo, las partidas conciliatorias
+         y los soportes (XML y fotos) del período.</p>
+      <div class="acciones">
+        <a class="boton" href="{% url 'cierre:paquete' %}?periodo={{ periodo|date:"Y-m" }}">Descargar paquete {{ periodo|date:"Y-m" }}</a>
+      </div>
+      {% if not resumen.listo %}
+        <p class="suave">Puedes descargarlo con pendientes — el resumen los lista
+           con su motivo — pero el mes firmable es el que sale en verde.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

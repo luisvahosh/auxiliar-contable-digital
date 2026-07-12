@@ -52,6 +52,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/causacion/` — P1/P2/P3: compras, ventas, terceros, Alegra/Siigo.
 - `app/conciliacion/` — P4: extractos bancarios y cruce contra libros.
 - `app/calendario/` — P6: calendario tributario por NIT y alertas por correo.
+- `app/cierre/` — P7: lista de chequeo del mes y paquete ZIP del contador.
 - Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
@@ -98,10 +99,17 @@ Toda funcionalidad de dominio se valida contra los casos de
   vía comando `enviar_alertas_tributarias` (P6.2; backend consola en dev).
   Semilla 2026-S2 ESTIMADA (retefuente, IVA bimestral, ICA Bogotá) — confirmar
   contra decreto oficial. 62 tests.
-- **Sigue:** P7 cierre mensual y paquete del contador (el entregable que
-  valida todo); P6.3 monitoreo rechazos DIAN (spike portal); P5.2
-  recordatorios de cobro; P4.5 extracto PDF; notas crédito de proveedores;
-  CSV contra importación real Siigo.
+- **Hecho (día 3, P7):** cierre mensual — app `cierre/` (sin modelos: lectura
+  transversal): checklist del período (pendientes con motivo, conciliación,
+  cuadre de retenciones 2365 = base formulario 350) y paquete ZIP del
+  contador (resumen, auxiliares por cuenta/tercero, Siigo consolidado,
+  partidas conciliatorias, soportes XML+fotos). 70 tests. Con esto la guía
+  P1–P7 tiene su primera pasada completa.
+- **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
+  (XML reales del portal DIAN); confirmar fechas del calendario contra el
+  decreto; CSV contra importación real Siigo. Luego: P6.3 monitoreo DIAN
+  (spike portal), P5.2 recordatorios de cobro, P4.5 extracto PDF, notas
+  crédito de proveedores, usuarios/login (PLAN §12).
 
 ## Git
 

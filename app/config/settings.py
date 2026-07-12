@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "causacion",
     "conciliacion",
     "calendario",
+    "cierre",
 ]
 
 MIDDLEWARE = [
