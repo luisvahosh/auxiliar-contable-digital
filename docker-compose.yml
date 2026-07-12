@@ -1,0 +1,24 @@
+# Auxiliar Contable Digital — despliegue beta en un VPS Docker (Hostinger).
+# La base (sqlite) y los soportes (fotos) viven en el volumen "datos":
+# sobreviven a los redespliegues. PostgreSQL llegará cambiando DATABASE_URL.
+services:
+  web:
+    build: ./app
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      DJANGO_CSRF_ORIGINS: ${DJANGO_CSRF_ORIGINS:-}
+      DATABASE_URL: sqlite:////app/datos/db.sqlite3
+      DJANGO_MEDIA_ROOT: /app/datos/media
+      ALEGRA_EMAIL: ${ALEGRA_EMAIL:-}
+      ALEGRA_TOKEN: ${ALEGRA_TOKEN:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+    volumes:
+      - datos:/app/datos
+    restart: unless-stopped
+
+volumes:
+  datos:

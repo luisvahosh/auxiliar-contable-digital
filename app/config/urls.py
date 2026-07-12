@@ -1,7 +1,7 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve as servir_archivo
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -10,8 +10,9 @@ urlpatterns = [
     path("calendario/", include("calendario.urls")),
     path("cierre/", include("cierre.urls")),
     path("", include("core.urls")),
+    # Soportes (fotos): servidos por la app también en el contenedor beta.
+    # Los nombres son UUID no adivinables; endurecer con auth cuando el
+    # volumen lo pida (proxy dedicado o vista autenticada).
+    re_path(r"^media/(?P<path>.*)$", servir_archivo,
+            {"document_root": settings.MEDIA_ROOT}),
 ]
-
-if settings.DEBUG:
-    # Soportes (fotos) en desarrollo; en producción los servirá el proxy.
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
