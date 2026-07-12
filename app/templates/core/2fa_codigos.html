@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block titulo %}Códigos de respaldo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 480px; margin: 24px auto">
+    <h1>Guarda tus códigos de respaldo</h1>
+    <p class="suave">Si pierdes el teléfono, cualquiera de estos códigos te deja
+       entrar <strong>una sola vez</strong>. Guárdalos en un lugar seguro
+       (gestor de contraseñas, papel bajo llave) — <strong>no se volverán a
+       mostrar</strong>.</p>
+    <div class="tarjeta">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;
+                  font-variant-numeric: tabular-nums; font-family: Consolas, monospace">
+        {% for codigo in codigos %}
+          <code style="padding:8px; background: var(--superficie); border-radius:6px;
+                       text-align:center">{{ codigo }}</code>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="acciones">
+      <a class="boton" href="{% url 'core:inicio' %}">Ya los guardé</a>
+    </div>
+  </div>
+{% endblock %}

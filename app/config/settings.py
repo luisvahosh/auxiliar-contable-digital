@@ -32,7 +32,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "axes",  # rate limiting de login (PLAN.md §12)
     "django_otp",
-    "django_otp.plugins.otp_totp",  # segundo factor TOTP (PLAN.md §12)
+    "django_otp.plugins.otp_totp",    # segundo factor TOTP (PLAN.md §12)
+    "django_otp.plugins.otp_static",  # códigos de respaldo del 2FA
     # Apps del producto
     "core",
     "causacion",

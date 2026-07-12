@@ -2,6 +2,8 @@ import uuid
 
 from django.db import models
 
+from core.cifrado import CampoCifrado
+
 
 class ConsultasPorEmpresa(models.Manager):
     """Manager multi-tenant (CLAUDE.md §2): el código de negocio consulta
@@ -174,8 +176,8 @@ class ConexionContable(models.Model):
     Cada tenant conecta su propia cuenta (Alegra hoy; Siigo API cuando el
     plan del cliente traiga credenciales) desde el panel de la app — el
     .env queda solo como respaldo global de la beta.
-    OJO (PLAN §10): el token se guarda en la base de datos; antes de tener
-    clientes reales, cifrarlo en reposo.
+    El token se guarda CIFRADO en reposo (PLAN §10, core.cifrado); si
+    DJANGO_SECRET_KEY cambia, la empresa debe reconectar.
     """
 
     PROVEEDORES = [("alegra", "Alegra")]
@@ -185,7 +187,7 @@ class ConexionContable(models.Model):
                                 related_name="conexiones_contables")
     proveedor = models.CharField(max_length=20, choices=PROVEEDORES, default="alegra")
     usuario = models.CharField("correo o usuario de la API", max_length=200)
-    token = models.CharField("token de la API", max_length=200)
+    token = CampoCifrado("token de la API")
     activa = models.BooleanField(default=True)
     actualizada = models.DateTimeField(auto_now=True)
 

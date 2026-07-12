@@ -8,6 +8,11 @@
     <p>Cada ingreso pide el código de tu aplicación de autenticación.
        Si cambias de teléfono, pide al administrador de la plataforma que
        restablezca tu dispositivo (panel admin → dispositivos TOTP).</p>
+    <form method="post" action="{% url 'core:regenerar_codigos' %}">
+      {% csrf_token %}
+      <button type="submit" class="boton boton-secundario">Regenerar códigos de respaldo</button>
+    </form>
+    <p class="ayuda">Regenerarlos invalida los anteriores.</p>
     <a class="boton boton-secundario" href="{% url 'core:inicio' %}">Volver al inicio</a>
   </div>
 {% endblock %}

@@ -164,11 +164,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   Soporte de proxy https por env (DJANGO_TRAS_PROXY=1: X-Forwarded-Proto,
   cookies seguras) — arregla el CSRF 403 del VPS junto con
   DJANGO_CSRF_ORIGINS. 117 tests.
+- **Hecho (día 5, seguridad):** tokens de conexiones cifrados en reposo
+  (core/cifrado.py, Fernet derivado de SECRET_KEY — si cambia, reconectar;
+  valores heredados en claro se leen y se cifran al re-guardar) y códigos
+  de respaldo del 2FA (otp_static: 8 códigos de un solo uso al activar,
+  regenerables desde 2FA activo; /verificar/ acepta app o respaldo).
+  122 tests.
 - **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
   calendario contra decreto; CSV contra importación real Siigo; buzón
   IMAP; P6.3 monitoreo DIAN. Visión: seguir calibrando con fotos reales
-  de Luis. Futuro §12: forzar 2FA a admins (hoy es aviso), códigos de
-  respaldo, cifrar tokens de conexiones en reposo.
+  de Luis. Futuro §12: forzar 2FA a admins (hoy es aviso).
 
 ## Git
 

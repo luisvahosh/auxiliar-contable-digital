@@ -42,15 +42,15 @@ class FormularioRegistro(forms.Form):
 
 class FormularioToken2FA(forms.Form):
     token = forms.CharField(
-        label="Código de 6 dígitos",
-        min_length=6, max_length=6,
-        widget=forms.TextInput(attrs={"inputmode": "numeric", "autocomplete":
-                                      "one-time-code", "autofocus": True}))
+        label="Código de la app (o uno de respaldo)",
+        min_length=6, max_length=16,
+        widget=forms.TextInput(attrs={"autocomplete": "one-time-code",
+                                      "autofocus": True}))
 
     def clean_token(self):
-        token = self.cleaned_data["token"].strip()
-        if not token.isdigit():
-            raise forms.ValidationError("Solo dígitos.")
+        token = self.cleaned_data["token"].strip().replace(" ", "")
+        if not token.isalnum():
+            raise forms.ValidationError("Solo letras y números.")
         return token
 
 

@@ -116,6 +116,31 @@ def _qr_svg(texto):
     return imagen.to_string().decode()
 
 
+def _generar_codigos_respaldo(usuario):
+    """8 códigos de un solo uso por si se pierde el teléfono. Regenerarlos
+    invalida los anteriores."""
+    from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
+    dispositivo, _ = StaticDevice.objects.get_or_create(
+        user=usuario, name="Códigos de respaldo", defaults={"confirmed": True})
+    dispositivo.confirmed = True
+    dispositivo.save(update_fields=["confirmed"])
+    dispositivo.token_set.all().delete()
+    codigos = [StaticToken.random_token() for _ in range(8)]
+    for codigo in codigos:
+        dispositivo.token_set.create(token=codigo)
+    return codigos
+
+
+@require_POST
+def regenerar_codigos(request):
+    """Nuevos códigos de respaldo (solo con la sesión ya verificada)."""
+    if not (request.user.is_verified() and user_has_device(request.user, confirmed=True)):
+        return redirect("core:configurar_2fa")
+    codigos = _generar_codigos_respaldo(request.user)
+    messages.success(request, "Códigos de respaldo regenerados: los anteriores ya no sirven.")
+    return render(request, "core/2fa_codigos.html", {"codigos": codigos})
+
+
 def configurar_2fa(request):
     """Activar el segundo factor TOTP (§12): escanear el QR y confirmar."""
     if user_has_device(request.user, confirmed=True):
@@ -135,7 +160,9 @@ def configurar_2fa(request):
             otp_login(request, dispositivo)
             messages.success(request, "Segundo factor activado: desde ahora el "
                                       "ingreso pedirá el código de tu aplicación.")
-            return redirect("core:inicio")
+            return render(request, "core/2fa_codigos.html", {
+                "codigos": _generar_codigos_respaldo(request.user),
+            })
         formulario.add_error("token", "Código incorrecto: revisa la app y el reloj del teléfono.")
 
     import base64

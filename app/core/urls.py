@@ -32,6 +32,7 @@ urlpatterns = [
     path("salir/", vistas_auth.LogoutView.as_view(), name="logout"),
     path("registro/<str:token>/", views.registro, name="registro"),
     path("seguridad/2fa/", views.configurar_2fa, name="configurar_2fa"),
+    path("seguridad/2fa/codigos/", views.regenerar_codigos, name="regenerar_codigos"),
     path("verificar/", views.verificar_2fa, name="verificar_2fa"),
     path("empresas/", views.empresas, name="empresas"),
     path("empresas/cambiar/", views.cambiar, name="cambiar_empresa"),

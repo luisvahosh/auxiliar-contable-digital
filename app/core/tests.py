@@ -207,6 +207,82 @@ class Pruebas2FA(CasoConEmpresa):
         self.assertEqual(self.client.get("/").status_code, 200)
 
 
+class PruebasCifradoEnReposo(CasoConEmpresa):
+    """PLAN §10: los tokens de conexiones no viven en claro en la base."""
+
+    def test_el_token_queda_cifrado_en_la_base_y_legible_en_el_modelo(self):
+        from django.db import connection
+        from causacion.models import ConexionContable
+        ConexionContable.objects.create(empresa=self.empresa, proveedor="alegra",
+                                        usuario="e@x.co", token="secreto-123")
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT token FROM causacion_conexioncontable")
+            crudo = cursor.fetchone()[0]
+        self.assertNotIn("secreto-123", crudo)
+        self.assertTrue(crudo.startswith("gAAAA"))  # marca de Fernet
+        self.assertEqual(ConexionContable.objects.de_empresa(self.empresa)
+                         .get().token, "secreto-123")
+
+    def test_un_valor_heredado_en_claro_sigue_siendo_legible(self):
+        from django.db import connection
+        from causacion.models import ConexionContable
+        conexion = ConexionContable.objects.create(
+            empresa=self.empresa, proveedor="alegra", usuario="e@x.co", token="x")
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE causacion_conexioncontable SET token = %s "
+                           "WHERE id = %s", ["token-viejo-en-claro", conexion.pk.hex])
+        conexion.refresh_from_db()
+        self.assertEqual(conexion.token, "token-viejo-en-claro")
+
+
+class PruebasCodigosDeRespaldo(CasoConEmpresa):
+    """2FA: códigos de un solo uso por si se pierde el teléfono."""
+
+    def activar_2fa(self):
+        from django_otp.oath import totp
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        self.client.get("/seguridad/2fa/")
+        dispositivo = TOTPDevice.objects.get(user=self.usuario)
+        token = f"{totp(dispositivo.bin_key, step=dispositivo.step, digits=dispositivo.digits):06d}"
+        return self.client.post("/seguridad/2fa/", {"token": token})
+
+    def test_al_activar_se_entregan_ocho_codigos(self):
+        from django_otp.plugins.otp_static.models import StaticToken
+        respuesta = self.activar_2fa()
+        self.assertContains(respuesta, "códigos de respaldo")
+        self.assertEqual(StaticToken.objects.filter(
+            device__user=self.usuario).count(), 8)
+
+    def test_un_codigo_de_respaldo_entra_una_sola_vez(self):
+        from django_otp.plugins.otp_static.models import StaticToken
+        self.activar_2fa()
+        codigo = StaticToken.objects.filter(device__user=self.usuario).first().token
+        # Sesión nueva: el código de respaldo reemplaza al de la app
+        self.client.logout()
+        self.client.force_login(self.usuario)
+        self.client.post("/verificar/", {"token": codigo})
+        self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertEqual(StaticToken.objects.filter(
+            device__user=self.usuario).count(), 7)  # se consumió
+        # El mismo código ya no sirve en otra sesión
+        self.client.logout()
+        self.client.force_login(self.usuario)
+        respuesta = self.client.post("/verificar/", {"token": codigo})
+        self.assertContains(respuesta, "incorrecto")
+
+    def test_regenerar_invalida_los_anteriores(self):
+        from django_otp.plugins.otp_static.models import StaticToken
+        self.activar_2fa()
+        viejos = set(StaticToken.objects.filter(
+            device__user=self.usuario).values_list("token", flat=True))
+        respuesta = self.client.post("/seguridad/2fa/codigos/")
+        self.assertEqual(respuesta.status_code, 200)
+        nuevos = set(StaticToken.objects.filter(
+            device__user=self.usuario).values_list("token", flat=True))
+        self.assertEqual(len(nuevos), 8)
+        self.assertFalse(viejos & nuevos)
+
+
 class PruebasMultiEmpresa(CasoConEmpresa):
     def setUp(self):
         super().setUp()
