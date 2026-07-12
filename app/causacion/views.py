@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from core.models import Empresa
 
 from . import alegra, vision
+from .cartera import RANGOS, edades_de_cartera
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
 from .forms import (
     TIPOS_IMAGEN,
@@ -150,6 +151,7 @@ def _registrar_venta(request, empresa, datos, contenido):
             cufe=datos.cufe,
             numero=datos.numero,
             fecha_emision=datos.fecha_emision,
+            fecha_vencimiento=datos.fecha_vencimiento,
             nit_cliente=datos.nit_adquiriente,
             nombre_cliente=datos.nombre_adquiriente,
             subtotal=datos.subtotal,
@@ -421,6 +423,20 @@ def foto_causar(request):
     messages.success(request, f"Factura física {factura.numero} causada como sugerida, "
                               "pendiente de tu aprobación.")
     return redirect("causacion:detalle", pk=factura.pk)
+
+
+# ---------- Cartera (P5.1) ----------
+
+def cartera(request):
+    empresa = _empresa_activa(request)
+    partidas, totales = edades_de_cartera(empresa)
+    return render(request, "causacion/cartera.html", {
+        "empresa": empresa,
+        "partidas": partidas,
+        "rangos": [(clave, etiqueta, totales[clave]) for clave, etiqueta in RANGOS],
+        "total_cartera": sum(totales.values()),
+        "hay_asumidos": any(partida["vencimiento_asumido"] for partida in partidas),
+    })
 
 
 # ---------- Matriz de terceros (P3) ----------

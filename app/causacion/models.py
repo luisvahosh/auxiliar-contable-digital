@@ -110,6 +110,9 @@ class FacturaVenta(models.Model):
     cufe = models.CharField("CUFE", max_length=100)
     numero = models.CharField("número", max_length=50)
     fecha_emision = models.DateField("fecha de emisión")
+    fecha_vencimiento = models.DateField(
+        "fecha de vencimiento", null=True, blank=True,
+        help_text="Del XML (PaymentDueDate); si falta, cartera asume 30 días")
     nit_cliente = models.CharField("NIT del cliente", max_length=20)
     nombre_cliente = models.CharField("cliente", max_length=200)
 

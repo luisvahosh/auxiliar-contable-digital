@@ -57,6 +57,7 @@ class FacturaParseada:
     retefuente_practicada: Decimal  # WithholdingTaxTotal esquema 06 (ventas)
     referencia_numero: str        # BillingReference (notas crédito)
     referencia_cufe: str
+    fecha_vencimiento: date | None = None  # PaymentDueDate, si viene
 
     @property
     def texto_clasificable(self):
@@ -176,6 +177,12 @@ def parsear_factura(contenido):
             "la nota crédito no referencia la factura original (BillingReference)."
         )
 
+    vencimiento_texto = _texto_opcional(raiz, "cac:PaymentMeans/cbc:PaymentDueDate")
+    try:
+        fecha_vencimiento = date.fromisoformat(vencimiento_texto) if vencimiento_texto else None
+    except ValueError:
+        fecha_vencimiento = None  # opcional: si viene dañada, se ignora
+
     return FacturaParseada(
         cufe=cufe,
         numero=_texto(raiz, "cbc:ID", "el número de documento"),
@@ -196,4 +203,5 @@ def parsear_factura(contenido):
         retefuente_practicada=retefuente_practicada,
         referencia_numero=referencia_numero,
         referencia_cufe=referencia_cufe,
+        fecha_vencimiento=fecha_vencimiento,
     )

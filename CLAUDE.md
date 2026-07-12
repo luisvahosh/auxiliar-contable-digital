@@ -85,9 +85,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   confirmación campo por campo → flujo normal SIEMPRE como "sugerida";
   antiduplicado NIT+número+fecha (cufe FISICA:...); imagen en MEDIA_ROOT.
   49 tests.
-- **Sigue:** P4.5 extracto PDF; probar visión con NVIDIA_API_KEY real y foto
-  real; notas crédito de proveedores; validar CSV contra importación real en
-  Siigo; reteICA (P3); P5 cartera.
+- **Hecho (día 3):** visión verificada end-to-end con NVIDIA_API_KEY real
+  (extracción perfecta sobre datos-prueba/P1.10-factura-fisica.png). P5.1
+  cartera por edades: `causacion/cartera.py` — saldo = neto − pagos
+  conciliados (P4) − notas crédito aprobadas; vencimiento del XML
+  (PaymentDueDate, nuevo campo) o 30 días asumidos; página /causacion/cartera/.
+  55 tests.
+- **Sigue:** P5.2 recordatorios de cobro (necesita correo por tenant); P4.5
+  extracto PDF; notas crédito de proveedores; validar CSV contra importación
+  real en Siigo; reteICA (P3); P6 calendario tributario.
 
 ## Git
 

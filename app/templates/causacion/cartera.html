@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cartera — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Cartera por edades</h1>
+  <p class="suave">{{ empresa }} · Total por cobrar:
+     <strong>${{ total_cartera|floatformat:"0g" }}</strong>.
+     Los pagos conciliados en bancos y las notas crédito descuentan el saldo
+     automáticamente; lo pagado por completo sale solo del reporte.</p>
+
+  <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom:16px">
+    {% for clave, etiqueta, total in rangos %}
+      <div class="tarjeta" style="margin-bottom:0">
+        <p class="suave" style="margin:0">{{ etiqueta }}</p>
+        <p class="numero" style="font-size:20px; font-weight:700; margin:4px 0 0">${{ total|floatformat:"0g" }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if partidas %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead>
+          <tr>
+            <th>Factura</th>
+            <th>Cliente</th>
+            <th>Vence</th>
+            <th class="numero">Neto</th>
+            <th class="numero">Abonos</th>
+            <th class="numero">Saldo</th>
+            <th>Edad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for partida in partidas %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' partida.venta.pk %}">{{ partida.venta.numero }}</a></td>
+              <td>{{ partida.venta.nombre_cliente }}</td>
+              <td>{{ partida.vencimiento }}{% if partida.vencimiento_asumido %} *{% endif %}</td>
+              <td class="numero">${{ partida.neto|floatformat:"0g" }}</td>
+              <td class="numero">{% if partida.abonos %}${{ partida.abonos|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero"><strong>${{ partida.saldo|floatformat:"0g" }}</strong></td>
+              <td><span class="insignia {% if partida.rango == 'corriente' %}insignia-aprobada{% elif partida.rango == 'mas_90' %}insignia-rechazada{% else %}insignia-pendiente{% endif %}">{{ partida.etiqueta }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if hay_asumidos %}
+      <p class="suave">* Sin fecha de vencimiento en el XML: se asume el plazo
+         comercial de 30 días desde la emisión.</p>
+    {% endif %}
+  {% else %}
+    <div class="tarjeta">
+      <p>No hay cartera pendiente: todas las ventas aprobadas están pagadas
+         (o aún no hay ventas registradas).</p>
+    </div>
+  {% endif %}
+{% endblock %}

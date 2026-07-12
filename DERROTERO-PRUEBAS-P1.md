@@ -1,4 +1,4 @@
-# Derrotero de pruebas — P1 a P4, como lo vive un auxiliar contable
+# Derrotero de pruebas — P1 a P5, como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -210,10 +210,10 @@ digitalmente como soporte.*
 
 - [ ] En **Subir factura** → tarjeta "¿La factura es de papel?" → **Causar
   desde una foto** (en el celular el botón abre la cámara directamente).
-- [ ] Subir cualquier foto/imagen de una factura. Sin `NVIDIA_API_KEY` en el
-  `.env`, la app lo dice claro y te deja **digitar los campos manualmente**
-  (la foto queda como soporte); con la key configurada, la IA de visión
-  prellena los campos y muestra su confianza.
+- [ ] Subir `datos-prueba/P1.10-factura-fisica.png` (una factura de papel
+  simulada; sirve cualquier foto real). Con la `NVIDIA_API_KEY` configurada,
+  la IA de visión prellena los campos y muestra su confianza; sin key, la app
+  lo dice claro y te deja **digitar manualmente** (la foto queda de soporte).
 - [ ] Confirmar los campos **uno por uno** contra el papel (prueba dañar el
   total: la app rechaza si subtotal + IVA ≠ total).
 - [ ] **Causar como sugerida** → la factura entra al flujo normal (cuenta PUC,
@@ -222,6 +222,22 @@ digitalmente como soporte.*
   enlace **"ver foto (soporte)"**.
 - [ ] Antiduplicado sin CUFE: la misma factura (mismo NIT + número + fecha)
   dos veces → rechazo "ya fue causada".
+
+## Paso 16 — ¿Quién nos debe y hace cuánto? (P5.1)
+
+*Escenario: lunes en la mañana. El auxiliar revisa la cartera para saber a
+quién cobrar primero.*
+
+- [ ] Abrir **Cartera** en el menú: cada venta aprobada con saldo aparece
+  clasificada por edad (corriente, 1–30, 31–60, 61–90, +90 días) con
+  totales por rango arriba.
+- [ ] Verificar la conexión con bancos (paso 14): la FE-104 que conciliaste
+  **no aparece** (pagada por completo) y la FE-106 muestra el **abono parcial**
+  descontado del saldo ($9.200.000 − $4.600.000 = $4.600.000 pendientes).
+- [ ] Las notas crédito aprobadas también descuentan cartera (la NC-12 del
+  paso 11 rebaja la factura sobre la que se emitió, si ambas están aprobadas).
+- [ ] El asterisco (*) marca facturas sin fecha de vencimiento en el XML:
+  se les asume el plazo comercial de 30 días.
 
 ## Cierre — revisión de bandeja
 

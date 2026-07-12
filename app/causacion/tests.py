@@ -413,6 +413,89 @@ class PruebasVentas(TestCase):
         self.assertEqual(FacturaVenta.objects.de_empresa(self.empresa).count(), 1)
 
 
+class PruebasCartera(TestCase):
+    """Caso P5.1: edades de cartera con saldos que descuentan pagos y notas crédito."""
+
+    def setUp(self):
+        from datetime import date, timedelta
+        self.hoy = date(2026, 7, 11)
+        self.empresa = Empresa.objects.get(nit="901234567")
+
+        def venta(numero, vence_hace_dias, total, retenido=0):
+            return FacturaVenta.objects.create(
+                empresa=self.empresa, tipo="venta", cufe=numero.lower() * 12,
+                numero=numero, fecha_emision=self.hoy - timedelta(days=vence_hace_dias + 30),
+                fecha_vencimiento=self.hoy - timedelta(days=vence_hace_dias),
+                nit_cliente="1", nombre_cliente=f"Cliente {numero}",
+                subtotal=total, iva=0, total=total, retencion_practicada=retenido,
+                estado="aprobada", explicacion="x", asiento=[], xml_crudo="<x/>")
+
+        self.corriente = venta("AA-1", -10, 1000000)   # vence en 10 días
+        self.reciente = venta("BB-2", 5, 2000000)      # vencida hace 5 días
+        self.vieja = venta("CC-3", 100, 3000000)       # vencida hace 100 días
+        self.pagada = venta("DD-4", 20, 4000000)
+
+    def pagar(self, venta, valor):
+        from conciliacion.models import ExtractoBancario, MovimientoBancario
+        extracto = ExtractoBancario.objects.create(empresa=self.empresa, nombre="e.csv")
+        MovimientoBancario.objects.create(
+            empresa=self.empresa, extracto=extracto, fila=1, fecha=self.hoy,
+            descripcion="pago", valor=valor, sugerencia="pago_cliente",
+            estado="conciliado", factura_venta=venta, explicacion="x")
+
+    def test_p51_cada_factura_cae_en_su_rango(self):
+        from .cartera import edades_de_cartera
+        self.pagar(self.pagada, Decimal("4000000"))
+        partidas, totales = edades_de_cartera(self.empresa, hoy=self.hoy)
+        por_numero = {p["venta"].numero: p for p in partidas}
+        self.assertEqual(por_numero["AA-1"]["rango"], "corriente")
+        self.assertEqual(por_numero["BB-2"]["rango"], "hasta_30")
+        self.assertEqual(por_numero["CC-3"]["rango"], "mas_90")
+        self.assertEqual(totales["corriente"], Decimal("1000000"))
+        self.assertEqual(totales["mas_90"], Decimal("3000000"))
+
+    def test_p53_la_pagada_sale_del_reporte(self):
+        from .cartera import edades_de_cartera
+        self.pagar(self.pagada, Decimal("4000000"))
+        partidas, _ = edades_de_cartera(self.empresa, hoy=self.hoy)
+        self.assertNotIn("DD-4", [p["venta"].numero for p in partidas])
+
+    def test_el_pago_parcial_reduce_el_saldo(self):
+        from .cartera import edades_de_cartera
+        self.pagar(self.reciente, Decimal("1500000"))
+        partidas, _ = edades_de_cartera(self.empresa, hoy=self.hoy)
+        partida = next(p for p in partidas if p["venta"].numero == "BB-2")
+        self.assertEqual(partida["saldo"], Decimal("500000"))
+        self.assertEqual(partida["abonos"], Decimal("1500000"))
+
+    def test_la_nota_credito_aprobada_descuenta_cartera(self):
+        from .cartera import edades_de_cartera
+        FacturaVenta.objects.create(
+            empresa=self.empresa, tipo="nota_credito", factura_original=self.corriente,
+            cufe="nc" * 30, numero="NC-9", fecha_emision=self.hoy,
+            nit_cliente="1", nombre_cliente="Cliente AA-1",
+            subtotal=400000, iva=0, total=400000,
+            estado="aprobada", explicacion="x", asiento=[], xml_crudo="<x/>")
+        partidas, _ = edades_de_cartera(self.empresa, hoy=self.hoy)
+        partida = next(p for p in partidas if p["venta"].numero == "AA-1")
+        self.assertEqual(partida["saldo"], Decimal("600000"))
+
+    def test_sin_vencimiento_asume_30_dias(self):
+        from .cartera import edades_de_cartera
+        self.corriente.fecha_vencimiento = None
+        self.corriente.save()
+        partidas, _ = edades_de_cartera(self.empresa, hoy=self.hoy)
+        partida = next(p for p in partidas if p["venta"].numero == "AA-1")
+        self.assertTrue(partida["vencimiento_asumido"])
+        # emisión hace -40+30=... emitida hoy-(-10+30)=hoy-20 → vence hoy+10: corriente
+        self.assertEqual(partida["rango"], "corriente")
+
+    def test_la_pagina_de_cartera_renderiza(self):
+        respuesta = self.client.get(reverse("causacion:cartera"))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Cartera por edades")
+
+
 class PruebasExportSiigoYAlegra(TestCase):
     """P1.9: el asiento aprobado llega al software contable."""
 

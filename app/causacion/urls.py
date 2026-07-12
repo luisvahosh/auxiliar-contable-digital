@@ -17,6 +17,8 @@ urlpatterns = [
     path("ventas/<uuid:pk>/rechazar/", views.rechazar_venta, name="rechazar_venta"),
     path("ventas/<uuid:pk>/siigo.csv", views.exportar_siigo_venta, name="exportar_siigo_venta"),
     path("ventas/<uuid:pk>/enviar-alegra/", views.enviar_alegra_venta, name="enviar_alegra_venta"),
+    # Cartera (P5.1)
+    path("cartera/", views.cartera, name="cartera"),
     # Matriz de terceros (P3)
     path("terceros/", views.terceros, name="terceros"),
     path("terceros/<uuid:pk>/", views.editar_tercero, name="editar_tercero"),
