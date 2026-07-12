@@ -732,6 +732,7 @@ class PruebasExportSiigoYAlegra(CasoConEmpresa):
 
     def test_alegra_exige_mapeo_de_cuentas(self):
         self.aprobar()
+        MapeoCuentaAlegra.objects.all().delete()  # simular ambiente sin la semilla
         entorno = {"ALEGRA_EMAIL": "x@y.co", "ALEGRA_TOKEN": "tok"}
         with patch.dict("os.environ", entorno):
             respuesta = self.client.post(
@@ -742,8 +743,9 @@ class PruebasExportSiigoYAlegra(CasoConEmpresa):
     def test_alegra_envia_el_asiento_mapeado(self):
         self.aprobar()
         for i, cuenta in enumerate(["5110", "240802", "236515", "2335"], start=1):
-            MapeoCuentaAlegra.objects.create(empresa=self.empresa,
-                                             cuenta_puc=cuenta, id_alegra=i)
+            MapeoCuentaAlegra.objects.update_or_create(
+                empresa=self.empresa, cuenta_puc=cuenta,
+                defaults={"id_alegra": i})
         entorno = {"ALEGRA_EMAIL": "x@y.co", "ALEGRA_TOKEN": "tok"}
         with patch.dict("os.environ", entorno), \
              patch("causacion.alegra.requests.post") as envio:
