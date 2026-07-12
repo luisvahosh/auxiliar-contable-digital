@@ -171,3 +171,43 @@ def construir_asiento(factura, propuesta, retencion):
         # Control del auxiliar: jamás persistir un asiento desbalanceado.
         raise ValueError(f"Asiento desbalanceado: débitos {debitos} ≠ créditos {creditos}.")
     return renglones
+
+
+def construir_asiento_nota_credito_compra(nota, original):
+    """Reversa (parcial o total) de una compra ya causada: se descarga la
+    cuenta por pagar y se acreditan el gasto/activo y el IVA descontable.
+    Devuelve (renglones, explicación)."""
+    renglones = []
+
+    def renglon(cuenta, nombre, debito=Decimal("0"), credito=Decimal("0")):
+        renglones.append({"cuenta": cuenta, "nombre": nombre,
+                          "debito": str(debito), "credito": str(credito)})
+
+    # La contrapartida del pago es la misma cuenta por pagar del asiento original
+    por_pagar = next(
+        (r for r in original.asiento
+         if Decimal(r["credito"]) > 0 and r["cuenta"].startswith("2")
+         and not r["cuenta"].startswith("2365")),
+        {"cuenta": CUENTA_COSTOS_GASTOS_POR_PAGAR[0],
+         "nombre": CUENTA_COSTOS_GASTOS_POR_PAGAR[1]},
+    )
+    renglon(por_pagar["cuenta"], por_pagar["nombre"], debito=nota.total)
+    renglon(original.cuenta_puc, original.nombre_cuenta_puc, credito=nota.subtotal)
+    if nota.iva > 0:
+        renglon(*CUENTA_IVA_DESCONTABLE, credito=nota.iva)
+
+    debitos = sum(Decimal(r["debito"]) for r in renglones)
+    creditos = sum(Decimal(r["credito"]) for r in renglones)
+    if debitos != creditos:
+        raise ValueError(f"Asiento desbalanceado: débitos {debitos} ≠ créditos {creditos}.")
+
+    alcance = "total" if nota.total == original.total else "parcial"
+    explicacion = (
+        f"Nota crédito de proveedor {nota.numero}: reversa {alcance} de la compra "
+        f"{original.numero} (${nota.total:,.0f} de ${original.total:,.0f}). Se descarga "
+        f"la cuenta por pagar y se acreditan {original.cuenta_puc} y el IVA descontable."
+    )
+    if original.retencion > 0:
+        explicacion += (" OJO: la compra original tuvo retefuente — si la declaración "
+                        "del período no se ha presentado, revisar el ajuste de la retención.")
+    return renglones, explicacion

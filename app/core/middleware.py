@@ -9,7 +9,8 @@ from .tenancy import empresa_activa
 
 # Lo único público: login, registro por token, admin (con su propio login),
 # estáticos y soportes en desarrollo.
-PREFIJOS_PUBLICOS = ("/login/", "/registro/", "/admin/", "/static/", "/media/")
+PREFIJOS_PUBLICOS = ("/login/", "/registro/", "/recuperar/", "/admin/",
+                     "/static/", "/media/")
 
 
 class AccesoPorEmpresaMiddleware:

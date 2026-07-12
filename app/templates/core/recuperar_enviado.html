@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}Revisa tu correo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto; text-align:center">
+    <h1>Revisa tu correo</h1>
+    <p>Si ese correo tiene una cuenta, te llegará un enlace para definir la
+       contraseña nueva. Revisa también la carpeta de spam.</p>
+    <a class="boton boton-secundario" href="{% url 'core:login' %}">Volver al ingreso</a>
+  </div>
+{% endblock %}

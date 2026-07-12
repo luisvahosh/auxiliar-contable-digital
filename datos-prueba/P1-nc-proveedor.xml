@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ARCHIVO SIMULADO PARA PRUEBAS — Nota crédito de PROVEEDOR (compras).
+  El contador Carlos Pérez emite una NC parcial sobre su factura FVS-847
+  (descuento acordado de $300.000 + IVA). Datos y CUFE ficticios.
+  Asiento esperado (reversa): débito 2335 $357.000; crédito 5110 $300.000
+  y 240802 IVA descontable $57.000. Vinculada a FVS-847; la explicación
+  advierte revisar el ajuste de la retefuente de la compra original.
+-->
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>10</cbc:CustomizationID>
+  <cbc:ProfileID>DIAN 2.1: nota crédito electrónica</cbc:ProfileID>
+  <cbc:ProfileExecutionID>1</cbc:ProfileExecutionID>
+  <cbc:ID>NCP-15</cbc:ID>
+  <cbc:UUID schemeID="1" schemeName="CUDE-SHA384">cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234cafe1234</cbc:UUID>
+  <cbc:IssueDate>2026-07-06</cbc:IssueDate>
+  <cbc:IssueTime>11:00:00-05:00</cbc:IssueTime>
+  <cbc:CreditNoteTypeCode>91</cbc:CreditNoteTypeCode>
+  <cbc:Note>Descuento acordado sobre honorarios facturados en FVS-847.</cbc:Note>
+  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:LineCountNumeric>1</cbc:LineCountNumeric>
+  <cac:BillingReference>
+    <cac:InvoiceDocumentReference>
+      <cbc:ID>FVS-847</cbc:ID>
+    </cac:InvoiceDocumentReference>
+  </cac:BillingReference>
+  <cac:AccountingSupplierParty>
+    <cbc:AdditionalAccountID>2</cbc:AdditionalAccountID>
+    <cac:Party>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>CARLOS ANDRÉS PÉREZ GÓMEZ</cbc:RegistrationName>
+        <cbc:CompanyID schemeAgencyID="195" schemeID="8" schemeName="13">79456123</cbc:CompanyID>
+        <cbc:TaxLevelCode listName="48">R-99-PN</cbc:TaxLevelCode>
+        <cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cbc:AdditionalAccountID>1</cbc:AdditionalAccountID>
+    <cac:Party>
+      <cac:PartyTaxScheme>
+        <cbc:RegistrationName>LEARNWAY SAS</cbc:RegistrationName>
+        <cbc:CompanyID schemeAgencyID="195" schemeID="3" schemeName="31">901234567</cbc:CompanyID>
+        <cbc:TaxLevelCode listName="48">O-23</cbc:TaxLevelCode>
+        <cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="COP">57000.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="COP">300000.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="COP">57000.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:Percent>19.00</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="COP">300000.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="COP">300000.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="COP">357000.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="COP">357000.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:CreditNoteLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:CreditedQuantity unitCode="94">1.00</cbc:CreditedQuantity>
+    <cbc:LineExtensionAmount currencyID="COP">300000.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Description>Descuento sobre honorarios facturados (FVS-847)</cbc:Description>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="COP">300000.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:CreditNoteLine>
+</CreditNote>

@@ -118,11 +118,18 @@ Toda funcionalidad de dominio se valida contra los casos de
   cliente agrupando facturas vencidas; el que pagó no recibe nada (la
   cartera descuenta pagos conciliados y NC); correo del cliente extraído
   del XML (Contact) a FacturaVenta.correo_cliente. 87 tests.
+- **Hecho (día 4):** recuperación de contraseña (§12, enlace de un solo uso,
+  respuesta idéntica exista o no el correo); notas crédito de proveedor
+  (reversa vinculada, advierte ajuste de retefuente); refactor
+  `causacion/servicios.py` — motor único `procesar_xml` para todos los
+  canales de ingesta; comando `causar_lote <carpeta>` (P1.8) con reintento
+  de NC al final del lote, reentrante. Ingesta automática (carpeta + buzón
+  IMAP) documentada en PLAN.md §4. 94 tests.
 - **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
   (XML reales del portal DIAN); confirmar fechas del calendario contra el
-  decreto; CSV contra importación real Siigo. Luego: P6.3 monitoreo DIAN
-  (spike portal), P4.5 extracto PDF, notas crédito de proveedores,
-  recuperación de contraseña y 2FA admin (§12 pendientes).
+  decreto; CSV contra importación real Siigo. Luego: buzón IMAP (lee
+  facturas del correo, sobre procesar_xml), P6.3 monitoreo DIAN (spike
+  portal), P4.5 extracto PDF, 2FA admin.
 
 ## Git
 

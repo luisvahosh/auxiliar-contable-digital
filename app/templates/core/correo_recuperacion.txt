@@ -1,0 +1,9 @@
+Hola:
+
+Alguien (esperamos que tú) pidió restablecer la contraseña de tu cuenta en
+Auxiliar Contable Digital.
+
+Define tu contraseña nueva aquí (enlace de un solo uso):
+{{ protocol }}://{{ domain }}{% url 'core:password_reset_confirm' uidb64=uid token=token %}
+
+Si no fuiste tú, ignora este correo: tu contraseña actual sigue vigente.

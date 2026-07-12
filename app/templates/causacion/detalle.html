@@ -12,6 +12,10 @@
     <table>
       <tbody>
         <tr><th>Emisor</th><td>{{ factura.nombre_emisor }} (NIT {{ factura.nit_emisor }})</td></tr>
+        {% if factura.factura_original %}
+          <tr><th>Reversa a</th>
+              <td><a class="fila-enlace" href="{% url 'causacion:detalle' factura.factura_original.pk %}">{{ factura.factura_original.numero }}</a></td></tr>
+        {% endif %}
         <tr><th>Fecha de emisión</th><td>{{ factura.fecha_emision }}</td></tr>
         {% if factura.origen == "foto" %}
           <tr><th>Origen</th><td>Factura física fotografiada

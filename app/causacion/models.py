@@ -29,10 +29,19 @@ class FacturaCompra(models.Model):
         ("aprobada", "Aprobada"),
         ("rechazada", "Rechazada"),
     ]
+    TIPOS = [
+        ("compra", "Compra"),
+        ("nota_credito", "Nota crédito de proveedor"),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     empresa = models.ForeignKey("core.Empresa", on_delete=models.PROTECT,
                                 related_name="facturas_compra")
+    tipo = models.CharField(max_length=15, choices=TIPOS, default="compra")
+    factura_original = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="notas_credito",
+        help_text="Compra que reversa esta nota crédito de proveedor")
     cufe = models.CharField("CUFE", max_length=100)
     numero = models.CharField("número", max_length=50)
     fecha_emision = models.DateField("fecha de emisión")

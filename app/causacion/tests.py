@@ -497,6 +497,72 @@ class PruebasCartera(CasoConEmpresa):
         self.assertContains(respuesta, "Cartera por edades")
 
 
+class PruebasNotaCreditoProveedor(CasoConEmpresa):
+    """NC de proveedor: reversa de una compra ya causada, vinculada a la original."""
+
+    def subir(self, nombre):
+        archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def test_sin_la_compra_original_se_rechaza(self):
+        respuesta = self.subir("P1-nc-proveedor.xml")
+        self.assertContains(respuesta, "no está causada")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_reversa_vinculada_a_la_compra(self):
+        self.subir("P1.1-factura-honorarios.xml")   # FVS-847
+        respuesta = self.subir("P1-nc-proveedor.xml")
+        self.assertEqual(respuesta.status_code, 200)
+        nota = FacturaCompra.objects.de_empresa(self.empresa).get(tipo="nota_credito")
+        self.assertEqual(nota.factura_original.numero, "FVS-847")
+        por_cuenta = {r["cuenta"]: r for r in nota.asiento}
+        self.assertEqual(Decimal(por_cuenta["2335"]["debito"]), Decimal("357000.00"))
+        self.assertEqual(Decimal(por_cuenta["5110"]["credito"]), Decimal("300000.00"))
+        self.assertEqual(Decimal(por_cuenta["240802"]["credito"]), Decimal("57000.00"))
+        self.assertIn("parcial", nota.explicacion)
+        self.assertIn("retefuente", nota.explicacion)  # la original tuvo retención
+
+    def test_la_misma_nota_no_entra_dos_veces(self):
+        self.subir("P1.1-factura-honorarios.xml")
+        self.subir("P1-nc-proveedor.xml")
+        respuesta = self.subir("P1-nc-proveedor.xml")
+        self.assertContains(respuesta, "ya fue registrada")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa)
+                         .filter(tipo="nota_credito").count(), 1)
+
+
+class PruebasLoteDeCarpeta(TestCase):
+    """P1.8 / ingesta automática: procesar toda una carpeta de XML por lotes."""
+
+    def correr(self):
+        import io
+        from django.core.management import call_command
+        salida = io.StringIO()
+        call_command("causar_lote", str(DATOS_PRUEBA), stdout=salida)
+        return salida.getvalue()
+
+    def test_procesa_toda_la_carpeta_con_resumen(self):
+        salida = self.correr()
+        empresa = Empresa.objects.get(nit="901234567")
+        # 6 compras (P1.1-P1.4, P1.7, P3.2) + 1 NC proveedor + 2 ventas + 1 NC venta
+        self.assertEqual(FacturaCompra.objects.de_empresa(empresa).count(), 7)
+        self.assertEqual(FacturaVenta.objects.de_empresa(empresa).count(), 3)
+        # P1.5 duplicada; P1.6a y P1.6b con error
+        self.assertIn("10 procesados, 1 duplicados, 2 con error", salida)
+        self.assertIn("PENDIENTES", salida)
+        # Todo queda en bandeja: nada se aprueba solo
+        self.assertFalse(FacturaCompra.objects.de_empresa(empresa)
+                         .exclude(estado="pendiente").exists())
+
+    def test_el_lote_es_reentrante(self):
+        self.correr()
+        salida = self.correr()  # segunda pasada: todo duplicado, nada doble
+        empresa = Empresa.objects.get(nit="901234567")
+        self.assertEqual(FacturaCompra.objects.de_empresa(empresa).count(), 7)
+        self.assertIn("0 procesados, 11 duplicados, 2 con error", salida)
+
+
 class PruebasRecordatoriosDeCobro(TestCase):
     """Casos P5.2 (recordatorio automático) y P5.3 (no acosar al que pagó)."""
 

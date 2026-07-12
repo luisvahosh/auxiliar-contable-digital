@@ -22,13 +22,10 @@ from .forms import (
     FormularioTercero,
 )
 from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
-from .parser import FacturaInvalida, FacturaParseada, Linea, parsear_factura
+from .parser import FacturaParseada, Linea
+from .servicios import procesar_xml, tercero_del_emisor
 from .siigo import generar_csv_siigo
-from .ventas import (
-    consecutivos_faltantes,
-    construir_asiento_nota_credito,
-    construir_asiento_venta,
-)
+from .ventas import consecutivos_faltantes
 
 CARPETA_FOTOS = "facturas_fisicas"
 # Solo nombres que nosotros mismos generamos (anti path-traversal)
@@ -47,169 +44,21 @@ def subir(request):
     formulario = FormularioSubirFactura(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and formulario.is_valid():
-        contenido = formulario.cleaned_data["archivo"].read()
-        try:
-            datos = parsear_factura(contenido)
-        except FacturaInvalida as error:
-            messages.error(request, f"No se pudo procesar el XML: {error}")
+        resultado = procesar_xml(empresa, formulario.cleaned_data["archivo"].read())
+        if resultado.estado == "error":
+            messages.error(request, resultado.mensaje)
             return render(request, "causacion/subir.html", {"formulario": formulario})
-
-        es_emisor = datos.nit_emisor == empresa.nit
-        es_adquiriente = datos.nit_adquiriente == empresa.nit
-
-        if datos.tipo_documento == "nota_credito":
-            if es_emisor:
-                return _registrar_nota_credito(request, empresa, datos, contenido)
-            messages.error(
-                request,
-                "Las notas crédito de proveedores (compras) aún no están soportadas; "
-                "por ahora solo las emitidas por tu empresa.",
-            )
-        elif es_adquiriente:
-            return _causar_compra(request, empresa, datos, contenido)
-        elif es_emisor:
-            return _registrar_venta(request, empresa, datos, contenido)
+        if resultado.estado == "duplicado":
+            messages.warning(request, resultado.mensaje)
         else:
-            messages.error(
-                request,
-                f"El documento no menciona a {empresa.razon_social} (NIT {empresa.nit}): "
-                f"emisor {datos.nit_emisor}, adquiriente {datos.nit_adquiriente}.",
-            )
-        return render(request, "causacion/subir.html", {"formulario": formulario})
+            messages.success(request, resultado.mensaje)
+            if resultado.tipo == "venta":
+                _alertar_consecutivo(request, empresa)
+        destino = ("causacion:detalle" if resultado.tipo in ("compra", "nc_compra")
+                   else "causacion:detalle_venta")
+        return redirect(destino, pk=resultado.documento.pk)
 
     return render(request, "causacion/subir.html", {"formulario": formulario})
-
-
-def _causar_compra(request, empresa, datos, contenido):
-    # Control P1.5: la misma factura (CUFE) no se causa dos veces.
-    existente = FacturaCompra.objects.de_empresa(empresa).filter(cufe=datos.cufe).first()
-    if existente:
-        messages.warning(
-            request,
-            f"La factura {existente.numero} ya fue causada (CUFE duplicado). "
-            "No se creó un asiento doble.",
-        )
-        return redirect("causacion:detalle", pk=existente.pk)
-
-    # Matriz de terceros (P3): el proveedor se registra con su primera factura
-    # y en adelante su calidad registrada manda sobre lo que diga el XML.
-    tercero = _tercero_del_emisor(empresa, datos)
-
-    propuesta = clasificar(datos)
-    retencion = calcular_retencion(datos, propuesta.concepto, tercero)
-    renglones = construir_asiento(datos, propuesta, retencion)
-    try:
-        factura = FacturaCompra.objects.create(
-            empresa=empresa,
-            cufe=datos.cufe,
-            numero=datos.numero,
-            fecha_emision=datos.fecha_emision,
-            nit_emisor=datos.nit_emisor,
-            nombre_emisor=datos.nombre_emisor,
-            tipo_persona_emisor=datos.tipo_persona_emisor,
-            responsabilidad_emisor=datos.responsabilidad_emisor,
-            subtotal=datos.subtotal,
-            iva=datos.iva,
-            total=datos.total,
-            retencion=retencion.valor,
-            cuenta_puc=propuesta.cuenta,
-            nombre_cuenta_puc=propuesta.nombre_cuenta,
-            concepto_retencion=propuesta.concepto,
-            nivel=propuesta.nivel,
-            explicacion=f"{propuesta.explicacion}\n{retencion.porque}",
-            asiento=renglones,
-            xml_crudo=contenido.decode("utf-8", errors="replace"),
-        )
-    except IntegrityError:
-        # Carrera entre dos subidas simultáneas: la restricción única manda.
-        messages.warning(request, "Esa factura ya fue causada (CUFE duplicado).")
-        return redirect("causacion:bandeja")
-
-    messages.success(
-        request,
-        f"Compra {factura.numero} procesada — propuesta "
-        f"{factura.get_nivel_display().lower()}, pendiente de tu aprobación.",
-    )
-    return redirect("causacion:detalle", pk=factura.pk)
-
-
-def _registrar_venta(request, empresa, datos, contenido):
-    existente = FacturaVenta.objects.de_empresa(empresa).filter(cufe=datos.cufe).first()
-    if existente:
-        messages.warning(request, f"La venta {existente.numero} ya fue registrada "
-                                  "(CUFE duplicado). No se creó un asiento doble.")
-        return redirect("causacion:detalle_venta", pk=existente.pk)
-
-    renglones, explicacion = construir_asiento_venta(datos)
-    try:
-        venta = FacturaVenta.objects.create(
-            empresa=empresa,
-            tipo="venta",
-            cufe=datos.cufe,
-            numero=datos.numero,
-            fecha_emision=datos.fecha_emision,
-            fecha_vencimiento=datos.fecha_vencimiento,
-            nit_cliente=datos.nit_adquiriente,
-            nombre_cliente=datos.nombre_adquiriente,
-            correo_cliente=datos.correo_adquiriente,
-            subtotal=datos.subtotal,
-            iva=datos.iva,
-            total=datos.total,
-            retencion_practicada=datos.retefuente_practicada,
-            explicacion=explicacion,
-            asiento=renglones,
-            xml_crudo=contenido.decode("utf-8", errors="replace"),
-        )
-    except IntegrityError:
-        messages.warning(request, "Esa venta ya fue registrada (CUFE duplicado).")
-        return redirect("causacion:bandeja_ventas")
-
-    messages.success(request, f"Venta {venta.numero} registrada, pendiente de tu aprobación.")
-    _alertar_consecutivo(request, empresa)
-    return redirect("causacion:detalle_venta", pk=venta.pk)
-
-
-def _registrar_nota_credito(request, empresa, datos, contenido):
-    existente = FacturaVenta.objects.de_empresa(empresa).filter(cufe=datos.cufe).first()
-    if existente:
-        messages.warning(request, f"La nota crédito {existente.numero} ya fue registrada.")
-        return redirect("causacion:detalle_venta", pk=existente.pk)
-
-    ventas = FacturaVenta.objects.de_empresa(empresa).filter(tipo="venta")
-    original = None
-    if datos.referencia_cufe:
-        original = ventas.filter(cufe=datos.referencia_cufe).first()
-    if original is None and datos.referencia_numero:
-        original = ventas.filter(numero=datos.referencia_numero).first()
-    if original is None:
-        messages.error(
-            request,
-            f"La nota crédito {datos.numero} referencia la factura "
-            f"{datos.referencia_numero or datos.referencia_cufe[:12]}, que no está "
-            "registrada. Sube primero la factura de venta original.",
-        )
-        return redirect("causacion:subir")
-
-    renglones, explicacion = construir_asiento_nota_credito(datos, original)
-    nota = FacturaVenta.objects.create(
-        empresa=empresa,
-        tipo="nota_credito",
-        factura_original=original,
-        cufe=datos.cufe,
-        numero=datos.numero,
-        fecha_emision=datos.fecha_emision,
-        nit_cliente=datos.nit_adquiriente,
-        nombre_cliente=datos.nombre_adquiriente,
-        subtotal=datos.subtotal,
-        iva=datos.iva,
-        total=datos.total,
-        explicacion=explicacion,
-        asiento=renglones,
-        xml_crudo=contenido.decode("utf-8", errors="replace"),
-    )
-    messages.success(request, f"Nota crédito {nota.numero} registrada, vinculada a "
-                              f"{original.numero}, pendiente de tu aprobación.")
-    return redirect("causacion:detalle_venta", pk=nota.pk)
 
 
 def _alertar_consecutivo(request, empresa):
@@ -283,21 +132,6 @@ def detalle_venta(request, pk):
 
 
 # ---------- Factura física fotografiada (P1.10) ----------
-
-def _tercero_del_emisor(empresa, datos):
-    """El proveedor entra a la matriz con su primera factura (ver P3)."""
-    tercero, _ = Tercero.objects.de_empresa(empresa).get_or_create(
-        nit=datos.nit_emisor,
-        defaults={
-            "empresa": empresa,
-            "razon_social": datos.nombre_emisor,
-            "tipo_persona": datos.tipo_persona_emisor,
-            "regimen_simple": datos.responsabilidad_emisor == "O-47",
-            "autorretenedor": datos.responsabilidad_emisor == "O-15",
-        },
-    )
-    return tercero
-
 
 def foto(request):
     """Paso 1: subir/tomar la foto; si la IA de visión está configurada,
@@ -384,7 +218,7 @@ def foto_causar(request):
         referencia_numero="",
         referencia_cufe="",
     )
-    tercero = _tercero_del_emisor(empresa, datos)
+    tercero = tercero_del_emisor(empresa, datos)
     propuesta = clasificar(datos)
     retencion = calcular_retencion(datos, propuesta.concepto, tercero)
     renglones = construir_asiento(datos, propuesta, retencion)

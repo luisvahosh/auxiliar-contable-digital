@@ -84,6 +84,40 @@ class PruebasRegistroPorToken(TestCase):
         self.assertFalse(Usuario.objects.filter(username="debil@x.co").exists())
 
 
+class PruebasRecuperacionContrasena(TestCase):
+    """§12: recuperación por enlace de un solo uso, sin revelar si el correo existe."""
+
+    def setUp(self):
+        self.usuaria = Usuario.objects.create_user(
+            username="ana@x.co", email="ana@x.co", password="clave-vieja-larga-1")
+
+    def test_respuesta_identica_exista_o_no_el_correo(self):
+        from django.core import mail
+        for correo in ["ana@x.co", "nadie@x.co"]:
+            respuesta = self.client.post("/recuperar/", {"email": correo}, follow=True)
+            self.assertContains(respuesta, "Revisa tu correo")
+        self.assertEqual(len(mail.outbox), 1)  # solo al que existe, sin decirlo
+
+    def test_flujo_completo_y_enlace_de_un_solo_uso(self):
+        import re as _re
+        from django.core import mail
+        self.client.post("/recuperar/", {"email": "ana@x.co"})
+        enlace = _re.search(r"/recuperar/[^\s]+/[^\s]+/", mail.outbox[0].body).group(0)
+        # Django redirige a una URL de sesión para no dejar el token en el historial
+        respuesta = self.client.get(enlace, follow=True)
+        self.assertContains(respuesta, "Define tu nueva contraseña")
+        url_formulario = respuesta.request["PATH_INFO"]
+        respuesta = self.client.post(url_formulario, {
+            "new_password1": "clave-nueva-larga-2026",
+            "new_password2": "clave-nueva-larga-2026"}, follow=True)
+        self.assertContains(respuesta, "Contraseña actualizada")
+        self.usuaria.refresh_from_db()
+        self.assertTrue(self.usuaria.check_password("clave-nueva-larga-2026"))
+        # El enlace original ya no sirve
+        respuesta = self.client.get(enlace, follow=True)
+        self.assertContains(respuesta, "no es válido")
+
+
 class PruebasMultiEmpresa(CasoConEmpresa):
     def setUp(self):
         super().setUp()

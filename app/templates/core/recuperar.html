@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block titulo %}Recuperar contraseña — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto">
+    <h1>Recuperar contraseña</h1>
+    <p class="suave">Escribe tu correo: si tiene una cuenta, te enviaremos un
+       enlace de un solo uso para definir una contraseña nueva.</p>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom:16px">
+          <label for="{{ form.email.id_for_label }}">Correo</label>
+          {{ form.email }}
+          {% if form.email.errors %}<p class="ayuda" style="color: var(--error)">{{ form.email.errors|striptags }}</p>{% endif %}
+        </div>
+        <button type="submit" class="boton" style="width:100%; min-height:44px">Enviar enlace</button>
+      </form>
+    </div>
+    <p style="text-align:center"><a class="fila-enlace" href="{% url 'core:login' %}">Volver al ingreso</a></p>
+  </div>
+{% endblock %}

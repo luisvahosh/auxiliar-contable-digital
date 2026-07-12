@@ -1,5 +1,5 @@
 from django.contrib.auth import views as vistas_auth
-from django.urls import path
+from django.urls import path, reverse_lazy
 
 from . import views
 from .forms import FormularioLogin
@@ -8,6 +8,22 @@ app_name = "core"
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
+    # Recuperación de contraseña (§12: enlace de un solo uso, sin revelar
+    # si el correo existe — Django responde igual en ambos casos)
+    path("recuperar/", vistas_auth.PasswordResetView.as_view(
+        template_name="core/recuperar.html",
+        email_template_name="core/correo_recuperacion.txt",
+        subject_template_name="core/correo_recuperacion_asunto.txt",
+        success_url=reverse_lazy("core:password_reset_done"),
+    ), name="password_reset"),
+    path("recuperar/enviado/", vistas_auth.PasswordResetDoneView.as_view(
+        template_name="core/recuperar_enviado.html"), name="password_reset_done"),
+    path("recuperar/listo/", vistas_auth.PasswordResetCompleteView.as_view(
+        template_name="core/recuperar_listo.html"), name="password_reset_complete"),
+    path("recuperar/<uidb64>/<token>/", vistas_auth.PasswordResetConfirmView.as_view(
+        template_name="core/recuperar_confirmar.html",
+        success_url=reverse_lazy("core:password_reset_complete"),
+    ), name="password_reset_confirm"),
     path("login/", vistas_auth.LoginView.as_view(
         template_name="core/login.html",
         authentication_form=FormularioLogin,

@@ -325,6 +325,43 @@ estado de cuenta — sin molestar jamás al que ya pagó.*
 - [ ] En producción, este comando y el de alertas tributarias se programan
   a diario (Programador de tareas / Celery beat).
 
+## Paso 21 — Recuperar la contraseña
+
+- [ ] En el login → **"¿Olvidaste tu contraseña?"** → escribir tu correo.
+  La respuesta es idéntica exista o no la cuenta (no se puede adivinar
+  quién tiene usuario).
+- [ ] El correo con el enlace sale por la consola del servidor (en
+  desarrollo). Abrirlo, definir la contraseña nueva y entrar con ella.
+- [ ] Volver a abrir el mismo enlace: ya no sirve (un solo uso).
+
+## Paso 22 — La nota crédito del proveedor
+
+*Escenario: el contador acordó un descuento de $300.000 sobre su factura
+FVS-847 y emitió la nota crédito NCP-15.*
+
+- [ ] Subir `P1-nc-proveedor.xml` **antes** que la FVS-847 (en una base
+  limpia): la app pide causar primero la original.
+- [ ] Con la FVS-847 causada, subirla de nuevo: queda vinculada ("Reversa a
+  FVS-847") con el asiento de reversa — débito 2335 $357.000, crédito 5110
+  $300.000 y 240802 $57.000 — y la explicación **advierte revisar el ajuste
+  de la retefuente** porque la compra original tuvo retención.
+
+## Paso 23 — Causar el mes por lotes (P1.8, ingesta automática)
+
+*Escenario: descargaste la carpeta del mes desde el portal DIAN — nadie va a
+subir 100 facturas una por una.*
+
+- [ ] Correr:
+  `python manage.py causar_lote "..\datos-prueba"`
+  El comando procesa todos los XML de la carpeta y reporta por archivo:
+  **OK** (causada/registrada), **DUP** (ya estaba, no duplica) o **ERR**
+  (con el motivo — el malformado y el XXE caen aquí).
+- [ ] Las notas crédito que llegan antes que su factura original se
+  **reintentan al final del lote** — el orden de los archivos no importa.
+- [ ] Todo queda **pendiente de aprobación** en las bandejas: el lote acelera
+  la digitación, no reemplaza tu revisión (humano en el circuito).
+- [ ] Correrlo dos veces: la segunda pasada no duplica nada.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

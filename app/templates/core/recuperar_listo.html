@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block titulo %}Contraseña actualizada — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto; text-align:center">
+    <h1>Contraseña actualizada</h1>
+    <p>Ya puedes ingresar con tu contraseña nueva.</p>
+    <a class="boton" href="{% url 'core:login' %}">Ingresar</a>
+  </div>
+{% endblock %}
