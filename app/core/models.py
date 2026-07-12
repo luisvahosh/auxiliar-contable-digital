@@ -24,6 +24,10 @@ class Empresa(models.Model):
         help_text="Vacío = sin alertas por correo")
     dias_anticipacion_alertas = models.PositiveSmallIntegerField(
         "días de anticipación de las alertas", default=5)
+    # Recordatorios de cobro a clientes morosos (guía P5.2) — opt-in por tenant
+    enviar_recordatorios_cobro = models.BooleanField(
+        "enviar recordatorios de cobro", default=False,
+        help_text="Correo con el estado de cuenta a clientes con facturas vencidas")
     creada = models.DateTimeField(auto_now_add=True)
 
     class Meta:

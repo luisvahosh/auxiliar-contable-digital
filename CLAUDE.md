@@ -113,12 +113,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   por defecto, `request.empresa` como tenant). Tests base `CasoConEmpresa`
   en core/pruebas.py — TODA prueba de vistas hereda de ahí. 81 tests.
   Usuario semilla: luisvahosh@gmail.com (admin LEARNWAY + superuser).
+- **Hecho (día 4, P5.2/P5.3):** recordatorios de cobro — comando
+  `enviar_recordatorios_cobro` (opt-in por Empresa): estado de cuenta por
+  cliente agrupando facturas vencidas; el que pagó no recibe nada (la
+  cartera descuenta pagos conciliados y NC); correo del cliente extraído
+  del XML (Contact) a FacturaVenta.correo_cliente. 87 tests.
 - **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
   (XML reales del portal DIAN); confirmar fechas del calendario contra el
   decreto; CSV contra importación real Siigo. Luego: P6.3 monitoreo DIAN
-  (spike portal), P5.2 recordatorios de cobro, P4.5 extracto PDF, notas
-  crédito de proveedores, recuperación de contraseña y 2FA admin (§12
-  pendientes).
+  (spike portal), P4.5 extracto PDF, notas crédito de proveedores,
+  recuperación de contraseña y 2FA admin (§12 pendientes).
 
 ## Git
 

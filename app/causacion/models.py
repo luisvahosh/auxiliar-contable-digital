@@ -115,6 +115,9 @@ class FacturaVenta(models.Model):
         help_text="Del XML (PaymentDueDate); si falta, cartera asume 30 días")
     nit_cliente = models.CharField("NIT del cliente", max_length=20)
     nombre_cliente = models.CharField("cliente", max_length=200)
+    correo_cliente = models.EmailField(
+        "correo del cliente", blank=True, default="",
+        help_text="Del XML (Contact); destino de los recordatorios de cobro")
 
     subtotal = models.DecimalField(max_digits=16, decimal_places=2)
     iva = models.DecimalField(max_digits=16, decimal_places=2)

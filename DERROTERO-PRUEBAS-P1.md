@@ -306,6 +306,25 @@ invitación y ninguna empresa sabe que las otras existen.*
 - [ ] Roles: un usuario "operador" no puede invitar; solo el administrador
   de la empresa.
 
+## Paso 20 — Recordatorios de cobro automáticos (P5.2 y P5.3)
+
+*Escenario: cada mañana, la app le escribe a los clientes morosos con su
+estado de cuenta — sin molestar jamás al que ya pagó.*
+
+- [ ] Activar el opt-in: admin → Empresas → LEARNWAY → marcar **"enviar
+  recordatorios de cobro"**. (Es por tenant: cada empresa decide.)
+- [ ] Correr `python manage.py enviar_recordatorios_cobro` — con el backend
+  de consola, los correos salen en la terminal del servidor: un **estado de
+  cuenta por cliente** agrupando todas sus facturas vencidas con días de
+  mora y saldo.
+- [ ] Reglas verificadas por test: la factura **corriente no molesta** al
+  cliente; el cliente **que ya pagó** (pago conciliado en Bancos) no recibe
+  nada (P5.3); las facturas sin correo del cliente se reportan aparte.
+- [ ] El correo del cliente se toma automáticamente del XML de la factura
+  (Contact/ElectronicMail); se puede completar a mano en el admin.
+- [ ] En producción, este comando y el de alertas tributarias se programan
+  a diario (Programador de tareas / Celery beat).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

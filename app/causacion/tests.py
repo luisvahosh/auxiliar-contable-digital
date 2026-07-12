@@ -497,6 +497,78 @@ class PruebasCartera(CasoConEmpresa):
         self.assertContains(respuesta, "Cartera por edades")
 
 
+class PruebasRecordatoriosDeCobro(TestCase):
+    """Casos P5.2 (recordatorio automático) y P5.3 (no acosar al que pagó)."""
+
+    def setUp(self):
+        from datetime import date, timedelta
+        self.hoy = date.today()
+        self.un_dia = timedelta(days=1)
+        self.empresa = Empresa.objects.get(nit="901234567")
+        self.empresa.enviar_recordatorios_cobro = True
+        self.empresa.save()
+
+    def venta(self, numero, dias_vencida, correo="pagos@cliente.example.com"):
+        return FacturaVenta.objects.create(
+            empresa=self.empresa, tipo="venta", cufe=numero.lower() * 12,
+            numero=numero, fecha_emision=self.hoy - 40 * self.un_dia,
+            fecha_vencimiento=self.hoy - dias_vencida * self.un_dia,
+            nit_cliente="1", nombre_cliente="CLIENTE PRUEBA", correo_cliente=correo,
+            subtotal=1000000, iva=0, total=1000000,
+            estado="aprobada", explicacion="x", asiento=[], xml_crudo="<x/>")
+
+    def correr(self):
+        from django.core import mail
+        from django.core.management import call_command
+        call_command("enviar_recordatorios_cobro")
+        return mail.outbox
+
+    def test_p52_factura_vencida_genera_estado_de_cuenta(self):
+        self.venta("FE-201", dias_vencida=5)
+        correos = self.correr()
+        self.assertEqual(len(correos), 1)
+        self.assertIn("pagos@cliente.example.com", correos[0].to)
+        self.assertIn("FE-201", correos[0].body)
+        self.assertIn("5 día", correos[0].body)
+        self.assertIn("$1,000,000", correos[0].body)
+
+    def test_p52_agrupa_las_facturas_del_mismo_cliente(self):
+        self.venta("FE-201", dias_vencida=5)
+        self.venta("FE-202", dias_vencida=40)
+        correos = self.correr()
+        self.assertEqual(len(correos), 1)  # un solo estado de cuenta
+        self.assertIn("FE-201", correos[0].body)
+        self.assertIn("FE-202", correos[0].body)
+
+    def test_p53_el_que_pago_no_recibe_recordatorio(self):
+        from conciliacion.models import ExtractoBancario, MovimientoBancario
+        venta = self.venta("FE-201", dias_vencida=5)
+        extracto = ExtractoBancario.objects.create(empresa=self.empresa, nombre="e.csv")
+        MovimientoBancario.objects.create(
+            empresa=self.empresa, extracto=extracto, fila=1, fecha=self.hoy,
+            descripcion="pago", valor=venta.total, sugerencia="pago_cliente",
+            estado="conciliado", factura_venta=venta, explicacion="x")
+        self.assertEqual(len(self.correr()), 0)
+
+    def test_la_corriente_no_molesta_al_cliente(self):
+        self.venta("FE-201", dias_vencida=-10)  # vence en 10 días
+        self.assertEqual(len(self.correr()), 0)
+
+    def test_sin_optin_de_la_empresa_no_se_envia_nada(self):
+        self.empresa.enviar_recordatorios_cobro = False
+        self.empresa.save()
+        self.venta("FE-201", dias_vencida=5)
+        self.assertEqual(len(self.correr()), 0)
+
+    def test_el_parser_extrae_el_correo_del_cliente(self):
+        xml = contenido("P2.1-venta-estandar.xml").replace(
+            b"</cac:Party>\r\n  </cac:AccountingCustomerParty>",
+            b"<cac:Contact><cbc:ElectronicMail>pagos@andina.example.com"
+            b"</cbc:ElectronicMail></cac:Contact></cac:Party>\r\n  </cac:AccountingCustomerParty>")
+        datos = parsear_factura(xml)
+        self.assertEqual(datos.correo_adquiriente, "pagos@andina.example.com")
+
+
 class PruebasExportSiigoYAlegra(CasoConEmpresa):
     """P1.9: el asiento aprobado llega al software contable."""
 

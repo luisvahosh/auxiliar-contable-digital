@@ -58,6 +58,7 @@ class FacturaParseada:
     referencia_numero: str        # BillingReference (notas crédito)
     referencia_cufe: str
     fecha_vencimiento: date | None = None  # PaymentDueDate, si viene
+    correo_adquiriente: str = ""           # Contact/ElectronicMail, para recordatorios (P5.2)
 
     @property
     def texto_clasificable(self):
@@ -204,4 +205,6 @@ def parsear_factura(contenido):
         referencia_numero=referencia_numero,
         referencia_cufe=referencia_cufe,
         fecha_vencimiento=fecha_vencimiento,
+        correo_adquiriente=_texto_opcional(
+            adquiriente, "cac:Party/cac:Contact/cbc:ElectronicMail"),
     )

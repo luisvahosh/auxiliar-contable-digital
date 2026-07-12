@@ -151,6 +151,7 @@ def _registrar_venta(request, empresa, datos, contenido):
             fecha_vencimiento=datos.fecha_vencimiento,
             nit_cliente=datos.nit_adquiriente,
             nombre_cliente=datos.nombre_adquiriente,
+            correo_cliente=datos.correo_adquiriente,
             subtotal=datos.subtotal,
             iva=datos.iva,
             total=datos.total,
