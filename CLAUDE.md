@@ -79,11 +79,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   cliente exacto/parcial por neto de cartera, pago proveedor, gastos
   bancarios 530505/531595 con asiento propuesto), excepciones con candidato
   más probable, formato de cuadre P4.6. 44 tests.
-- **Planeado (P1.10, PLAN.md §4):** causación desde foto de factura física —
-  modelo de visión extrae campos → formulario editable → flujo normal como
-  "sugerida"; antiduplicado NIT+número+fecha.
-- **Sigue:** P4.5 extracto PDF; P1.10 foto de factura; notas crédito de
-  proveedores; validar CSV contra importación real en Siigo; reteICA (P3).
+- **Hecho (día 3, P1.10):** causación desde foto de factura física —
+  `causacion/vision.py` (NVIDIA NIM OpenAI-compatible, NVIDIA_API_KEY en
+  .env; sin key: digitación manual con la foto como soporte) → formulario de
+  confirmación campo por campo → flujo normal SIEMPRE como "sugerida";
+  antiduplicado NIT+número+fecha (cufe FISICA:...); imagen en MEDIA_ROOT.
+  49 tests.
+- **Sigue:** P4.5 extracto PDF; probar visión con NVIDIA_API_KEY real y foto
+  real; notas crédito de proveedores; validar CSV contra importación real en
+  Siigo; reteICA (P3); P5 cartera.
 
 ## Git
 

@@ -88,4 +88,8 @@ USE_THOUSAND_SEPARATOR = True  # cifras contables legibles: 2.380.000
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Soportes subidos (fotos de facturas físicas, P1.10). Configurable por .env.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

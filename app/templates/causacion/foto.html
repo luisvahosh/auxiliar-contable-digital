@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block titulo %}Foto de factura — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Causar una factura de papel</h1>
+  <div class="tarjeta">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="{{ formulario.foto.id_for_label }}">{{ formulario.foto.label }}</label>
+      <p class="ayuda">{{ formulario.foto.help_text }}</p>
+      {{ formulario.foto }}
+      {% if formulario.foto.errors %}
+        <p class="ayuda" style="color: var(--error)">{{ formulario.foto.errors|striptags }}</p>
+      {% endif %}
+      <button type="submit" class="boton">Leer la factura</button>
+    </form>
+  </div>
+  <p class="suave">Qué pasa después: la IA de visión lee los campos de la foto
+     (NIT, fecha, totales, concepto) y te los muestra en un formulario para que
+     los confirmes <strong>uno por uno</strong> contra el papel. Solo entonces
+     se arma el asiento — y siempre como propuesta <strong>sugerida</strong>,
+     nunca automática. La foto queda guardada como soporte del asiento.</p>
+{% endblock %}

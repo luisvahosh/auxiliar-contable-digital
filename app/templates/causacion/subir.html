@@ -16,6 +16,11 @@
       <button type="submit" class="boton">Procesar factura</button>
     </form>
   </div>
+  <div class="tarjeta">
+    <h2>¿La factura es de papel?</h2>
+    <p class="ayuda">Tómale una foto y la app lee los campos por ti.</p>
+    <a class="boton boton-secundario" href="{% url 'causacion:foto' %}">Causar desde una foto</a>
+  </div>
   <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos) y
      la app detecta sola qué es — una <strong>compra</strong> (te la facturaron),
      una <strong>venta</strong> (la emitió tu empresa) o una <strong>nota

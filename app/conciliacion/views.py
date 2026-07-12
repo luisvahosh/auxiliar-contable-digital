@@ -41,11 +41,12 @@ def bancos(request):
         extracto = ExtractoBancario.objects.create(
             empresa=empresa, nombre=archivo.name[:120])
         ventas_usadas, compras_usadas = set(), set()
-        for crudo in crudos:
+        for fila, crudo in enumerate(crudos, start=1):
             propuesta = sugerir(crudo, ventas, compras, ventas_usadas, compras_usadas)
             MovimientoBancario.objects.create(
                 empresa=empresa,
                 extracto=extracto,
+                fila=fila,
                 fecha=crudo["fecha"],
                 descripcion=crudo["descripcion"],
                 valor=crudo["valor"],

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block titulo %}Confirmar factura física — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Confirma los campos contra la factura</h1>
+  {% if confianza %}
+    <p class="suave">Confianza de la extracción según la IA: {{ confianza }}/100.
+       Igual revisa todo — el que firma eres tú.</p>
+  {% endif %}
+
+  <div class="tarjeta" style="display:grid; gap:24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))">
+    <div>
+      <img src="/media/facturas_fisicas/{{ nombre_foto }}" alt="Foto de la factura subida"
+           style="max-width:100%; border:1px solid var(--borde); border-radius:8px">
+    </div>
+    <form method="post" action="{% url 'causacion:foto_causar' %}">
+      {% csrf_token %}
+      <input type="hidden" name="nombre_foto" value="{{ nombre_foto }}">
+      {% if formulario.non_field_errors %}
+        <p class="ayuda" style="color: var(--error)">{{ formulario.non_field_errors|striptags }}</p>
+      {% endif %}
+      {% for campo in formulario %}
+        <div style="margin-bottom: 12px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <div class="acciones">
+        <button type="submit" class="boton">Causar como sugerida</button>
+        <a class="boton boton-secundario" href="{% url 'causacion:foto' %}">Tomar otra foto</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

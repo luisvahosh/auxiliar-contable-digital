@@ -46,6 +46,7 @@ class MovimientoBancario(models.Model):
                                 related_name="movimientos_bancarios")
     extracto = models.ForeignKey(ExtractoBancario, on_delete=models.CASCADE,
                                  related_name="movimientos")
+    fila = models.PositiveIntegerField("fila en el extracto", default=0)
     fecha = models.DateField()
     descripcion = models.CharField(max_length=200)
     valor = models.DecimalField(max_digits=16, decimal_places=2)  # abono +, cargo -
@@ -63,7 +64,7 @@ class MovimientoBancario(models.Model):
     objects = ConsultasPorEmpresa()
 
     class Meta:
-        ordering = ["fecha", "id"]
+        ordering = ["extracto", "fila"]  # el orden del CSV original
         verbose_name = "movimiento bancario"
         verbose_name_plural = "movimientos bancarios"
 

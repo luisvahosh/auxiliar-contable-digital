@@ -12,12 +12,17 @@ class ConsultasPorEmpresa(models.Manager):
 
 
 class FacturaCompra(models.Model):
-    """Una factura electrónica de compra causada (o en bandeja de revisión)."""
+    """Una factura de compra causada (o en bandeja de revisión):
+    electrónica (XML DIAN) o física fotografiada (P1.10)."""
 
     NIVELES = [
         ("automatica", "Automática"),
         ("sugerida", "Sugerida"),
         ("manual", "Manual"),
+    ]
+    ORIGENES = [
+        ("xml", "XML DIAN"),
+        ("foto", "Foto de factura física"),
     ]
     ESTADOS = [
         ("pendiente", "Pendiente de aprobación"),
@@ -50,6 +55,11 @@ class FacturaCompra(models.Model):
     explicacion = models.TextField("porqué de la propuesta")
     asiento = models.JSONField("renglones del asiento propuesto", default=list)
     xml_crudo = models.TextField("XML original (soporte)")
+    # P1.10: facturas físicas fotografiadas. Sin CUFE real, el antiduplicado
+    # es por NIT+número+fecha (codificado en el campo cufe como FISICA:...).
+    origen = models.CharField(max_length=5, choices=ORIGENES, default="xml")
+    imagen = models.FileField("foto de la factura física", upload_to="facturas_fisicas",
+                              null=True, blank=True)
 
     # Destino contable (P1.9): trazabilidad del envío a Alegra.
     id_alegra = models.CharField("id del asiento en Alegra", max_length=30, blank=True, default="")

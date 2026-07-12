@@ -202,6 +202,27 @@ FE-106 (paso 10) — el extracto se cruza contra lo aprobado.
 - [ ] El **formato de conciliación** de arriba muestra el cuadre: abonos,
   cargos, lo explicado y la **diferencia por explicar** (la excepción) (P4.6).
 
+## Paso 15 — La factura de papel: causar desde una foto (P1.10)
+
+*Escenario: el proveedor de la cafetería entrega una factura de papel. El
+auxiliar la fotografía, verifica los datos y la causa — el papel se archiva
+digitalmente como soporte.*
+
+- [ ] En **Subir factura** → tarjeta "¿La factura es de papel?" → **Causar
+  desde una foto** (en el celular el botón abre la cámara directamente).
+- [ ] Subir cualquier foto/imagen de una factura. Sin `NVIDIA_API_KEY` en el
+  `.env`, la app lo dice claro y te deja **digitar los campos manualmente**
+  (la foto queda como soporte); con la key configurada, la IA de visión
+  prellena los campos y muestra su confianza.
+- [ ] Confirmar los campos **uno por uno** contra el papel (prueba dañar el
+  total: la app rechaza si subtotal + IVA ≠ total).
+- [ ] **Causar como sugerida** → la factura entra al flujo normal (cuenta PUC,
+  retención según la matriz de terceros, asiento balanceado), SIEMPRE como
+  sugerida — nunca automática por venir de OCR — y en el detalle queda el
+  enlace **"ver foto (soporte)"**.
+- [ ] Antiduplicado sin CUFE: la misma factura (mismo NIT + número + fecha)
+  dos veces → rechazo "ya fue causada".
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

@@ -7,6 +7,9 @@ app_name = "causacion"
 urlpatterns = [
     path("", views.bandeja, name="bandeja"),
     path("subir/", views.subir, name="subir"),
+    # Factura física fotografiada (P1.10)
+    path("foto/", views.foto, name="foto"),
+    path("foto/causar/", views.foto_causar, name="foto_causar"),
     # Ventas (P2) — antes de <uuid:pk> para que "ventas" no se confunda con un id
     path("ventas/", views.bandeja_ventas, name="bandeja_ventas"),
     path("ventas/<uuid:pk>/", views.detalle_venta, name="detalle_venta"),

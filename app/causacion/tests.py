@@ -165,6 +165,97 @@ class PruebasFlujoWeb(TestCase):
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
 
 
+class PruebasFacturaFisica(TestCase):
+    """Caso P1.10: causación desde foto de factura de papel."""
+
+    def setUp(self):
+        self.empresa = Empresa.objects.get(nit="901234567")
+
+    def subir_foto(self):
+        foto = SimpleUploadedFile("factura.png", b"\x89PNG-fake-bytes",
+                                  content_type="image/png")
+        with patch.dict("os.environ", {"NVIDIA_API_KEY": ""}):
+            return self.client.post(reverse("causacion:foto"), {"foto": foto},
+                                    follow=True)
+
+    def nombre_foto_de(self, respuesta):
+        import re as _re
+        return _re.search(r'name="nombre_foto" value="([^"]+)"',
+                          respuesta.content.decode()).group(1)
+
+    def campos_base(self, nombre_foto, **cambios):
+        campos = {
+            "nombre_foto": nombre_foto,
+            "nit_emisor": "79456123",
+            "nombre_emisor": "CARLOS ANDRÉS PÉREZ GÓMEZ",
+            "tipo_persona": "2",
+            "numero": "CC-2026-07",
+            "fecha": "2026-07-05",
+            "subtotal": "2000000",
+            "iva": "0",
+            "total": "2000000",
+            "concepto": "Honorarios asesoría contable julio",
+        }
+        campos.update(cambios)
+        return campos
+
+    def test_sin_ia_permite_digitacion_manual_y_causa_como_sugerida(self):
+        respuesta = self.subir_foto()
+        self.assertContains(respuesta, "no está configurada")   # aviso claro
+        self.assertContains(respuesta, "nombre_foto")           # formulario listo
+        nombre = self.nombre_foto_de(respuesta)
+        respuesta = self.client.post(reverse("causacion:foto_causar"),
+                                     self.campos_base(nombre), follow=True)
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.assertEqual(factura.origen, "foto")
+        self.assertEqual(factura.nivel, "sugerida")  # NUNCA automática desde foto
+        self.assertEqual(factura.cuenta_puc, "5110")
+        self.assertEqual(factura.retencion, Decimal("200000"))  # 10% honorarios PN
+        self.assertTrue(factura.imagen.name.startswith("facturas_fisicas/"))
+        # El proveedor entró a la matriz de terceros
+        self.assertTrue(Tercero.objects.de_empresa(self.empresa)
+                        .filter(nit="79456123").exists())
+
+    def test_antiduplicado_por_nit_numero_fecha(self):
+        nombre = self.nombre_foto_de(self.subir_foto())
+        self.client.post(reverse("causacion:foto_causar"), self.campos_base(nombre))
+        nombre2 = self.nombre_foto_de(self.subir_foto())
+        respuesta = self.client.post(reverse("causacion:foto_causar"),
+                                     self.campos_base(nombre2), follow=True)
+        self.assertContains(respuesta, "ya fue causada")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 1)
+
+    def test_totales_que_no_cuadran_no_se_causan(self):
+        nombre = self.nombre_foto_de(self.subir_foto())
+        respuesta = self.client.post(
+            reverse("causacion:foto_causar"),
+            self.campos_base(nombre, total="9999999"), follow=True)
+        self.assertContains(respuesta, "no cuadran")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_nombre_de_foto_malicioso_se_rechaza(self):
+        respuesta = self.client.post(
+            reverse("causacion:foto_causar"),
+            self.campos_base("..\\..\\config\\settings.py"), follow=True)
+        self.assertContains(respuesta, "Referencia de foto inválida")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_con_ia_prellenado_desde_la_vision(self):
+        foto = SimpleUploadedFile("factura.jpg", b"bytes", content_type="image/jpeg")
+        campos_ia = {"nit_emisor": "900.123.456", "nombre_emisor": "PAPELERIA EL LAPIZ SAS",
+                     "numero": "PL-88", "fecha": "2026-07-01", "subtotal": 250000,
+                     "iva": 47500, "total": 297500, "concepto": "Papelería oficina",
+                     "confianza": 92}
+        with patch.dict("os.environ", {"NVIDIA_API_KEY": "nvapi-prueba"}), \
+             patch("causacion.views.vision.extraer_campos", return_value=campos_ia):
+            respuesta = self.client.post(reverse("causacion:foto"), {"foto": foto},
+                                         follow=True)
+        self.assertContains(respuesta, "PAPELERIA EL LAPIZ SAS")
+        self.assertContains(respuesta, "900123456")  # NIT normalizado a dígitos
+        self.assertContains(respuesta, "92/100")     # confianza visible
+        self.assertContains(respuesta, "UNO POR UNO")
+
+
 class PruebasMatrizDeTerceros(TestCase):
     """Casos P3: la calidad tributaria real del proveedor manda sobre el XML."""
 

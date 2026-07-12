@@ -13,7 +13,12 @@
       <tbody>
         <tr><th>Emisor</th><td>{{ factura.nombre_emisor }} (NIT {{ factura.nit_emisor }})</td></tr>
         <tr><th>Fecha de emisión</th><td>{{ factura.fecha_emision }}</td></tr>
-        <tr><th>CUFE</th><td class="suave" style="word-break: break-all">{{ factura.cufe }}</td></tr>
+        {% if factura.origen == "foto" %}
+          <tr><th>Origen</th><td>Factura física fotografiada
+            {% if factura.imagen %} — <a class="fila-enlace" href="{{ factura.imagen.url }}" target="_blank">ver foto (soporte)</a>{% endif %}</td></tr>
+        {% else %}
+          <tr><th>CUFE</th><td class="suave" style="word-break: break-all">{{ factura.cufe }}</td></tr>
+        {% endif %}
         <tr><th>Subtotal</th><td class="numero">${{ factura.subtotal|floatformat:"0g" }}</td></tr>
         <tr><th>IVA</th><td class="numero">${{ factura.iva|floatformat:"0g" }}</td></tr>
         <tr><th>Total factura</th><td class="numero">${{ factura.total|floatformat:"0g" }}</td></tr>
