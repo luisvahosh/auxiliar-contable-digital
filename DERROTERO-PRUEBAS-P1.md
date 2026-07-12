@@ -187,7 +187,9 @@ del banco que nadie registró.*
 Requisito: tener **aprobadas** la FVS-847 (paso 1), la FE-104 (paso 9) y la
 FE-106 (paso 10) — el extracto se cruza contra lo aprobado.
 
-- [ ] Abrir **Bancos** en el menú → subir `P4-extracto-junio.csv`.
+- [ ] Abrir **Bancos** en el menú → subir `P4-extracto-junio.csv`
+  (o su gemelo `P4-extracto-junio.pdf` — el PDF de texto del banco produce
+  exactamente los mismos movimientos, caso P4.5).
 - [ ] Revisar las sugerencias movimiento por movimiento:
   - **$3.570.000 Comercializadora Andina** → cruce exacto con FE-104 (pago de cliente).
   - **$4.600.000 Grandes Superficies** → **pago parcial** de FE-106 (neto

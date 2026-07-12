@@ -1,0 +1,46 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 695 >>
+stream
+BT /F1 10 Tf 40 760 Td 14 TL
+(BANCO SIMULADO S.A. - EXTRACTO DE CUENTA CORRIENTE) Tj T*
+(Titular: LEARNWAY SAS   NIT 901.234.567   Cuenta 1234-5678) Tj T*
+(Periodo: julio 2026) Tj T*
+() Tj T*
+(FECHA        DESCRIPCION                                        VALOR) Tj T*
+(02/07/2026 TRANSFERENCIA CTA 1234 COMERCIALIZADORA ANDINA 3.570.000) Tj T*
+(03/07/2026 ABONO GRANDES SUPERFICIES DEL CENTRO 4.600.000) Tj T*
+(05/07/2026 PAGO PSE CARLOS ANDRES PEREZ HONORARIOS -2.180.000) Tj T*
+(08/07/2026 CUOTA DE MANEJO TARJETA DEBITO -14.900) Tj T*
+(08/07/2026 GMF 4X1000 -35.000) Tj T*
+(09/07/2026 CONSIGNACION EFECTIVO OFICINA 052 1.100.000) Tj T*
+() Tj T*
+(SALDO FINAL DEL PERIODO: 7.040.100) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000987 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1055
+%%EOF

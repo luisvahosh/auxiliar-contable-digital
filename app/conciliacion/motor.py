@@ -17,6 +17,8 @@ import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from pypdf import PdfReader
+
 CUENTA_BANCOS = ("111005", "Bancos — moneda nacional")
 CUENTA_CLIENTES = ("1305", "Clientes nacionales")
 
@@ -84,6 +86,52 @@ def parsear_extracto(contenido):
     if not movimientos:
         raise ExtractoInvalido("El extracto no tiene movimientos.")
     return movimientos
+
+
+# Renglón de movimiento en el texto de un PDF bancario:
+# fecha  descripción  valor (con signo, formato colombiano)
+PATRON_MOVIMIENTO_PDF = re.compile(
+    r"^(\d{2}/\d{2}/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(-?\$?[\d.,]+)$")
+
+
+def parsear_extracto_pdf(contenido):
+    """Extrae los movimientos del texto de un extracto en PDF (P4.5).
+
+    Funciona con PDF de texto (el que descarga el portal del banco); un
+    escaneo/imagen no tiene texto y se rechaza con instrucción clara.
+    """
+    try:
+        lector = PdfReader(io.BytesIO(contenido))
+        texto = "\n".join((pagina.extract_text() or "") for pagina in lector.pages)
+    except Exception:
+        raise ExtractoInvalido("el archivo no es un PDF legible.")
+
+    movimientos = []
+    for linea in texto.splitlines():
+        encontrado = PATRON_MOVIMIENTO_PDF.match(linea.strip())
+        if not encontrado:
+            continue  # encabezados, saldos, pies de página
+        try:
+            movimientos.append({
+                "fecha": _parsear_fecha(encontrado.group(1)),
+                "descripcion": encontrado.group(2).strip()[:200],
+                "valor": _parsear_valor(encontrado.group(3)),
+            })
+        except ExtractoInvalido:
+            continue  # línea con pinta de movimiento pero valores raros: se ignora
+    if not movimientos:
+        raise ExtractoInvalido(
+            "no se encontraron movimientos en el PDF. Si es un escaneo (imagen), "
+            "por ahora usa el CSV del banco; la lectura de imágenes llegará después."
+        )
+    return movimientos
+
+
+def parsear_extracto_archivo(nombre, contenido):
+    """Un solo punto de entrada: decide por la extensión (CSV o PDF)."""
+    if nombre.lower().endswith(".pdf"):
+        return parsear_extracto_pdf(contenido)
+    return parsear_extracto(contenido)
 
 
 def _renglon(cuenta, nombre, debito=Decimal("0"), credito=Decimal("0")):

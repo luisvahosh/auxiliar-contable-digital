@@ -125,11 +125,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   canales de ingesta; comando `causar_lote <carpeta>` (P1.8) con reintento
   de NC al final del lote, reentrante. Ingesta automática (carpeta + buzón
   IMAP) documentada en PLAN.md §4. 94 tests.
+- **Hecho (día 4, P4.5):** extracto bancario en PDF — `parsear_extracto_pdf`
+  (pypdf, PDF de texto; escaneos rechazados con instrucción), mismo motor de
+  cruce; `parsear_extracto_archivo` decide por extensión. Fixture
+  P4-extracto-junio.pdf idéntico al CSV. 97 tests.
 - **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
   (XML reales del portal DIAN); confirmar fechas del calendario contra el
   decreto; CSV contra importación real Siigo. Luego: buzón IMAP (lee
   facturas del correo, sobre procesar_xml), P6.3 monitoreo DIAN (spike
-  portal), P4.5 extracto PDF, 2FA admin.
+  portal), 2FA admin.
 
 ## Git
 

@@ -12,7 +12,7 @@ from core.models import Empresa
 from core.pruebas import CasoConEmpresa
 
 from .models import ExtractoBancario, MovimientoBancario
-from .motor import ExtractoInvalido, parsear_extracto
+from .motor import (ExtractoInvalido, parsear_extracto, parsear_extracto_pdf)
 
 
 def csv_bytes(*filas):
@@ -73,6 +73,40 @@ class PruebasParserExtracto(TestCase):
         with self.assertRaises(ExtractoInvalido) as ctx:
             parsear_extracto(csv_bytes("hoy;X;100"))
         self.assertIn("Fecha inválida", str(ctx.exception))
+
+
+class PruebasExtractoPdf(BaseConciliacion):
+    """Caso P4.5: el mismo extracto en PDF produce los mismos movimientos."""
+
+    @staticmethod
+    def datos_prueba(nombre):
+        from pathlib import Path
+        from django.conf import settings
+        return (Path(settings.BASE_DIR).parent / "datos-prueba" / nombre).read_bytes()
+
+    def test_p45_pdf_y_csv_producen_los_mismos_movimientos(self):
+        del_csv = parsear_extracto(self.datos_prueba("P4-extracto-junio.csv"))
+        del_pdf = parsear_extracto_pdf(self.datos_prueba("P4-extracto-junio.pdf"))
+        self.assertEqual(del_csv, del_pdf)
+        self.assertEqual(len(del_pdf), 6)
+
+    def test_pdf_sin_movimientos_da_instruccion_clara(self):
+        # Un PDF válido pero sin renglones de movimientos (p. ej. un escaneo)
+        pdf_vacio = self.datos_prueba("P4-extracto-junio.pdf").replace(b"/2026", b"/x026")
+        with self.assertRaises(ExtractoInvalido) as ctx:
+            parsear_extracto_pdf(pdf_vacio)
+        self.assertIn("escaneo", str(ctx.exception))
+
+    def test_subida_web_del_pdf(self):
+        respuesta = self.subir(self.datos_prueba("P4-extracto-junio.pdf"),
+                               nombre="extracto.pdf")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(
+            MovimientoBancario.objects.de_empresa(self.empresa).count(), 6)
+        # El cruce funciona igual que con CSV: la FE-104 cruza exacta
+        exacto = MovimientoBancario.objects.de_empresa(self.empresa).get(
+            sugerencia="pago_cliente")
+        self.assertEqual(exacto.factura_venta, self.venta)
 
 
 class PruebasConciliacion(BaseConciliacion):

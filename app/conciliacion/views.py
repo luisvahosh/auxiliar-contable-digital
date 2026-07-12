@@ -8,7 +8,7 @@ from causacion.models import FacturaCompra, FacturaVenta
 
 from .forms import FormularioSubirExtracto
 from .models import ExtractoBancario, MovimientoBancario
-from .motor import ExtractoInvalido, parsear_extracto, sugerir
+from .motor import ExtractoInvalido, parsear_extracto_archivo, sugerir
 
 
 def _empresa_activa(request):
@@ -24,7 +24,7 @@ def bancos(request):
     if request.method == "POST" and formulario.is_valid():
         archivo = formulario.cleaned_data["archivo"]
         try:
-            crudos = parsear_extracto(archivo.read())
+            crudos = parsear_extracto_archivo(archivo.name, archivo.read())
         except ExtractoInvalido as error:
             messages.error(request, f"No se pudo procesar el extracto: {error}")
             return render(request, "conciliacion/bancos.html", {
