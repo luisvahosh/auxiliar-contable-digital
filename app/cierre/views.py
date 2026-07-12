@@ -4,14 +4,13 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
-from core.models import Empresa
-
 from .logica import periodos_disponibles, resumen_cierre
 from .paquete import construir_paquete
 
 
 def _empresa_activa(request):
-    return Empresa.objects.order_by("creada").first()
+    """Tenant del request: lo resuelve el middleware desde la sesión (§12)."""
+    return request.empresa
 
 
 def _periodo_pedido(request, periodos):

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}Enlace no válido — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto; text-align:center">
+    <h1>Este enlace no es válido</h1>
+    <p>El enlace de registro no existe, ya fue usado o venció (dura 72 horas).
+       Pide al administrador de tu empresa que te envíe uno nuevo.</p>
+    <a class="boton boton-secundario" href="{% url 'core:login' %}">Ir al ingreso</a>
+  </div>
+{% endblock %}

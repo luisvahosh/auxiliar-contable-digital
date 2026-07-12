@@ -9,6 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.models import Empresa
+from core.pruebas import CasoConEmpresa
 
 from .logica import alertas_de, digito_del_nit, vencimientos_de
 from .models import VencimientoTributario
@@ -16,10 +17,11 @@ from .models import VencimientoTributario
 HOY = date(2026, 7, 11)
 
 
-class PruebasCalendarioPorNit(TestCase):
+class PruebasCalendarioPorNit(CasoConEmpresa):
     def setUp(self):
+        super().setUp()
         # La beta cero (NIT …7) más otro tenant con dígito distinto
-        self.empresa_7 = Empresa.objects.get(nit="901234567")
+        self.empresa_7 = self.empresa
         self.empresa_3 = Empresa.objects.create(nit="800111223", razon_social="OTRA SAS")
         VencimientoTributario.objects.all().delete()  # sin la semilla, control total
         VencimientoTributario.objects.create(

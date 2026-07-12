@@ -11,6 +11,7 @@ from django.urls import reverse
 
 from causacion.models import FacturaCompra, FacturaVenta
 from core.models import Empresa
+from core.pruebas import CasoConEmpresa
 
 from .logica import resumen_cierre
 from .paquete import construir_paquete
@@ -46,9 +47,9 @@ def venta(empresa, numero, estado="aprobada"):
         ])
 
 
-class PruebasResumen(TestCase):
+class PruebasResumen(CasoConEmpresa):
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
     def test_p71_pendientes_bloquean_y_aparecen_con_motivo(self):
         compra(self.empresa, "AA-1")
@@ -94,9 +95,9 @@ class PruebasResumen(TestCase):
         self.assertEqual(len(resumen["compras"]), 0)
 
 
-class PruebasPaquete(TestCase):
+class PruebasPaquete(CasoConEmpresa):
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
         compra(self.empresa, "AA-1")
         venta(self.empresa, "FE-104")
 

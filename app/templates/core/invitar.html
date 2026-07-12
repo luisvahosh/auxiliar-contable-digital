@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block titulo %}Invitar usuario — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Invitar un usuario</h1>
+  <p class="suave">La invitación es a <strong>{{ request.empresa.razon_social }}</strong>,
+     por enlace de un solo uso que vence en 72 horas.</p>
+
+  {% if enlace %}
+    <div class="tarjeta">
+      <h2>Enlace de registro creado</h2>
+      <p>Se envió por correo. Si necesitas compartirlo por otro medio:</p>
+      <p class="porque" style="word-break: break-all">{{ enlace }}</p>
+    </div>
+  {% endif %}
+
+  <div class="tarjeta">
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom:16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="boton">Crear invitación</button>
+    </form>
+  </div>
+{% endblock %}

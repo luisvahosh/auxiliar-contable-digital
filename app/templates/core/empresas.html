@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block titulo %}Mis empresas — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Mis empresas</h1>
+  <p class="suave">Trabajas con una empresa a la vez; cambia aquí la activa.</p>
+
+  <div class="tarjeta tabla-envoltura">
+    <table>
+      <thead><tr><th>Empresa</th><th>NIT</th><th>Mi rol</th><th></th></tr></thead>
+      <tbody>
+        {% for membresia in membresias %}
+          <tr>
+            <td>{{ membresia.empresa.razon_social }}
+                {% if membresia.empresa == request.empresa %}<span class="insignia insignia-aprobada">Activa</span>{% endif %}</td>
+            <td>{{ membresia.empresa.nit }}</td>
+            <td>{{ membresia.get_rol_display }}</td>
+            <td>
+              {% if membresia.empresa != request.empresa %}
+                <form method="post" action="{% url 'core:cambiar_empresa' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="empresa" value="{{ membresia.empresa.pk }}">
+                  <button type="submit" class="boton boton-secundario">Trabajar con esta</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if es_admin %}
+    <div class="acciones">
+      <a class="boton" href="{% url 'core:invitar' %}">Invitar un usuario a {{ request.empresa.razon_social }}</a>
+    </div>
+  {% endif %}
+{% endblock %}

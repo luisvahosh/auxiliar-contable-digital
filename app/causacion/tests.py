@@ -12,6 +12,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.models import Empresa
+from core.pruebas import CasoConEmpresa
 
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
 from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
@@ -114,9 +115,9 @@ class PruebasClasificacionYRetencion(TestCase):
                 self.assertEqual(debitos, creditos)
 
 
-class PruebasFlujoWeb(TestCase):
+class PruebasFlujoWeb(CasoConEmpresa):
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
     def subir(self, nombre, archivo_nombre=None):
         archivo = SimpleUploadedFile(archivo_nombre or nombre, contenido(nombre),
@@ -165,11 +166,11 @@ class PruebasFlujoWeb(TestCase):
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
 
 
-class PruebasFacturaFisica(TestCase):
+class PruebasFacturaFisica(CasoConEmpresa):
     """Caso P1.10: causación desde foto de factura de papel."""
 
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
     def subir_foto(self):
         foto = SimpleUploadedFile("factura.png", b"\x89PNG-fake-bytes",
@@ -256,11 +257,11 @@ class PruebasFacturaFisica(TestCase):
         self.assertContains(respuesta, "UNO POR UNO")
 
 
-class PruebasMatrizDeTerceros(TestCase):
+class PruebasMatrizDeTerceros(CasoConEmpresa):
     """Casos P3: la calidad tributaria real del proveedor manda sobre el XML."""
 
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
     def subir(self, nombre):
         archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
@@ -345,12 +346,12 @@ class PruebasMatrizDeTerceros(TestCase):
         self.assertEqual(respuesta.status_code, 404)
 
 
-class PruebasVentas(TestCase):
+class PruebasVentas(CasoConEmpresa):
     """Casos P2: registro de facturas emitidas, retenciones a favor,
     consecutivo y notas crédito."""
 
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
     def subir(self, nombre):
         archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
@@ -413,13 +414,13 @@ class PruebasVentas(TestCase):
         self.assertEqual(FacturaVenta.objects.de_empresa(self.empresa).count(), 1)
 
 
-class PruebasCartera(TestCase):
+class PruebasCartera(CasoConEmpresa):
     """Caso P5.1: edades de cartera con saldos que descuentan pagos y notas crédito."""
 
     def setUp(self):
         from datetime import date, timedelta
         self.hoy = date(2026, 7, 11)
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
 
         def venta(numero, vence_hace_dias, total, retenido=0):
             return FacturaVenta.objects.create(
@@ -496,11 +497,11 @@ class PruebasCartera(TestCase):
         self.assertContains(respuesta, "Cartera por edades")
 
 
-class PruebasExportSiigoYAlegra(TestCase):
+class PruebasExportSiigoYAlegra(CasoConEmpresa):
     """P1.9: el asiento aprobado llega al software contable."""
 
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
         archivo = SimpleUploadedFile("P1.1.xml", contenido("P1.1-factura-honorarios.xml"),
                                      content_type="text/xml")
         self.client.post(reverse("causacion:subir"), {"archivo": archivo})
@@ -575,11 +576,12 @@ class PruebasExportSiigoYAlegra(TestCase):
         self.assertContains(respuesta, "ya está en Alegra")
 
 
-class PruebasMultiTenant(TestCase):
+class PruebasMultiTenant(CasoConEmpresa):
     """Test de acceso cruzado entre tenants — obligatorio en CI (CLAUDE.md §2)."""
 
     def setUp(self):
-        self.empresa_a = Empresa.objects.get(nit="901234567")
+        super().setUp()  # usuario logueado en la empresa A (LEARNWAY)
+        self.empresa_a = self.empresa
         self.empresa_b = Empresa.objects.create(nit="800111222", razon_social="OTRA SAS")
         self.factura_b = FacturaCompra.objects.create(
             empresa=self.empresa_b, cufe="ab" * 30, numero="X-1",
@@ -600,3 +602,4 @@ class PruebasMultiTenant(TestCase):
         respuesta = self.client.get(reverse("causacion:detalle",
                                             args=[self.factura_b.pk]))
         self.assertEqual(respuesta.status_code, 404)
+

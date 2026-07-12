@@ -1,16 +1,10 @@
 from django.shortcuts import render
 
-from core.models import Empresa
-
 from .logica import alertas_de, vencimientos_de
 
 
-def _empresa_activa(request):
-    return Empresa.objects.order_by("creada").first()
-
-
 def calendario(request):
-    empresa = _empresa_activa(request)
+    empresa = request.empresa  # lo resuelve el middleware desde la sesión (§12)
     items = vencimientos_de(empresa)
     alertas = alertas_de(empresa)
     return render(request, "calendario/calendario.html", {

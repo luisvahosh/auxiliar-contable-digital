@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",  # rate limiting de login (PLAN.md §12)
     # Apps del producto
     "core",
     "causacion",
@@ -43,7 +44,28 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.AccesoPorEmpresaMiddleware",  # acceso cerrado por defecto (§12)
+    "axes.middleware.AxesMiddleware",
 ]
+
+# Autenticación y protección de login (PLAN.md §12)
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",  # debe ir primero
+    "django.contrib.auth.backends.ModelBackend",
+]
+AXES_FAILURE_LIMIT = int(os.environ.get("AXES_INTENTOS_MAXIMOS", "5"))
+AXES_COOLOFF_TIME = 1  # horas de bloqueo tras agotar los intentos
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",  # compatibilidad
+]
+
+LOGIN_URL = "core:login"
+LOGIN_REDIRECT_URL = "core:inicio"
+LOGOUT_REDIRECT_URL = "core:login"
 
 ROOT_URLCONF = "config.urls"
 

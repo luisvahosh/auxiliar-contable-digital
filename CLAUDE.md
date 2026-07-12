@@ -105,11 +105,20 @@ Toda funcionalidad de dominio se valida contra los casos de
   contador (resumen, auxiliares por cuenta/tercero, Siigo consolidado,
   partidas conciliatorias, soportes XML+fotos). 70 tests. Con esto la guía
   P1–P7 tiene su primera pasada completa.
+- **Hecho (día 4, PLAN §12):** acceso e identidad — sin registro abierto:
+  login (Argon2 + django-axes 5 intentos/1h, error genérico), matrícula por
+  token de un solo uso hasheado con 72h (`core.Invitacion`), membresías
+  usuario↔empresa con roles (admin/operador/lectura), selector de empresa
+  activa por sesión, middleware `AccesoPorEmpresaMiddleware` (todo cerrado
+  por defecto, `request.empresa` como tenant). Tests base `CasoConEmpresa`
+  en core/pruebas.py — TODA prueba de vistas hereda de ahí. 81 tests.
+  Usuario semilla: luisvahosh@gmail.com (admin LEARNWAY + superuser).
 - **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
   (XML reales del portal DIAN); confirmar fechas del calendario contra el
   decreto; CSV contra importación real Siigo. Luego: P6.3 monitoreo DIAN
   (spike portal), P5.2 recordatorios de cobro, P4.5 extracto PDF, notas
-  crédito de proveedores, usuarios/login (PLAN §12).
+  crédito de proveedores, recuperación de contraseña y 2FA admin (§12
+  pendientes).
 
 ## Git
 

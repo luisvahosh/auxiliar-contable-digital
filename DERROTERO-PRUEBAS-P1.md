@@ -283,6 +283,29 @@ carpeta que el contador revisa y firma.*
 - [ ] P7.3 (dos empresas cerrando el mismo mes sin cruzarse) queda cubierto
   por test automático.
 
+## Paso 19 — Acceso e identidad (PLAN §12)
+
+*Escenario: la plataforma es multi-tenant de verdad — nadie entra sin
+invitación y ninguna empresa sabe que las otras existen.*
+
+- [ ] Abrir http://127.0.0.1:8000 en una ventana de incógnito: **todo redirige
+  al login** — no hay nada visible sin sesión.
+- [ ] Ingresar con tu usuario (`luisvahosh@gmail.com` + la contraseña temporal
+  entregada; cámbiala en el admin → Users). Probar una contraseña mala: el
+  error dice solo "Correo o contraseña incorrectos" — nunca revela si el
+  correo existe. Al 5.º intento fallido la cuenta se bloquea 1 hora
+  (django-axes).
+- [ ] En el menú aparece la **empresa activa** (LEARNWAY SAS) y el botón
+  **Salir**. El nombre de la empresa lleva a **Mis empresas** — solo lista
+  las tuyas.
+- [ ] **Invitar un usuario:** Mis empresas → Invitar → correo + rol → se
+  genera un enlace de un solo uso que vence en 72 horas (con backend de
+  correo de consola, el correo sale en la terminal del servidor). Abrir el
+  enlace en incógnito: formulario de registro con contraseña validada
+  (Argon2). El enlace **muere al usarse** — probarlo dos veces.
+- [ ] Roles: un usuario "operador" no puede invitar; solo el administrador
+  de la empresa.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titulo %}Ingresar — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto">
+    <h1 style="text-align:center">Auxiliar Contable Digital</h1>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <p class="ayuda" style="color: var(--error)">{{ form.non_field_errors|striptags }}</p>
+        {% endif %}
+        <div style="margin-bottom:16px">
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+        </div>
+        <div style="margin-bottom:16px">
+          <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          {{ form.password }}
+          <label style="font-weight:400; font-size:14px; margin-top:6px">
+            <input type="checkbox" onclick="const c=document.getElementById('{{ form.password.id_for_label }}'); c.type = c.type === 'password' ? 'text' : 'password'">
+            Mostrar contraseña
+          </label>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="boton" style="width:100%; min-height:44px">Ingresar</button>
+      </form>
+    </div>
+    <p class="suave" style="text-align:center">El acceso es por invitación de tu
+       empresa. Si no tienes cuenta, pide el enlace de registro a tu administrador.</p>
+  </div>
+{% endblock %}

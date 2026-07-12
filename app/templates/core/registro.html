@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block titulo %}Completar registro — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 420px; margin: 48px auto">
+    <h1>Completa tu registro</h1>
+    <p class="suave">Quedarás vinculado a <strong>{{ empresa.razon_social }}</strong>
+       con el correo <strong>{{ correo }}</strong>.</p>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% if formulario.non_field_errors %}
+          <p class="ayuda" style="color: var(--error)">{{ formulario.non_field_errors|striptags }}</p>
+        {% endif %}
+        {% for campo in formulario %}
+          <div style="margin-bottom:16px">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+            {{ campo }}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <button type="submit" class="boton" style="width:100%; min-height:44px">Crear mi cuenta</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

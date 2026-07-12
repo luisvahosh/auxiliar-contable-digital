@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from causacion.models import FacturaCompra, FacturaVenta
-from core.models import Empresa
 
 from .forms import FormularioSubirExtracto
 from .models import ExtractoBancario, MovimientoBancario
@@ -13,7 +12,8 @@ from .motor import ExtractoInvalido, parsear_extracto, sugerir
 
 
 def _empresa_activa(request):
-    return Empresa.objects.order_by("creada").first()
+    """Tenant del request: lo resuelve el middleware desde la sesión (§12)."""
+    return request.empresa
 
 
 def bancos(request):

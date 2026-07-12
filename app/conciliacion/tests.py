@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from causacion.models import FacturaCompra, FacturaVenta
 from core.models import Empresa
+from core.pruebas import CasoConEmpresa
 
 from .models import ExtractoBancario, MovimientoBancario
 from .motor import ExtractoInvalido, parsear_extracto
@@ -18,9 +19,9 @@ def csv_bytes(*filas):
     return ("fecha;descripcion;valor\n" + "\n".join(filas)).encode("utf-8")
 
 
-class BaseConciliacion(TestCase):
+class BaseConciliacion(CasoConEmpresa):
     def setUp(self):
-        self.empresa = Empresa.objects.get(nit="901234567")
+        super().setUp()
         self.venta = FacturaVenta.objects.create(
             empresa=self.empresa, tipo="venta", cufe="a1" * 30, numero="FE-104",
             fecha_emision="2026-06-15", nit_cliente="860222333",
