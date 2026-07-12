@@ -13,6 +13,12 @@ class Empresa(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nit = models.CharField("NIT", max_length=20, unique=True)
     razon_social = models.CharField("razón social", max_length=200)
+    # Alertas del calendario tributario (guía P6.2)
+    correo_alertas = models.EmailField(
+        "correo para alertas tributarias", blank=True,
+        help_text="Vacío = sin alertas por correo")
+    dias_anticipacion_alertas = models.PositiveSmallIntegerField(
+        "días de anticipación de las alertas", default=5)
     creada = models.DateTimeField(auto_now_add=True)
 
     class Meta:

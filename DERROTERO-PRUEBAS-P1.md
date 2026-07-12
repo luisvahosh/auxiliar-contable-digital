@@ -1,4 +1,4 @@
-# Derrotero de pruebas — P1 a P5, como lo vive un auxiliar contable
+# Derrotero de pruebas — P1 a P6, como lo vive un auxiliar contable
 
 Guion paso a paso para probar la plataforma tú mismo, en el orden y con el
 criterio con que trabaja un auxiliar contable real. Los archivos están en
@@ -238,6 +238,28 @@ quién cobrar primero.*
   paso 11 rebaja la factura sobre la que se emitió, si ambas están aprobadas).
 - [ ] El asterisco (*) marca facturas sin fecha de vencimiento en el XML:
   se les asume el plazo comercial de 30 días.
+
+## Paso 17 — ¿Qué le vence a la empresa este mes? (P6)
+
+*Escenario: el auxiliar lleva el control de vencimientos según el NIT —
+llegar tarde a la retefuente cuesta sanción mínima + intereses.*
+
+- [ ] Abrir **Calendario** en el menú: aparecen las fechas del segundo
+  semestre 2026 para NIT terminado en **7** (el de LEARNWAY): retención en
+  la fuente mensual, IVA bimestral e ICA Bogotá, con su estado (vencido /
+  vence HOY / en N días).
+- [ ] Las que caen dentro de la anticipación configurada (5 días por defecto)
+  salen como **alerta destacada** arriba.
+- [ ] En el admin (Empresas → LEARNWAY) puedes cambiar el **correo de
+  alertas** y los **días de anticipación**; el comando
+  `python manage.py enviar_alertas_tributarias` (programado a diario) envía
+  el correo con el detalle.
+- [ ] **Importante:** las fechas sembradas son *estimadas* con el patrón DIAN
+  por último dígito; se confirman contra el decreto oficial de plazos y se
+  ajustan en el admin (Vencimientos tributarios).
+- [ ] P6.1 (dos tenants ven fechas distintas) queda cubierto por test
+  automático; el monitoreo de rechazos DIAN (P6.3) requiere la
+  automatización del portal y está pendiente.
 
 ## Cierre — revisión de bandeja
 

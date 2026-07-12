@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "core",
     "causacion",
     "conciliacion",
+    "calendario",
 ]
 
 MIDDLEWARE = [
@@ -91,5 +92,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Soportes subidos (fotos de facturas físicas, P1.10). Configurable por .env.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+
+# Correo (alertas tributarias P6.2). En desarrollo: consola; en producción,
+# cambiar backend y credenciales SMTP por .env.
+EMAIL_BACKEND = os.environ.get("DJANGO_EMAIL_BACKEND",
+                               "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_FROM_EMAIL", "alertas@auxiliar.local")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

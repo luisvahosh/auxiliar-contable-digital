@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block titulo %}Calendario tributario — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Calendario tributario</h1>
+  <p class="suave">{{ empresa }} · Fechas para NIT terminado en
+     <strong>{{ digito }}</strong> (y obligaciones de todos los NIT).
+     Alertas configuradas con {{ empresa.dias_anticipacion_alertas }} día{{ empresa.dias_anticipacion_alertas|pluralize }} de anticipación.</p>
+
+  {% if alertas %}
+    <ul class="mensajes" style="padding:0">
+      {% for item in alertas %}
+        <li class="warning">⚠ {{ item.vencimiento.obligacion }} ({{ item.vencimiento.periodo }})
+          vence {% if item.dias == 0 %}<strong>HOY</strong>{% else %}en <strong>{{ item.dias }} día{{ item.dias|pluralize }}</strong>{% endif %}
+          — {{ item.vencimiento.fecha }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if items %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead>
+          <tr><th>Obligación</th><th>Período</th><th>Vence</th><th>Estado</th><th>Nota</th></tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.vencimiento.obligacion }}</td>
+              <td>{{ item.vencimiento.periodo }}</td>
+              <td>{{ item.vencimiento.fecha }}</td>
+              <td>
+                {% if item.estado == "vencido" %}
+                  <span class="insignia insignia-rechazada">Vencido hace {{ item.dias_absolutos }} día{{ item.dias_absolutos|pluralize }}</span>
+                {% elif item.estado == "hoy" %}
+                  <span class="insignia insignia-pendiente">Vence HOY</span>
+                {% else %}
+                  <span class="insignia {% if item.dias <= empresa.dias_anticipacion_alertas %}insignia-pendiente{% else %}insignia-aprobada{% endif %}">En {{ item.dias }} día{{ item.dias|pluralize }}</span>
+                {% endif %}
+              </td>
+              <td class="suave">{{ item.vencimiento.nota }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="tarjeta"><p>No hay vencimientos en el horizonte de 60 días.</p></div>
+  {% endif %}
+
+  <p class="suave">Las fechas sembradas para 2026 son <strong>estimadas</strong>
+     a partir del patrón DIAN por último dígito del NIT — confírmalas contra el
+     decreto oficial y ajústalas en el admin (Vencimientos tributarios). Las
+     alertas también llegan por correo si la empresa tiene configurado
+     el correo de alertas (comando <code>enviar_alertas_tributarias</code>).</p>
+{% endblock %}

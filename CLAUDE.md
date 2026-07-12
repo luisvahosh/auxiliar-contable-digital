@@ -51,7 +51,8 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/core/` — app base (inicio, tenant Empresa; luego: usuarios).
 - `app/causacion/` — P1/P2/P3: compras, ventas, terceros, Alegra/Siigo.
 - `app/conciliacion/` — P4: extractos bancarios y cruce contra libros.
-- Próximas apps por vertical: `calendario/`, `asistente/`.
+- `app/calendario/` — P6: calendario tributario por NIT y alertas por correo.
+- Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
 
@@ -91,9 +92,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   conciliados (P4) − notas crédito aprobadas; vencimiento del XML
   (PaymentDueDate, nuevo campo) o 30 días asumidos; página /causacion/cartera/.
   55 tests.
-- **Sigue:** P5.2 recordatorios de cobro (necesita correo por tenant); P4.5
-  extracto PDF; notas crédito de proveedores; validar CSV contra importación
-  real en Siigo; reteICA (P3); P6 calendario tributario.
+- **Hecho (día 3, P6):** calendario tributario — app `calendario/`:
+  VencimientoTributario global (admin-editable), fechas por último dígito
+  del NIT (P6.1), alertas con anticipación configurable por empresa y correo
+  vía comando `enviar_alertas_tributarias` (P6.2; backend consola en dev).
+  Semilla 2026-S2 ESTIMADA (retefuente, IVA bimestral, ICA Bogotá) — confirmar
+  contra decreto oficial. 62 tests.
+- **Sigue:** P7 cierre mensual y paquete del contador (el entregable que
+  valida todo); P6.3 monitoreo rechazos DIAN (spike portal); P5.2
+  recordatorios de cobro; P4.5 extracto PDF; notas crédito de proveedores;
+  CSV contra importación real Siigo.
 
 ## Git
 
