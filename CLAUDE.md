@@ -134,11 +134,19 @@ Toda funcionalidad de dominio se valida contra los casos de
   (selector con concepto de retención), se recalculan retención (con matriz
   de terceros) y asiento, y vuelve a bandeja como nivel "manual" con el
   motivo en la explicación. Cierra el ciclo de P1.7. 101 tests.
-- **Sigue (validación con realidad):** P7.1 con un mes real de la empresa
-  (XML reales del portal DIAN); confirmar fechas del calendario contra el
-  decreto; CSV contra importación real Siigo. Luego: buzón IMAP (lee
-  facturas del correo, sobre procesar_xml), P6.3 monitoreo DIAN (spike
-  portal), 2FA admin.
+- **Hecho (día 5):** desplegado en el VPS Docker de Hostinger (compose con
+  volumen `datos` para sqlite+media, gunicorn+whitenoise, puerto público
+  configurable con PUERTO_WEB — quedó en 9500). El repo de GitHub ahora es
+  PÚBLICO (historial auditado: sin secretos; ojo permanente: nada sensible
+  a git). Primera foto real desde el celular contra el VPS funcionó;
+  instrucción de visión afinada con lo aprendido; mapeo Alegra ahora es
+  migración semilla (0009) para ambientes nuevos. 101 tests.
+- **Sigue:** HTTPS con dominio en el VPS (Caddy; Bitdefender bloquea el
+  HTTP plano — pendiente saber qué ocupa 80/443 y si hay dominio);
+  validación con mes real de XML DIAN (P7.1); confirmar calendario contra
+  decreto; CSV contra importación real Siigo; buzón IMAP; P6.3 monitoreo
+  DIAN; 2FA admin. Afinar visión con casos reales que reporte Luis
+  (campo leído vs campo correcto).
 
 ## Git
 
