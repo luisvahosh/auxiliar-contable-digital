@@ -83,6 +83,19 @@ class FormularioFacturaFisica(forms.Form):
         return datos
 
 
+class FormularioConexionAlegra(forms.Form):
+    """Credenciales de la cuenta Alegra de la empresa (panel de conexiones)."""
+
+    usuario = forms.EmailField(
+        label="Correo de la cuenta Alegra",
+        widget=forms.EmailInput(attrs={"autocomplete": "off"}))
+    token = forms.CharField(
+        label="Token de la API",
+        max_length=200,
+        help_text="Se genera en Alegra → Configuración → Integraciones → API.",
+        widget=forms.TextInput(attrs={"autocomplete": "off"}))
+
+
 class FormularioReclasificacion(forms.Form):
     """El usuario corrige la cuenta PUC propuesta; retención y asiento se
     recalculan (humano en el circuito, nivel manual)."""

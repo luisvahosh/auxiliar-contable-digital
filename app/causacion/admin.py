@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
+from .models import (ConexionContable, FacturaCompra, FacturaVenta,
+                     MapeoCuentaAlegra, Tercero)
+
+
+@admin.register(ConexionContable)
+class ConexionContableAdmin(admin.ModelAdmin):
+    list_display = ("empresa", "proveedor", "usuario", "activa", "actualizada")
+    list_filter = ("proveedor", "activa")
+    exclude = ("token",)  # el token no se muestra ni edita desde el admin
 
 
 @admin.register(Tercero)

@@ -168,6 +168,41 @@ class FacturaVenta(models.Model):
         return self.nombre_cliente
 
 
+class ConexionContable(models.Model):
+    """Credenciales de la empresa hacia SU software contable (PLAN §4).
+
+    Cada tenant conecta su propia cuenta (Alegra hoy; Siigo API cuando el
+    plan del cliente traiga credenciales) desde el panel de la app — el
+    .env queda solo como respaldo global de la beta.
+    OJO (PLAN §10): el token se guarda en la base de datos; antes de tener
+    clientes reales, cifrarlo en reposo.
+    """
+
+    PROVEEDORES = [("alegra", "Alegra")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.ForeignKey("core.Empresa", on_delete=models.CASCADE,
+                                related_name="conexiones_contables")
+    proveedor = models.CharField(max_length=20, choices=PROVEEDORES, default="alegra")
+    usuario = models.CharField("correo o usuario de la API", max_length=200)
+    token = models.CharField("token de la API", max_length=200)
+    activa = models.BooleanField(default=True)
+    actualizada = models.DateTimeField(auto_now=True)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "proveedor"],
+                                    name="conexion_unica_por_proveedor"),
+        ]
+        verbose_name = "conexión contable"
+        verbose_name_plural = "conexiones contables"
+
+    def __str__(self):
+        return f"{self.get_proveedor_display()} de {self.empresa.razon_social}"
+
+
 class Tercero(models.Model):
     """Matriz de terceros (guía P3): la calidad tributaria real de cada
     proveedor, tomada de su RUT.

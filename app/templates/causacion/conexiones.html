@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block titulo %}Conexiones contables — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Conexiones contables</h1>
+  <p class="suave">La cuenta del software contable de
+     <strong>{{ request.empresa.razon_social }}</strong>. Cada empresa conecta
+     la suya; al guardar, la app la verifica contra Alegra antes de aceptarla.</p>
+
+  <div class="tarjeta">
+    <h2>Alegra
+      {% if conexion %}
+        <span class="insignia insignia-aprobada">Conectada</span>
+      {% elif hay_respaldo_global %}
+        <span class="insignia insignia-pendiente">Usando credenciales globales (beta)</span>
+      {% else %}
+        <span class="insignia insignia-rechazada">Sin conectar</span>
+      {% endif %}
+    </h2>
+    {% if conexion %}
+      <p class="ayuda">Cuenta: {{ conexion.usuario }} · actualizada {{ conexion.actualizada|date:"Y-m-d H:i" }}.
+         Guardar de nuevo reemplaza el token.</p>
+    {% elif hay_respaldo_global %}
+      <p class="ayuda">Hoy los envíos usan las credenciales del .env del servidor.
+         Conecta aquí la cuenta propia de la empresa para independizarla.</p>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom:16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="boton">Verificar y guardar</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Siigo</h2>
+    <p class="ayuda">Vía archivo: descarga el CSV consolidado desde el Cierre o el
+       de cada factura aprobada e impórtalo en Siigo. La conexión por API llegará
+       cuando la cuenta tenga un plan con credenciales (PLAN §4).</p>
+  </div>
+
+  <p class="ayuda">El mapeo de cuentas PUC → plan de cuentas del software se
+     administra en el <a class="fila-enlace" href="/admin/causacion/mapeocuentaalegra/">panel admin</a>.</p>
+{% endblock %}

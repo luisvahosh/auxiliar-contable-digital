@@ -34,6 +34,8 @@
   {% if es_admin %}
     <div class="acciones">
       <a class="boton" href="{% url 'core:invitar' %}">Invitar un usuario a {{ request.empresa.razon_social }}</a>
+      <a class="boton boton-secundario" href="{% url 'causacion:conexiones' %}">Conexiones contables</a>
+      <a class="boton boton-secundario" href="{% url 'core:configurar_2fa' %}">Segundo factor (2FA)</a>
     </div>
   {% endif %}
 {% endblock %}

@@ -785,7 +785,7 @@ class PruebasExportSiigoYAlegra(CasoConEmpresa):
         with patch.dict("os.environ", {"ALEGRA_EMAIL": "", "ALEGRA_TOKEN": ""}):
             respuesta = self.client.post(
                 reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
-        self.assertContains(respuesta, "Alegra no está configurado")
+        self.assertContains(respuesta, "Alegra no está conectado para esta empresa")
         self.factura.refresh_from_db()
         self.assertEqual(self.factura.id_alegra, "")
 
@@ -830,6 +830,79 @@ class PruebasExportSiigoYAlegra(CasoConEmpresa):
         respuesta = self.client.post(
             reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
         self.assertContains(respuesta, "ya está en Alegra")
+
+
+class PruebasConexionContable(CasoConEmpresa):
+    """Panel de conexiones: cada empresa conecta SU cuenta del software contable."""
+
+    def respuesta_company(self, estado=200, nombre="MI EMPRESA EN ALEGRA"):
+        class Falsa:
+            status_code = estado
+            ok = estado == 200
+            def json(self):
+                return {"name": nombre}
+        return Falsa()
+
+    def test_guardar_verifica_contra_alegra(self):
+        from .models import ConexionContable
+        with patch("causacion.alegra.requests.get",
+                   return_value=self.respuesta_company()):
+            respuesta = self.client.post(reverse("causacion:conexiones"),
+                                         {"usuario": "empresa@x.co", "token": "tok-1"},
+                                         follow=True)
+        self.assertContains(respuesta, "MI EMPRESA EN ALEGRA")
+        conexion = ConexionContable.objects.de_empresa(self.empresa).get()
+        self.assertEqual(conexion.usuario, "empresa@x.co")
+
+    def test_credenciales_malas_no_se_guardan(self):
+        from .models import ConexionContable
+        with patch("causacion.alegra.requests.get",
+                   return_value=self.respuesta_company(estado=401)):
+            respuesta = self.client.post(reverse("causacion:conexiones"),
+                                         {"usuario": "mala@x.co", "token": "x"},
+                                         follow=True)
+        self.assertContains(respuesta, "incorrectos")
+        self.assertEqual(ConexionContable.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_el_envio_usa_las_credenciales_de_la_empresa(self):
+        from .models import ConexionContable
+        ConexionContable.objects.create(empresa=self.empresa, proveedor="alegra",
+                                        usuario="empresa@x.co", token="tok-empresa")
+        factura = FacturaCompra.objects.create(
+            empresa=self.empresa, cufe="fa" * 30, numero="F-1",
+            fecha_emision="2026-07-01", nit_emisor="1", nombre_emisor="X",
+            tipo_persona_emisor="1", subtotal=100, iva=0, total=100,
+            cuenta_puc="5110", nombre_cuenta_puc="Honorarios", estado="aprobada",
+            explicacion="x", xml_crudo="<x/>",
+            asiento=[{"cuenta": "5110", "nombre": "H", "debito": "100", "credito": "0"},
+                     {"cuenta": "2335", "nombre": "P", "debito": "0", "credito": "100"}])
+        with patch.dict("os.environ", {"ALEGRA_EMAIL": "global@env.co",
+                                       "ALEGRA_TOKEN": "tok-env"}), \
+             patch("causacion.alegra.requests.post") as envio:
+            envio.return_value.ok = True
+            envio.return_value.status_code = 200
+            envio.return_value.json.return_value = {"id": 9}
+            self.client.post(reverse("causacion:enviar_alegra", args=[factura.pk]))
+        # Manda con la cuenta de la EMPRESA, no con la global del .env
+        self.assertEqual(envio.call_args.kwargs["auth"], ("empresa@x.co", "tok-empresa"))
+
+    def test_sin_conexion_propia_cae_al_respaldo_global(self):
+        from . import alegra
+        with patch.dict("os.environ", {"ALEGRA_EMAIL": "global@env.co",
+                                       "ALEGRA_TOKEN": "tok-env"}):
+            self.assertEqual(alegra._credenciales(self.empresa),
+                             ("global@env.co", "tok-env"))
+
+    def test_un_operador_no_configura_conexiones(self):
+        from django.contrib.auth import get_user_model
+        from core.models import Membresia
+        operador = get_user_model().objects.create_user(
+            username="op2@x.co", password="clave-larga-123")
+        Membresia.objects.create(usuario=operador, empresa=self.empresa,
+                                 rol="operador")
+        self.client.force_login(operador)
+        respuesta = self.client.get(reverse("causacion:conexiones"), follow=True)
+        self.assertContains(respuesta, "Solo el administrador")
 
 
 class PruebasMultiTenant(CasoConEmpresa):

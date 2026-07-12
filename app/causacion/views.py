@@ -14,16 +14,25 @@ from django.views.decorators.http import require_POST
 from . import alegra, vision
 from .cartera import RANGOS, edades_de_cartera
 from .clasificacion import calcular_retencion, clasificar, construir_asiento
+from core.tenancy import rol_en_empresa
+
 from .clasificacion import Propuesta, cuentas_reclasificables
 from .forms import (
     TIPOS_IMAGEN,
+    FormularioConexionAlegra,
     FormularioFacturaFisica,
     FormularioFotoFactura,
     FormularioReclasificacion,
     FormularioSubirFactura,
     FormularioTercero,
 )
-from .models import FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero
+from .models import (
+    ConexionContable,
+    FacturaCompra,
+    FacturaVenta,
+    MapeoCuentaAlegra,
+    Tercero,
+)
 from .parser import FacturaParseada, Linea
 from .servicios import procesar_xml, tercero_del_emisor
 from .siigo import generar_csv_siigo
@@ -118,7 +127,7 @@ def detalle(request, pk):
     factura = get_object_or_404(FacturaCompra.objects.de_empresa(empresa), pk=pk)
     return render(request, "causacion/detalle.html", {
         "factura": factura,
-        "alegra_configurado": alegra.esta_configurado(),
+        "alegra_configurado": alegra.esta_configurado(empresa),
         **_renglones_decimales(factura.asiento),
     })
 
@@ -128,7 +137,7 @@ def detalle_venta(request, pk):
     venta = get_object_or_404(FacturaVenta.objects.de_empresa(empresa), pk=pk)
     return render(request, "causacion/detalle_venta.html", {
         "venta": venta,
-        "alegra_configurado": alegra.esta_configurado(),
+        "alegra_configurado": alegra.esta_configurado(empresa),
         **_renglones_decimales(venta.asiento),
     })
 
@@ -257,6 +266,42 @@ def foto_causar(request):
     messages.success(request, f"Factura física {factura.numero} causada como sugerida, "
                               "pendiente de tu aprobación.")
     return redirect("causacion:detalle", pk=factura.pk)
+
+
+# ---------- Conexiones contables por empresa (PLAN §4) ----------
+
+def conexiones(request):
+    """El admin de la empresa conecta SU cuenta del software contable."""
+    empresa = _empresa_activa(request)
+    if rol_en_empresa(request, empresa) != "admin":
+        messages.error(request, "Solo el administrador de la empresa puede "
+                                "configurar las conexiones contables.")
+        return redirect("core:inicio")
+
+    conexion = (ConexionContable.objects.de_empresa(empresa)
+                .filter(proveedor="alegra").first())
+    formulario = FormularioConexionAlegra(
+        request.POST or None,
+        initial={"usuario": conexion.usuario} if conexion else {})
+
+    if request.method == "POST" and formulario.is_valid():
+        usuario = formulario.cleaned_data["usuario"]
+        token = formulario.cleaned_data["token"]
+        funciona, detalle = alegra.probar(usuario, token)
+        if funciona:
+            ConexionContable.objects.update_or_create(
+                empresa=empresa, proveedor="alegra",
+                defaults={"usuario": usuario, "token": token, "activa": True})
+            messages.success(request, f"Conexión con Alegra verificada y guardada "
+                                      f"(cuenta: {detalle}).")
+            return redirect("causacion:conexiones")
+        messages.error(request, f"No se guardó: {detalle}.")
+
+    return render(request, "causacion/conexiones.html", {
+        "conexion": conexion,
+        "formulario": formulario,
+        "hay_respaldo_global": alegra.esta_configurado(),  # .env de la beta
+    })
 
 
 # ---------- Reclasificación manual (cierra P1.7) ----------

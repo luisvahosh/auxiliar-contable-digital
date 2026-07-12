@@ -155,11 +155,20 @@ Toda funcionalidad de dominio se valida contra los casos de
   persiste), y cambio de modelo predeterminado por torneo (formal/tirilla/
   torcida): nvidia/nemotron-nano-12b-v2-vl 17/18 campos vs llama-90b 7/18.
   112 tests.
+- **Hecho (día 5):** conexiones contables por empresa — modelo
+  `ConexionContable` (credenciales Alegra por tenant, verificadas contra
+  la API al guardar; token pendiente de cifrado en reposo antes de
+  clientes reales), panel en Mis empresas → Conexiones (solo admin),
+  `alegra._credenciales(empresa)` con respaldo al .env de la beta.
+  2FA con emisor visible en la app autenticadora (OTP_TOTP_ISSUER).
+  Soporte de proxy https por env (DJANGO_TRAS_PROXY=1: X-Forwarded-Proto,
+  cookies seguras) — arregla el CSRF 403 del VPS junto con
+  DJANGO_CSRF_ORIGINS. 117 tests.
 - **Sigue:** validación con mes real de XML DIAN (P7.1); confirmar
   calendario contra decreto; CSV contra importación real Siigo; buzón
   IMAP; P6.3 monitoreo DIAN. Visión: seguir calibrando con fotos reales
   de Luis. Futuro §12: forzar 2FA a admins (hoy es aviso), códigos de
-  respaldo.
+  respaldo, cifrar tokens de conexiones en reposo.
 
 ## Git
 

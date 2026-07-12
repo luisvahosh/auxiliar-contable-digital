@@ -93,16 +93,13 @@
         {% if not factura.id_alegra %}
           <form method="post" action="{% url 'causacion:enviar_alegra' factura.pk %}">
             {% csrf_token %}
-            <button type="submit" class="boton boton-secundario" {% if not alegra_configurado %}title="Configura ALEGRA_EMAIL y ALEGRA_TOKEN en el .env"{% endif %}>
-              Enviar a Alegra
-            </button>
+            <button type="submit" class="boton boton-secundario">Enviar a Alegra</button>
           </form>
         {% endif %}
       </div>
       {% if not alegra_configurado %}
-        <p class="suave">Alegra aún no está configurado: agrega <code>ALEGRA_EMAIL</code> y
-           <code>ALEGRA_TOKEN</code> al <code>.env</code> (Alegra → Configuración →
-           Integraciones → API) y reinicia el servidor.</p>
+        <p class="suave">Alegra no está conectado para esta empresa:
+           <a class="fila-enlace" href="{% url 'causacion:conexiones' %}">conéctalo aquí</a>.</p>
       {% endif %}
     </div>
     <div class="acciones">

@@ -26,23 +26,51 @@ class ErrorAlegra(Exception):
     """La API de Alegra rechazó la petición. Mensaje apto para el usuario."""
 
 
-def _credenciales():
+def _credenciales(empresa=None):
+    """Credenciales de la empresa (panel de conexiones) o, si no tiene,
+    las globales del .env (respaldo de la beta)."""
+    if empresa is not None:
+        from .models import ConexionContable
+        conexion = (ConexionContable.objects.de_empresa(empresa)
+                    .filter(proveedor="alegra", activa=True).first())
+        if conexion:
+            return conexion.usuario, conexion.token
     correo = os.environ.get("ALEGRA_EMAIL", "").strip()
     token = os.environ.get("ALEGRA_TOKEN", "").strip()
     if not correo or not token:
         raise AlegraNoConfigurado(
-            "Alegra no está configurado: define ALEGRA_EMAIL y ALEGRA_TOKEN en el .env "
-            "(el token se genera en Alegra → Configuración → Integraciones → API)."
+            "Alegra no está conectado para esta empresa: configúralo en "
+            "Mis empresas → Conexiones contables (el token se genera en "
+            "Alegra → Configuración → Integraciones → API)."
         )
     return correo, token
 
 
-def esta_configurado():
+def esta_configurado(empresa=None):
     try:
-        _credenciales()
+        _credenciales(empresa)
         return True
     except AlegraNoConfigurado:
         return False
+
+
+def probar(usuario, token):
+    """Valida unas credenciales contra Alegra. → (True, nombre de la cuenta)
+    o (False, motivo apto para el usuario)."""
+    try:
+        respuesta = requests.get(f"{URL_BASE}/company", auth=(usuario, token),
+                                 timeout=TIEMPO_MAXIMO)
+    except requests.RequestException:
+        return False, "no hubo conexión con Alegra; intenta de nuevo"
+    if respuesta.status_code == 401:
+        return False, "usuario o token incorrectos"
+    if not respuesta.ok:
+        return False, f"Alegra respondió con error {respuesta.status_code}"
+    try:
+        nombre = respuesta.json().get("name") or usuario
+    except ValueError:
+        nombre = usuario
+    return True, nombre
 
 
 def enviar_asiento(factura, mapeo_cuentas):
@@ -51,8 +79,9 @@ def enviar_asiento(factura, mapeo_cuentas):
     mapeo_cuentas: dict {cuenta PUC local -> id de cuenta contable en Alegra}.
     El plan de cuentas de Alegra tiene ids propios; el mapeo vive por empresa
     en MapeoCuentaAlegra y debe cubrir todas las cuentas del asiento.
+    Las credenciales salen de la conexión contable de la empresa del documento.
     """
-    correo, token = _credenciales()
+    correo, token = _credenciales(factura.empresa)
 
     faltantes = sorted({r["cuenta"] for r in factura.asiento} - set(mapeo_cuentas))
     if faltantes:

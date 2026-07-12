@@ -89,8 +89,8 @@
         {% endif %}
       </div>
       {% if not alegra_configurado %}
-        <p class="suave">Alegra no está configurado: faltan <code>ALEGRA_EMAIL</code> y
-           <code>ALEGRA_TOKEN</code> en el <code>.env</code>.</p>
+        <p class="suave">Alegra no está conectado para esta empresa:
+           <a class="fila-enlace" href="{% url 'causacion:conexiones' %}">conéctalo aquí</a>.</p>
       {% endif %}
     </div>
     <div class="acciones">

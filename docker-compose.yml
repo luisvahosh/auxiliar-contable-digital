@@ -13,6 +13,7 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
       DJANGO_CSRF_ORIGINS: ${DJANGO_CSRF_ORIGINS:-}
+      DJANGO_TRAS_PROXY: ${DJANGO_TRAS_PROXY:-0}
       DATABASE_URL: sqlite:////app/datos/db.sqlite3
       DJANGO_MEDIA_ROOT: /app/datos/media
       ALEGRA_EMAIL: ${ALEGRA_EMAIL:-}

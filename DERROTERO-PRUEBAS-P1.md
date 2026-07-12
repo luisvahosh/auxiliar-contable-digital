@@ -398,6 +398,21 @@ igual no entra: falta el código del teléfono.*
   (anti-repetición) y si cambias de teléfono, el dispositivo se restablece
   desde el panel admin (dispositivos TOTP).
 
+## Paso 26 — Conexiones contables por empresa
+
+*Escenario: cada empresa cliente conecta SU cuenta de Alegra (o su software
+contable) — las credenciales viven por tenant, no en el servidor.*
+
+- [ ] Como administrador: **Mis empresas → Conexiones contables**.
+- [ ] Registrar el correo y el token de la cuenta Alegra de la empresa →
+  **Verificar y guardar**: la app prueba las credenciales contra Alegra
+  antes de aceptarlas (credenciales malas no se guardan; probarlo).
+- [ ] Un usuario operador no puede entrar a esta pantalla.
+- [ ] Desde ahora los envíos a Alegra usan la cuenta de la empresa; el
+  `.env` del servidor queda solo como respaldo global de la beta.
+- [ ] Siigo sigue por archivo (CSV del cierre o por factura); su API
+  llegará cuando la cuenta tenga plan con credenciales.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

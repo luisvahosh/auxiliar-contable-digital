@@ -74,6 +74,17 @@ LOGIN_URL = "core:login"
 LOGIN_REDIRECT_URL = "core:inicio"
 LOGOUT_REDIRECT_URL = "core:login"
 
+# El nombre que muestra la app de autenticación junto a la llave 2FA
+OTP_TOTP_ISSUER = "Auxiliar Contable"
+
+# Detrás del proxy inverso del VPS (https): confiar en X-Forwarded-Proto/Host
+# para que Django sepa que la petición original fue segura (CSRF, cookies).
+if os.environ.get("DJANGO_TRAS_PROXY", "0") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
