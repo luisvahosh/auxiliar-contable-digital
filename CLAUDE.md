@@ -146,6 +146,8 @@ git add .
 git commit -m "Día 1: proyecto Django corriendo con configuración por .env"
 ```
 
-Cada sesión termina con el proyecto corriendo y committeado (PLAN.md §8).
+Cada sesión termina con el proyecto corriendo, committeado y **pusheado**
+(PLAN.md §8). Remoto: https://github.com/luisvahosh/auxiliar-contable-digital
+(privado, `origin/main`).
 Nota: OneDrive puede pelear con `.git/` — si molesta, mover el repo a una
 carpeta fuera de OneDrive y dejar aquí solo los documentos.
