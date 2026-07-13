@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block titulo %}Certificado {{ tercero.nombre }} {{ anio }}{% endblock %}
+
+{% block contenido %}
+  <div class="acciones" style="margin-bottom:12px">
+    <a class="boton boton-secundario" href="{% url 'causacion:certificados' %}?anio={{ anio }}">Volver</a>
+    <button class="boton" onclick="window.print()">Imprimir / PDF</button>
+  </div>
+
+  <div class="tarjeta">
+    <h1>Certificado de retención en la fuente</h1>
+    <p class="suave">Año gravable {{ anio }}</p>
+
+    <table style="margin-bottom:16px">
+      <tbody>
+        <tr><th>Agente retenedor</th><td>{{ empresa.razon_social }} (NIT {{ empresa.nit }})</td></tr>
+        <tr><th>Retenido (proveedor)</th><td>{{ tercero.nombre }} (NIT {{ tercero.nit }})</td></tr>
+      </tbody>
+    </table>
+
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Concepto</th><th class="numero">Base sujeta a retención</th><th class="numero">Retención practicada</th></tr></thead>
+        <tbody>
+          {% for c in tercero.conceptos %}
+            <tr>
+              <td>{{ c.nombre_concepto }}</td>
+              <td class="numero">${{ c.base|floatformat:"0g" }}</td>
+              <td class="numero">${{ c.retencion|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td>Total</td>
+              <td class="numero">${{ tercero.total_base|floatformat:"0g" }}</td>
+              <td class="numero"><strong>${{ tercero.total_retencion|floatformat:"0g" }}</strong></td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <p class="ayuda">Certifica que durante el año {{ anio }} se practicaron las
+       retenciones aquí relacionadas, de acuerdo con las normas vigentes.</p>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Facturas que respaldan el certificado</h2>
+    <table>
+      <thead><tr><th>Factura</th><th>Fecha</th><th class="numero">Base</th><th class="numero">Retención</th></tr></thead>
+      <tbody>
+        {% for f in facturas %}
+          <tr>
+            <td>{{ f.numero }}</td>
+            <td>{{ f.fecha_emision }}</td>
+            <td class="numero">${{ f.subtotal|floatformat:"0g" }}</td>
+            <td class="numero">${{ f.retencion|floatformat:"0g" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

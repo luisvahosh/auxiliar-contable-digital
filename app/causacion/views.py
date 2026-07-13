@@ -375,6 +375,35 @@ def cartera(request):
     })
 
 
+# ---------- Certificados de retención (P9) ----------
+
+def certificados(request):
+    from datetime import date
+
+    from .certificados import certificados_del_anio
+    empresa = _empresa_activa(request)
+    try:
+        anio = int(request.GET.get("anio", date.today().year))
+    except ValueError:
+        anio = date.today().year
+    datos = certificados_del_anio(empresa, anio)
+    return render(request, "causacion/certificados.html", {
+        "datos": datos,
+        "anio": anio,
+        "anios": range(date.today().year, date.today().year - 5, -1),
+    })
+
+
+def certificado_tercero(request, anio, nit):
+    from .certificados import certificado_de
+    empresa = _empresa_activa(request)
+    datos = certificado_de(empresa, anio, nit)
+    if datos is None:
+        messages.error(request, "No hay retenciones para ese proveedor en el año.")
+        return redirect("causacion:certificados")
+    return render(request, "causacion/certificado_tercero.html", datos)
+
+
 # ---------- Matriz de terceros (P3) ----------
 
 def terceros(request):

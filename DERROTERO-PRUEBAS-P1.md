@@ -436,6 +436,25 @@ revisa y solo entonces se contabiliza.*
 - [ ] **OJO:** el SMMLV y auxilio 2026 son ESTIMADOS — confirmarlos contra
   los decretos antes de liquidar nómina real (nomina/parametros.py).
 
+## Paso 28 — Certificados de retención (P9, el trámite de febrero)
+
+*Escenario: llega febrero y los proveedores piden el certificado de lo que se
+les retuvo el año pasado. El auxiliar los emite desde lo ya causado.*
+
+- [ ] Requisito: tener varias compras **aprobadas** con retención (los pasos
+  1–2 del derrotero, y de paso la nota crédito de proveedor del paso 22).
+- [ ] **Terceros → Certificados de retención**: listado de proveedores con la
+  base y la retención del año, y arriba el cuadre: el total debe decir
+  **"Cuadra con los asientos (2365)"** — la misma cifra que la empresa
+  declara como agente retenedor.
+- [ ] Cambiar el año con el selector: los de otro año no aparecen.
+- [ ] **Ver certificado** de un proveedor: documento imprimible (botón
+  Imprimir/PDF) con las retenciones por concepto y las facturas que lo
+  respaldan.
+- [ ] Si emitiste la nota crédito del paso 22, la base del contador aparece
+  **descontada** por la reversa; un proveedor de Régimen Simple o bajo la
+  base mínima **no aparece** (no se le retuvo).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

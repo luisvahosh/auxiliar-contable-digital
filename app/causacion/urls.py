@@ -21,6 +21,10 @@ urlpatterns = [
     path("conexiones/", views.conexiones, name="conexiones"),
     # Cartera (P5.1)
     path("cartera/", views.cartera, name="cartera"),
+    # Certificados de retención (P9)
+    path("certificados/", views.certificados, name="certificados"),
+    path("certificados/<int:anio>/<str:nit>/", views.certificado_tercero,
+         name="certificado_tercero"),
     # Matriz de terceros (P3)
     path("terceros/", views.terceros, name="terceros"),
     path("terceros/<uuid:pk>/", views.editar_tercero, name="editar_tercero"),

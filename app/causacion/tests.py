@@ -2,6 +2,7 @@
 Pruebas del vertical de causación contra los XML reales-simulados de
 datos-prueba/ — casos P1 de PROCESO-AUXILIAR-CONTABLE.md.
 """
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
@@ -830,6 +831,79 @@ class PruebasExportSiigoYAlegra(CasoConEmpresa):
         respuesta = self.client.post(
             reverse("causacion:enviar_alegra", args=[self.factura.pk]), follow=True)
         self.assertContains(respuesta, "ya está en Alegra")
+
+
+class PruebasCertificadosRetencion(CasoConEmpresa):
+    """Casos P9: certificados de retención agregados desde las facturas."""
+
+    def compra(self, numero, nit, concepto, base, retencion, anio=2026,
+               estado="aprobada", tipo="compra", original=None):
+        base = Decimal(base)
+        retencion = Decimal(retencion)
+        asiento = [{"cuenta": "5110", "nombre": "x", "debito": str(base), "credito": "0"}]
+        if retencion > 0:
+            asiento.append({"cuenta": "236515", "nombre": "rete",
+                            "debito": "0", "credito": str(retencion)})
+        return FacturaCompra.objects.create(
+            empresa=self.empresa, tipo=tipo, factura_original=original,
+            cufe=(numero + "z" * 30)[:40], numero=numero,
+            fecha_emision=date(anio, 6, 15), nit_emisor=nit,
+            nombre_emisor=f"Proveedor {nit}", tipo_persona_emisor="2",
+            subtotal=base, iva=0, total=base, retencion=retencion,
+            cuenta_puc="5110", nombre_cuenta_puc="Honorarios",
+            concepto_retencion=concepto, estado=estado,
+            explicacion="x", asiento=asiento, xml_crudo="<x/>")
+
+    def certificados(self, anio=2026):
+        from .certificados import certificados_del_anio
+        return certificados_del_anio(self.empresa, anio)
+
+    def test_p91_suma_por_concepto_y_total_correcto(self):
+        self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        self.compra("F-2", "111", "honorarios", "3000000", "300000")
+        datos = self.certificados()
+        tercero = datos["terceros"][0]
+        self.assertEqual(tercero["nit"], "111")
+        self.assertEqual(tercero["total_base"], Decimal("5000000"))
+        self.assertEqual(tercero["total_retencion"], Decimal("500000"))
+
+    def test_p92_solo_aprobadas_y_del_anio(self):
+        self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        self.compra("F-2", "111", "honorarios", "9000000", "900000", estado="pendiente")
+        self.compra("F-3", "111", "honorarios", "5000000", "500000", anio=2025)
+        datos = self.certificados(2026)
+        self.assertEqual(datos["terceros"][0]["total_retencion"], Decimal("200000"))
+
+    def test_p93_la_nota_credito_descuenta_la_base(self):
+        original = self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        self.compra("NC-1", "111", "honorarios", "500000", "0",
+                    tipo="nota_credito", original=original)
+        tercero = self.certificados()["terceros"][0]
+        self.assertEqual(tercero["total_base"], Decimal("1500000"))  # 2M - 500k
+        # La retención practicada no se ajusta (queda como se declaró)
+        self.assertEqual(tercero["total_retencion"], Decimal("200000"))
+
+    def test_p94_cuadra_con_los_asientos_2365(self):
+        self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        self.compra("F-2", "222", "servicios", "1000000", "40000")
+        datos = self.certificados()
+        self.assertTrue(datos["cuadra"])
+        self.assertEqual(datos["total_retencion"], datos["retencion_en_asientos"])
+        self.assertEqual(datos["total_retencion"], Decimal("240000"))
+
+    def test_p95_sin_retencion_no_aparece(self):
+        self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        self.compra("F-2", "333", "servicios", "100000", "0")  # bajo base
+        nits = [t["nit"] for t in self.certificados()["terceros"]]
+        self.assertIn("111", nits)
+        self.assertNotIn("333", nits)
+
+    def test_el_certificado_individual_renderiza(self):
+        self.compra("F-1", "111", "honorarios", "2000000", "200000")
+        respuesta = self.client.get(
+            reverse("causacion:certificado_tercero", args=[2026, "111"]))
+        self.assertContains(respuesta, "Certificado de retención")
+        self.assertContains(respuesta, "F-1")
 
 
 class PruebasConexionContable(CasoConEmpresa):

@@ -182,6 +182,28 @@ las presenta el humano (v1 no presenta nada ante entidades).**
 | P8.8 | Novedades | Horas extra, incapacidades, retiros | *Pendiente de la siguiente iteración* |
 | P8.9 | Nómina electrónica DIAN y pre-PILA | Liquidación aprobada | *Pendiente: exportes para el operador de PILA y el proveedor de nómina electrónica* |
 
+### P9. Certificados de retención en la fuente (fase 3 — el trámite de febrero)
+
+**Disparador:** cada febrero, el proveedor pide su certificado del año
+anterior; también lo exige la conciliación del formulario 350.
+
+**Cómo lo hace el auxiliar:** por cada tercero al que se le practicó
+retención, suma en el año (por concepto: honorarios, servicios, compras,
+arrendamiento) las bases y las retenciones de todas las facturas causadas, y
+emite el certificado con el total. Es la misma cifra que declara la empresa
+como agente retenedor. La app agrega desde las facturas aprobadas — cero
+digitación.
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P9.1 | Certificado por tercero | Un proveedor con varias facturas retenidas en el año | Suma bases y retenciones por concepto; total correcto al peso |
+| P9.2 | Solo lo aprobado y del año | Facturas pendientes o de otro año | No entran en el certificado |
+| P9.3 | Descuenta notas crédito | Compra retenida con nota crédito posterior | La base neta refleja la reversa |
+| P9.4 | Cuadre con el 350 | Suma de todos los certificados del año | = total de créditos a las cuentas 2365 del período |
+| P9.5 | Sin retención | Proveedor RST o bajo base mínima | No aparece en el listado de certificados |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.

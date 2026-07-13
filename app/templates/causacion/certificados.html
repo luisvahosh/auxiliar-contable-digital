@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block titulo %}Certificados de retención — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Certificados de retención en la fuente</h1>
+  <p class="suave">Retenciones practicadas a cada proveedor en el año, agregadas
+     desde las facturas aprobadas. Es la misma cifra que la empresa declara
+     como agente retenedor.</p>
+
+  <p class="suave">Año:
+    {% for a in anios %}
+      {% if a == anio %}<strong>{{ a }}</strong>{% else %}<a class="fila-enlace" href="?anio={{ a }}">{{ a }}</a>{% endif %}{% if not forloop.last %} · {% endif %}
+    {% endfor %}
+  </p>
+
+  <div class="tarjeta">
+    <p>Total retenido en {{ anio }}: <strong>${{ datos.total_retencion|floatformat:"0g" }}</strong>
+      {% if datos.cuadra %}
+        <span class="insignia insignia-aprobada">Cuadra con los asientos (2365)</span>
+      {% else %}
+        <span class="insignia insignia-rechazada">No cuadra con 2365: ${{ datos.retencion_en_asientos|floatformat:"0g" }}</span>
+      {% endif %}
+    </p>
+  </div>
+
+  {% if datos.terceros %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead><tr><th>Proveedor</th><th>NIT</th><th class="numero">Base</th><th class="numero">Retención</th><th></th></tr></thead>
+        <tbody>
+          {% for t in datos.terceros %}
+            <tr>
+              <td>{{ t.nombre }}</td>
+              <td>{{ t.nit }}</td>
+              <td class="numero">${{ t.total_base|floatformat:"0g" }}</td>
+              <td class="numero"><strong>${{ t.total_retencion|floatformat:"0g" }}</strong></td>
+              <td><a class="fila-enlace" href="{% url 'causacion:certificado_tercero' anio t.nit %}">Ver certificado</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="tarjeta"><p>No se practicaron retenciones en {{ anio }}
+       (o las facturas aún no están aprobadas).</p></div>
+  {% endif %}
+{% endblock %}

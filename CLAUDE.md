@@ -178,12 +178,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   balanceado, un mes = una liquidación, aprobación humana. Casos P8 en la
   guía. SMMLV/auxilio 2026 ESTIMADOS (nomina/parametros.py — confirmar
   decretos). 132 tests.
+- **Hecho (día 6, P9):** certificados de retención — `causacion/certificados.py`
+  agrega por tercero y concepto desde facturas de compra aprobadas del año;
+  las NC de proveedor descuentan la base; retención total cuadra con créditos
+  a 2365 (P9.4). Listado en Terceros → Certificados y certificado individual
+  imprimible. 138 tests.
 - **Sigue:** P8.8 novedades (horas extra, incapacidades, retiros) y P8.9
-  exportes pre-PILA/nómina electrónica; fase 3 tributario profundo
-  (certificados de retención, exógena, caja menor, activos fijos);
-  validación con mes real de XML DIAN (P7.1); confirmar calendario y
-  SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3
-  monitoreo DIAN; forzar 2FA a admins.
+  exportes pre-PILA/nómina electrónica; fase 3 tributario profundo restante
+  (exógena, caja menor, activos fijos); validación con mes real de XML DIAN
+  (P7.1); confirmar calendario y SMMLV contra decretos; CSV contra Siigo
+  real; buzón IMAP; P6.3 monitoreo DIAN; forzar 2FA a admins.
 
 ## Git
 
