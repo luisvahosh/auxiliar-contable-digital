@@ -30,7 +30,8 @@
               background: var(--primario); color: #fff; padding: 8px 14px;
               border-radius: 8px; text-decoration: none; }
     .saltar:focus { left: 16px; }
-    header { background: var(--superficie-elevada); border-bottom: 1px solid var(--borde); }
+    header { background: var(--superficie-elevada); border-bottom: 1px solid var(--borde);
+             position: sticky; top: 0; z-index: 30; }
     nav { max-width: 960px; margin: 0 auto; padding: 12px 16px;
           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
     nav .marca { font-weight: 700; color: var(--primario); text-decoration: none; }
@@ -81,13 +82,15 @@
     .mensajes .info    { background: var(--info-fondo); color: var(--info); }
 
     .tarjeta { background: var(--superficie-elevada); border: 1px solid var(--borde);
-               border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+               border-radius: 12px; padding: 16px; margin-bottom: 16px;
+               box-shadow: 0 1px 2px rgba(15,23,42,.04); }
     .tabla-envoltura { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse;
             font-variant-numeric: tabular-nums; /* números contables alineados */ }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--borde); }
     th { font-size: 13px; text-transform: uppercase; letter-spacing: .03em;
          color: var(--sobre-superficie-suave); }
+    tbody tr:hover { background: var(--superficie); }  /* resalta la fila bajo el cursor */
     .numero { text-align: right; white-space: nowrap; }
     tfoot td { font-weight: 700; border-top: 2px solid var(--sobre-superficie); }
 
@@ -103,12 +106,35 @@
     label { display: block; font-weight: 600; margin-bottom: 4px; } /* labels visibles */
     .ayuda { color: var(--sobre-superficie-suave); font-size: 14px; }
     input[type="file"] { display: block; margin: 8px 0 16px; max-width: 100%; }
+    /* Cuadros de texto amigables: cómodos, bordes suaves y foco claro */
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="date"], input[type="tel"],
+    input[type="search"], select, textarea {
+      width: 100%; max-width: 28rem; font: inherit; color: inherit;
+      padding: 10px 12px; background: var(--superficie-elevada);
+      border: 1.5px solid var(--borde); border-radius: 10px;
+      transition: border-color .15s, box-shadow .15s; }
+    textarea { max-width: 100%; min-height: 96px; resize: vertical; }
+    input[type="search"] { max-width: 100%; }
+    input:hover, select:hover, textarea:hover { border-color: #cbd5e1; }
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none; border-color: var(--primario);
+      box-shadow: 0 0 0 3px var(--primario-suave); }
+    input::placeholder, textarea::placeholder { color: #94a3b8; }
     .boton { display: inline-block; background: var(--primario); color: #fff; border: 0;
              padding: 10px 18px; border-radius: 8px; font-size: 16px; font-weight: 600;
              cursor: pointer; text-decoration: none; touch-action: manipulation; }
     .boton-secundario { background: var(--superficie-elevada); color: var(--sobre-superficie);
                         border: 1px solid var(--borde); }
     .boton-peligro { background: var(--error); }
+    .boton:hover { filter: brightness(1.07); }
+    .boton-secundario:hover { background: var(--superficie); filter: none; }
+    .boton:active { transform: translateY(1px); }
+    @media (prefers-reduced-motion: no-preference) {
+      .boton, nav a, .submenu a, tbody tr {
+        transition: background-color .15s, color .15s, box-shadow .15s,
+                    filter .15s, transform .05s; }
+    }
     .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .porque { white-space: pre-line; background: var(--primario-suave);
               border-radius: 8px; padding: 12px 14px; }
