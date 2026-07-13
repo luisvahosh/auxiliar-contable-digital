@@ -125,7 +125,7 @@
       <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Abrir o cerrar el menú">
       <label for="menu-toggle" class="hamburguesa-btn"><span aria-hidden="true">☰</span> Menú</label>
         <div class="navlinks">
-        <details class="menu">
+        <details class="menu" name="navmenu">
           <summary>Facturación</summary>
           <div class="submenu">
             <a href="{% url 'causacion:bandeja' %}">Compras</a>
@@ -134,7 +134,7 @@
             <a href="{% url 'causacion:terceros' %}">Terceros</a>
           </div>
         </details>
-        <details class="menu">
+        <details class="menu" name="navmenu">
           <summary>Tesorería</summary>
           <div class="submenu">
             <a href="{% url 'conciliacion:bancos' %}">Bancos</a>
@@ -142,14 +142,14 @@
             <a href="{% url 'cajamenor:panel' %}">Caja menor</a>
           </div>
         </details>
-        <details class="menu">
+        <details class="menu" name="navmenu">
           <summary>Nómina y activos</summary>
           <div class="submenu">
             <a href="{% url 'nomina:panel' %}">Nómina</a>
             <a href="{% url 'activos:panel' %}">Activos fijos</a>
           </div>
         </details>
-        <details class="menu">
+        <details class="menu" name="navmenu">
           <summary>Tributario</summary>
           <div class="submenu">
             <a href="{% url 'calendario:calendario' %}">Calendario</a>
@@ -157,7 +157,7 @@
             <a href="{% url 'asistente:asistente' %}">Asistente IA</a>
           </div>
         </details>
-        <details class="menu">
+        <details class="menu" name="navmenu">
           <summary>Informes</summary>
           <div class="submenu">
             <a href="{% url 'informes:balance' %}">Balance y estados</a>
@@ -185,5 +185,22 @@
     </ul>
   {% endif %}
   <main id="contenido">{% block contenido %}{% endblock %}</main>
+  <script>
+    // Menú: un solo desplegable abierto a la vez (respaldo de [name] para
+    // navegadores viejos) y cerrar al hacer clic fuera del menú.
+    (function () {
+      var menus = document.querySelectorAll('nav details.menu');
+      menus.forEach(function (d) {
+        d.addEventListener('toggle', function () {
+          if (!d.open) return;
+          menus.forEach(function (o) { if (o !== d) o.open = false; });
+        });
+      });
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('nav details.menu')) return;
+        menus.forEach(function (d) { d.open = false; });
+      });
+    })();
+  </script>
 </body>
 </html>
