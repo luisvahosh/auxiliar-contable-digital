@@ -208,6 +208,11 @@ Toda funcionalidad de dominio se valida contra los casos de
   línea recta topada al valor depreciable (P10.2) y sin depreciar antes de
   adquirir (P10.5); aprobar actualiza depreciacion_acumulada; asiento por
   categoría cuadrado. 155 tests.
+- **Verificado contra fuentes oficiales (día 6):** UVT 2026 = $52.374
+  (Resolución DIAN 000238 del 15-dic-2025) — ya era correcto. SMMLV 2026 =
+  $1.750.905 y auxilio = $249.095 (Decretos 1469/1470 de 2025) —
+  CORREGIDOS (antes estimados en 1.623.500/200.000). Pendiente aún:
+  calendario tributario 2026 y conceptos de exógena contra sus resoluciones.
 - **Consolidación multi-empresa (día 6, en curso):** panel de configuración
   por empresa (datos fiscales: ciudad, responsable IVA, RST, autorretenedor,
   agente retención, tarifa ICA, exoneración) y panel de usuarios (listar

@@ -7,9 +7,8 @@ actualización anual de UVT y tarifas (guía P3).
 """
 from decimal import Decimal
 
-# UVT por año — fuente: resolución DIAN de noviembre de cada año.
-# OJO: confirmar el valor 2026 contra la resolución oficial antes de usar en
-# producción; los cálculos de base mínima dependen de esto.
+# UVT por año — resolución DIAN de diciembre de cada año.
+# 2026: $52.374, Resolución DIAN 000238 del 15-dic-2025 (IPC +5.17%).
 UVT = {
     2025: Decimal("49799"),
     2026: Decimal("52374"),

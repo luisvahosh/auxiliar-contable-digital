@@ -1,15 +1,15 @@
 """
 Parámetros de nómina por año (guía P8). Datos de dominio con su fuente.
 
-OJO: los valores 2026 son ESTIMADOS — confirmar contra los decretos de
-salario mínimo y auxilio de transporte antes de liquidar nómina real.
+Valores oficiales; reconfirmar cada diciembre contra el decreto del año.
+2026: Decretos 1469 y 1470 del 29-dic-2025 (SMMLV +23%, auxilio +24.5%).
 """
 from decimal import Decimal
 
 PARAMETROS_POR_ANIO = {
     2025: {"smmlv": Decimal("1423500"), "auxilio_transporte": Decimal("200000")},
-    # ESTIMADO — confirmar decreto de diciembre 2025:
-    2026: {"smmlv": Decimal("1623500"), "auxilio_transporte": Decimal("200000")},
+    # Decretos 1469 y 1470 de 2025 (vigentes desde el 1-ene-2026):
+    2026: {"smmlv": Decimal("1750905"), "auxilio_transporte": Decimal("249095")},
 }
 
 # Porcentajes (empleado con contrato laboral ordinario)

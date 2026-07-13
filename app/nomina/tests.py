@@ -60,9 +60,9 @@ class PruebasCalculo(CasoConEmpresa):
 
     def test_p87_usa_los_parametros_del_anio(self):
         self.assertEqual(parametros_del_anio(2025)["smmlv"], Decimal("1423500"))
-        self.assertEqual(parametros_del_anio(2026)["smmlv"], Decimal("1623500"))
+        self.assertEqual(parametros_del_anio(2026)["smmlv"], Decimal("1750905"))
         # Año futuro sin datos: usa el último conocido
-        self.assertEqual(parametros_del_anio(2027)["smmlv"], Decimal("1623500"))
+        self.assertEqual(parametros_del_anio(2027)["smmlv"], Decimal("1750905"))
 
 
 class PruebasImportarEmpleados(CasoConEmpresa):
