@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block titulo %}Información exógena — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Información exógena — pre-armado</h1>
+  <div class="tarjeta" style="border-left:4px solid var(--primario)">
+    <p class="ayuda" style="margin:0">Borrador de <strong>apoyo</strong>, agregado
+       desde tus compras y ventas aprobadas. Revísalo y preséntalo en el
+       <strong>prevalidador de la DIAN</strong>: la app no reporta ante la DIAN.
+       Los conceptos y cuantías se confirman contra la resolución de exógena del
+       año (los códigos cambian).</p>
+  </div>
+
+  <p class="suave">Año gravable:
+    {% for a in anios %}
+      {% if a == anio %}<strong>{{ a }}</strong>{% else %}<a class="fila-enlace" href="?anio={{ a }}">{{ a }}</a>{% endif %}{% if not forloop.last %} · {% endif %}
+    {% endfor %}
+  </p>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Formato 1001 — Pagos y retenciones a terceros</h2>
+    <p class="ayuda">Total pagos ${{ f1001.total_base|floatformat:"0g" }} ·
+       retenciones ${{ f1001.total_retencion|floatformat:"0g" }}
+       <a class="fila-enlace" href="{% url 'exogena:exportar_1001' %}?anio={{ anio }}">Descargar CSV</a></p>
+    {% if f1001.filas %}
+      <table>
+        <thead><tr><th>NIT</th><th>Tercero</th><th>Concepto</th>
+               <th class="numero">Pago/abono</th><th class="numero">Retención</th></tr></thead>
+        <tbody>
+          {% for f in f1001.filas %}
+            <tr>
+              <td>{{ f.nit }}</td>
+              <td>{{ f.nombre }}</td>
+              <td>{{ f.concepto }} — {{ f.concepto_nombre }}</td>
+              <td class="numero">${{ f.base|floatformat:"0g" }}</td>
+              <td class="numero">{% if f.retencion %}${{ f.retencion|floatformat:"0g" }}{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Sin compras aprobadas en {{ anio }}.</p>
+    {% endif %}
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Formato 1007 — Ingresos recibidos de terceros</h2>
+    <p class="ayuda">Total ingresos ${{ f1007.total|floatformat:"0g" }}
+       <a class="fila-enlace" href="{% url 'exogena:exportar_1007' %}?anio={{ anio }}">Descargar CSV</a></p>
+    {% if f1007.filas %}
+      <table>
+        <thead><tr><th>NIT</th><th>Cliente</th><th>Concepto</th><th class="numero">Ingreso</th></tr></thead>
+        <tbody>
+          {% for f in f1007.filas %}
+            <tr>
+              <td>{{ f.nit }}</td>
+              <td>{{ f.nombre }}</td>
+              <td>{{ f.concepto }} — {{ f.concepto_nombre }}</td>
+              <td class="numero">${{ f.ingreso|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Sin ventas aprobadas en {{ anio }}.</p>
+    {% endif %}
+  </div>
+{% endblock %}

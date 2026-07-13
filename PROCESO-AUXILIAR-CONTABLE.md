@@ -249,6 +249,29 @@ disponible + vales pendientes = monto fijo del fondo.
 | P11.5 | No exceder el fondo | Vale mayor que el efectivo disponible | Se rechaza con aviso |
 | P11.6 | Humano aprueba | Reembolso creado | Queda pendiente de aprobación; nada se contabiliza sin visto bueno |
 
+### P12. Pre-armado de información exógena (fase 3)
+
+**Disparador:** anual (la DIAN exige la exógena del año anterior). Es APOYO:
+la app arma el borrador; el humano lo revisa y lo presenta en el prevalidador
+DIAN — no presentamos nada ante la DIAN.
+
+**Cómo lo hace el auxiliar:** agrega por tercero, desde los documentos ya
+causados del año, los formatos más usados: **1001** (pagos o abonos en cuenta
+y retenciones practicadas a cada proveedor, con su concepto DIAN) y **1007**
+(ingresos recibidos de cada cliente). Exporta el CSV que sirve de insumo al
+prevalidador. La suma debe cuadrar con las compras y ventas del año.
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P12.1 | Formato 1001 | Varias compras a distintos proveedores | Por tercero: base del pago + retención practicada, con concepto DIAN (honorarios 5001, servicios 5004, compras 5007…) |
+| P12.2 | Formato 1007 | Varias ventas a distintos clientes | Por tercero: ingreso recibido, concepto 4001 |
+| P12.3 | Solo aprobados y del año | Documentos pendientes o de otro año | No entran |
+| P12.4 | Cuadre con libros | El año cerrado | Suma del 1001 = compras aprobadas del año; suma del 1007 = ventas aprobadas del año |
+| P12.5 | Export CSV | Formato listo | Descarga el CSV por tercero, insumo del prevalidador DIAN |
+| P12.6 | Notas crédito | Compra/venta con nota crédito posterior | El valor reportado refleja el neto (descuenta la reversa) |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.

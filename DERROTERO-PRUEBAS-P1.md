@@ -552,6 +552,27 @@ cafetería). Se gasta con vales y se repone cuando se agota.*
 - [ ] Las cuentas de gasto salen del **plan de cuentas** de la empresa
   (editables en Configuración → Plan de cuentas, grupo Caja menor).
 
+## Paso 34 — Pre-armado de exógena (P12)
+
+*Escenario: la DIAN exige la información exógena del año. El auxiliar la
+pre-arma desde lo ya causado y la revisa antes de presentarla.*
+
+- [ ] Requisito: tener compras y ventas **aprobadas** del año (los pasos 1–2
+  y 9–10 del derrotero).
+- [ ] Abrir **Exógena** en el menú. Fíjate en el encuadre: es un **borrador
+  de apoyo** para presentar en el **prevalidador de la DIAN** — la app no
+  reporta ante la DIAN.
+- [ ] **Formato 1001** (pagos y retenciones a proveedores): cada tercero con
+  su concepto DIAN (honorarios 5001, servicios 5004, compras 5007…), el pago
+  y la retención practicada. **Formato 1007** (ingresos por cliente): cada
+  cliente con su ingreso, concepto 4001.
+- [ ] Cambiar el año con el selector (por defecto el año anterior).
+- [ ] **Descargar CSV** de cada formato: el insumo para el prevalidador.
+- [ ] Verificación: el total del 1001 = compras aprobadas del año; el del
+  1007 = ventas aprobadas; las notas crédito descuentan el neto.
+- [ ] **OJO:** los códigos de concepto y las cuantías mínimas cambian por
+  resolución anual de la DIAN — confírmalos antes de presentar.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

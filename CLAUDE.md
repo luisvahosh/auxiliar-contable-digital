@@ -65,6 +65,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/nomina/` — P8: planta de personal y liquidación mensual con asiento.
 - `app/activos/` — P10: activos fijos y depreciación línea recta.
 - `app/cajamenor/` — P11: fondo fijo, vales y reembolso que los legaliza.
+- `app/exogena/` — P12: pre-armado de exógena 1001/1007 (lectura transversal).
 - Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
@@ -232,9 +233,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   (legaliza vales, asiento gastos+IVA vs bancos, aprobación humana);
   efectivo disponible = monto − vales pendientes; no excede el fondo (P11.5);
   usa el plan de cuentas por empresa. 177 tests.
-- **Sigue:** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
-  validación mes real XML DIAN (P7.1); confirmar calendario y SMMLV contra
-  decretos; CSV contra Siigo real; buzón IMAP; P6.3; asistente IA normativo.
+- **Hecho (día 6, P12):** pre-armado de exógena — app `exogena/` (lectura
+  transversal): formato 1001 (pagos+retenciones a proveedores con concepto
+  DIAN, NC descuenta) y 1007 (ingresos por cliente), con export CSV para el
+  prevalidador. Apoyo del auxiliar, no reporta ante DIAN. Conceptos/cuantías
+  a confirmar contra resolución anual. 189 tests.
+- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica (para entregar al
+  operador); validación mes real XML DIAN (P7.1); confirmar calendario,
+  SMMLV y conceptos exógena contra decretos/resoluciones; CSV contra Siigo
+  real; buzón IMAP; P6.3 monitoreo DIAN; asistente IA normativo (fase 1
+  del PLAN, requiere NVIDIA_API_KEY + pgvector — ya hay Postgres).
 
 ## Git
 
