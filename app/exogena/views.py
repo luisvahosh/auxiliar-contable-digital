@@ -5,7 +5,7 @@ from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .logica import formato_1001, formato_1007
+from .logica import formato_1001, formato_1007, formato_2276
 
 
 def _anio(request):
@@ -20,11 +20,13 @@ def panel(request):
     anio = _anio(request)
     f1001 = formato_1001(empresa, anio)
     f1007 = formato_1007(empresa, anio)
+    f2276 = formato_2276(empresa, anio)
     return render(request, "exogena/panel.html", {
         "anio": anio,
         "anios": range(date.today().year, date.today().year - 6, -1),
         "f1001": f1001,
         "f1007": f1007,
+        "f2276": f2276,
     })
 
 
@@ -57,3 +59,14 @@ def exportar_1007(request):
     return _csv(f"exogena-1007-{anio}.csv",
                 ["TIPO DOC", "NIT/CEDULA", "NOMBRE O RAZON SOCIAL", "CONCEPTO",
                  "INGRESO RECIBIDO"], filas)
+
+
+def exportar_2276(request):
+    anio = _anio(request)
+    datos = formato_2276(request.empresa, anio)
+    filas = [[f["tipo_doc"], f["nit"], f["nombre"],
+              f"{f['pagos']:.0f}", f"{f['salud']:.0f}", f"{f['pension']:.0f}", "0"]
+             for f in datos["filas"]]
+    return _csv(f"exogena-2276-{anio}.csv",
+                ["TIPO DOC", "CEDULA", "NOMBRE", "PAGOS LABORALES",
+                 "APORTE SALUD", "APORTE PENSION", "RETENCION EN LA FUENTE"], filas)

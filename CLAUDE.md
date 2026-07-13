@@ -291,6 +291,13 @@ Toda funcionalidad de dominio se valida contra los casos de
   esto P8 (nómina) queda cerrado en su alcance de apoyo. 226 tests. También:
   buzón IMAP ahora es descubrible desde "Subir factura" (Configuración →
   Buzón seguía siendo el único acceso).
+- **Hecho (día 7, P12 formato 2276):** exógena de rentas de trabajo — nuevo
+  `exogena.logica.formato_2276`: agrega por empleado (cédula, tipo doc 13) los
+  pagos laborales, aporte de salud y de pensión desde las LiquidacionNomina
+  APROBADAS del año; tabla y CSV en el panel de exógena. La retención en la
+  fuente de nómina NO la calcula la app (es apoyo) — esa casilla la completa el
+  operador. Casillas/conceptos por confirmar contra la resolución. Con esto P12
+  cubre 1001/1007/2276. 229 tests.
 - **Sigue:** ampliar corpus del asistente (validar con contador); validación
   mes real XML DIAN (P7.1); confirmar calendario/conceptos exógena contra
   resoluciones; CSV contra Siigo real; confirmar códigos ResponseCode DIAN.

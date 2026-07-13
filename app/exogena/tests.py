@@ -8,8 +8,9 @@ from django.urls import reverse
 
 from causacion.models import FacturaCompra, FacturaVenta
 from core.pruebas import CasoConEmpresa
+from nomina.models import LiquidacionNomina
 
-from .logica import formato_1001, formato_1007
+from .logica import formato_1001, formato_1007, formato_2276
 
 
 def compra(empresa, numero, nit, concepto, base, retencion="0", anio=2026,
@@ -82,6 +83,47 @@ class PruebasFormato1007(CasoConEmpresa):
         self.assertEqual(datos["filas"][0]["ingreso"], Decimal("2500000"))
 
 
+def liquidacion(empresa, mes, empleados, anio=2026, estado="aprobada"):
+    """empleados = [(cedula, nombre, devengado, salud, pension), ...]"""
+    detalle = [{"cedula": c, "empleado": n, "devengado": str(d),
+                "salud_empleado": str(s), "pension_empleado": str(p)}
+               for c, n, d, s, p in empleados]
+    return LiquidacionNomina.objects.create(
+        empresa=empresa, anio=anio, mes=mes, estado=estado, detalle=detalle,
+        total_devengado=0, total_deducciones=0, total_neto=0,
+        total_aportes_empleador=0, total_provisiones=0, asiento=[], explicacion="x")
+
+
+class PruebasFormato2276(CasoConEmpresa):
+    def test_p12_rentas_de_trabajo_suma_los_meses_por_empleado(self):
+        liquidacion(self.empresa, 6, [("100", "Ana", "1800000", "64940", "64940")])
+        liquidacion(self.empresa, 7, [("100", "Ana", "1800000", "64940", "64940"),
+                                      ("200", "Beto", "3000000", "120000", "120000")])
+        datos = formato_2276(self.empresa, 2026)
+        por_ced = {f["nit"]: f for f in datos["filas"]}
+        self.assertEqual(por_ced["100"]["pagos"], Decimal("3600000"))  # 2 meses
+        self.assertEqual(por_ced["100"]["salud"], Decimal("129880"))
+        self.assertEqual(por_ced["100"]["tipo_doc"], "13")  # cédula
+        self.assertEqual(datos["totales"]["pagos"], Decimal("6600000"))
+
+    def test_solo_aprobadas_y_del_anio(self):
+        liquidacion(self.empresa, 6, [("100", "Ana", "1800000", "64940", "64940")])
+        liquidacion(self.empresa, 7, [("100", "Ana", "9000000", "0", "0")],
+                    estado="pendiente")
+        liquidacion(self.empresa, 6, [("100", "Ana", "5000000", "0", "0")], anio=2025)
+        datos = formato_2276(self.empresa, 2026)
+        self.assertEqual(datos["totales"]["pagos"], Decimal("1800000"))
+
+    def test_export_2276_csv(self):
+        liquidacion(self.empresa, 6, [("100", "Ana Prueba", "1800000", "64940", "64940")])
+        respuesta = self.client.get(reverse("exogena:exportar_2276") + "?anio=2026")
+        self.assertEqual(respuesta.status_code, 200)
+        cuerpo = respuesta.content.decode("utf-8-sig")
+        self.assertIn("Ana Prueba", cuerpo)
+        self.assertIn("1800000", cuerpo)
+        self.assertIn("RETENCION EN LA FUENTE", cuerpo)  # casilla que completa el operador
+
+
 class PruebasExportYCuadre(CasoConEmpresa):
     def test_p124_cuadra_con_libros(self):
         compra(self.empresa, "F-1", "901111111", "honorarios", "2000000", "200000")
@@ -107,4 +149,5 @@ class PruebasExportYCuadre(CasoConEmpresa):
         respuesta = self.client.get(reverse("exogena:panel"))
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Formato 1001")
+        self.assertContains(respuesta, "Formato 2276")
         self.assertContains(respuesta, "prevalidador")

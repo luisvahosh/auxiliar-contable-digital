@@ -66,4 +66,38 @@
       <p>Sin ventas aprobadas en {{ anio }}.</p>
     {% endif %}
   </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Formato 2276 — Rentas de trabajo (nómina)</h2>
+    <p class="ayuda">Pagos laborales por empleado, desde tus nóminas aprobadas.
+       Total pagos ${{ f2276.totales.pagos|floatformat:"0g" }}
+       <a class="fila-enlace" href="{% url 'exogena:exportar_2276' %}?anio={{ anio }}">Descargar CSV</a></p>
+    <p class="ayuda">La <strong>retención en la fuente de nómina</strong> no la calcula la
+       app (es apoyo, no software de nómina): esa casilla la completa tu operador.</p>
+    {% if f2276.filas %}
+      <table>
+        <thead><tr><th>Cédula</th><th>Empleado</th><th class="numero">Pagos laborales</th>
+               <th class="numero">Aporte salud</th><th class="numero">Aporte pensión</th></tr></thead>
+        <tbody>
+          {% for f in f2276.filas %}
+            <tr>
+              <td>{{ f.nit }}</td>
+              <td>{{ f.nombre }}</td>
+              <td class="numero">${{ f.pagos|floatformat:"0g" }}</td>
+              <td class="numero">${{ f.salud|floatformat:"0g" }}</td>
+              <td class="numero">${{ f.pension|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2">Totales</td>
+              <td class="numero">${{ f2276.totales.pagos|floatformat:"0g" }}</td>
+              <td class="numero">${{ f2276.totales.salud|floatformat:"0g" }}</td>
+              <td class="numero">${{ f2276.totales.pension|floatformat:"0g" }}</td></tr>
+        </tfoot>
+      </table>
+    {% else %}
+      <p>Sin nóminas aprobadas en {{ anio }}.</p>
+    {% endif %}
+  </div>
 {% endblock %}

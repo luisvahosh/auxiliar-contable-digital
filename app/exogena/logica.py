@@ -1,5 +1,5 @@
 """
-Pre-armado de información exógena (guía P12): formatos 1001 y 1007.
+Pre-armado de información exógena (guía P12): formatos 1001, 1007 y 2276.
 
 Agrega por tercero desde los documentos ya causados del año — cero digitación.
 Es apoyo del auxiliar: arma el borrador; el humano lo revisa y lo presenta en
@@ -9,6 +9,7 @@ confirman contra la resolución del año (que cambia códigos y cuantías).
 from decimal import Decimal
 
 from causacion.models import FacturaCompra, FacturaVenta
+from nomina.models import LiquidacionNomina
 
 # Concepto de retención (interno) → concepto DIAN del formato 1001.
 # Confirmar contra la resolución de exógena del año (los códigos varían).
@@ -93,3 +94,39 @@ def formato_1007(empresa, anio):
         })
         total += ingreso
     return {"filas": filas, "total": total}
+
+
+def formato_2276(empresa, anio):
+    """Rentas de trabajo (pagos laborales) por empleado, desde las nóminas
+    APROBADAS del año — P12 sobre el módulo de nómina.
+
+    Los beneficiarios son personas naturales (cédula, tipo doc 13). La app NO
+    calcula la retención en la fuente de nómina (es apoyo, no software de
+    nómina): esa casilla queda para que el operador la complete. Casillas y
+    conceptos por confirmar contra la resolución del año.
+    """
+    liquidaciones = LiquidacionNomina.objects.de_empresa(empresa).filter(
+        estado="aprobada", anio=anio)
+
+    grupos = {}  # (cedula, nombre) -> {pagos, salud, pension}
+    for liq in liquidaciones:
+        for e in liq.detalle:
+            clave = (e.get("cedula", ""), e.get("empleado", ""))
+            g = grupos.setdefault(clave, {"pagos": Decimal("0"),
+                                          "salud": Decimal("0"),
+                                          "pension": Decimal("0")})
+            g["pagos"] += Decimal(str(e.get("devengado", "0")))
+            g["salud"] += Decimal(str(e.get("salud_empleado", "0")))
+            g["pension"] += Decimal(str(e.get("pension_empleado", "0")))
+
+    filas = []
+    totales = {"pagos": Decimal("0"), "salud": Decimal("0"), "pension": Decimal("0")}
+    for (cedula, nombre), g in sorted(grupos.items(), key=lambda x: x[0][1]):
+        filas.append({
+            "tipo_doc": "13",  # cédula: los empleados son personas naturales
+            "nit": cedula, "nombre": nombre,
+            "pagos": g["pagos"], "salud": g["salud"], "pension": g["pension"],
+        })
+        for k in totales:
+            totales[k] += g[k]
+    return {"filas": filas, "totales": totales}

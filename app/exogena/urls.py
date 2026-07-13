@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.panel, name="panel"),
     path("1001.csv", views.exportar_1001, name="exportar_1001"),
     path("1007.csv", views.exportar_1007, name="exportar_1007"),
+    path("2276.csv", views.exportar_2276, name="exportar_2276"),
 ]
