@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApplicationResponse xmlns="urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2"
+  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:UUID schemeName="CUDE-SHA384">9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3928</cbc:UUID>
+  <cbc:IssueDate>2026-07-13</cbc:IssueDate>
+  <cbc:IssueTime>10:15:00-05:00</cbc:IssueTime>
+  <cbc:ResponseDate>2026-07-13</cbc:ResponseDate>
+  <cac:SenderParty>
+    <cac:PartyTaxScheme>
+      <cbc:RegistrationName>Unidad Administrativa Especial DIAN</cbc:RegistrationName>
+      <cbc:CompanyID>800197268</cbc:CompanyID>
+    </cac:PartyTaxScheme>
+  </cac:SenderParty>
+  <cac:ReceiverParty>
+    <cac:PartyTaxScheme>
+      <cbc:RegistrationName>MI EMPRESA SAS</cbc:RegistrationName>
+      <cbc:CompanyID>901111111</cbc:CompanyID>
+    </cac:PartyTaxScheme>
+  </cac:ReceiverParty>
+  <cac:DocumentResponse>
+    <cac:Response>
+      <cbc:ResponseCode>02</cbc:ResponseCode>
+      <cbc:Description>Documento rechazado: el NIT del adquiriente no coincide con el RUT.</cbc:Description>
+    </cac:Response>
+    <cac:DocumentReference>
+      <cbc:ID>FE-104</cbc:ID>
+      <cbc:UUID schemeName="CUFE-SHA384">40ec62c6df1846b0cf79ff019c5f11253a8ea4f155053af2e2061111d59bce97fea7cd38e5c225620839feb3db0fa548</cbc:UUID>
+    </cac:DocumentReference>
+  </cac:DocumentResponse>
+</ApplicationResponse>

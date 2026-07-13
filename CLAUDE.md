@@ -266,10 +266,24 @@ Toda funcionalidad de dominio se valida contra los casos de
   conciliación); balance de comprobación por cuenta con verificación de
   cuadre, estado de resultados (clases PUC 4/5/6) y libro mayor por cuenta
   con saldo corriente; export CSV. 212 tests.
+- **Hecho (día 7, P6.3):** monitoreo DIAN de facturas emitidas — la app lee el
+  ApplicationResponse (resultado de validación de la DIAN) que el auxiliar
+  recibe (mismo "subir XML"/buzón/lote), sin consultar la DIAN (eso lo hace
+  Alegra/Siigo). `parser.parsear_respuesta_dian` (defusedxml, XXE) → marca la
+  FacturaVenta como aceptada/rechazada por CUFE o número, guarda motivo y
+  fecha; código no concluyente queda para revisión humana. Panel Facturación →
+  Monitoreo DIAN (rechazos destacados). Comando `alertar_rechazos_dian`
+  (opt-in por correo_alertas, avisa cada rechazo una sola vez). Fixtures en
+  datos-prueba/respuestas-dian/. Códigos ResponseCode por confirmar contra la
+  resolución. 221 tests.
+- **Hecho (día 7, UI):** asistente IA más rápido (modelo llama-3.1-8b +
+  caché de respuestas en BD ConsultaCache); menú responsivo con hamburguesa
+  checkbox+label (sin JS, se ve completo en PC / colapsa en móvil); auditoría
+  web-design-guidelines aplicada (saltar-al-contenido, foco visible,
+  theme-color, autocomplete en registro).
 - **Sigue:** ampliar corpus del asistente (validar con contador); P8.9
   pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1); confirmar
-  calendario/conceptos exógena contra resoluciones; CSV contra Siigo real;
-  P6.3 monitoreo DIAN.
+  calendario/conceptos exógena contra resoluciones; CSV contra Siigo real.
 
 ## Git
 

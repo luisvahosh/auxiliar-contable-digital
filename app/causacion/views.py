@@ -112,6 +112,19 @@ def bandeja_ventas(request):
     })
 
 
+def monitoreo_dian(request):
+    """Estado de las facturas emitidas ante la DIAN (P6.3): rechazos primero."""
+    empresa = _empresa_activa(request)
+    ventas = FacturaVenta.objects.de_empresa(empresa).filter(tipo="venta")
+    return render(request, "causacion/monitoreo_dian.html", {
+        "empresa": empresa,
+        "rechazadas": ventas.filter(estado_dian="rechazada"),
+        "pendientes": ventas.filter(estado_dian="pendiente"),
+        "aceptadas": ventas.filter(estado_dian="aceptada"),
+        "total": ventas.count(),
+    })
+
+
 def _renglones_decimales(asiento):
     renglones = [
         {**r, "debito": Decimal(r["debito"]), "credito": Decimal(r["credito"])}

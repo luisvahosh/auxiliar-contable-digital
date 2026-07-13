@@ -141,6 +141,21 @@ class FacturaVenta(models.Model):
     asiento = models.JSONField("renglones del asiento propuesto", default=list)
     xml_crudo = models.TextField("XML original (soporte)")
 
+    # Estado ante la DIAN (P6.3) — la app NO consulta la DIAN: lee el
+    # ApplicationResponse que el auxiliar recibe y refleja aceptación/rechazo.
+    ESTADOS_DIAN = [
+        ("pendiente", "Pendiente de la DIAN"),
+        ("aceptada", "Aceptada por la DIAN"),
+        ("rechazada", "Rechazada por la DIAN"),
+    ]
+    estado_dian = models.CharField(
+        "estado ante la DIAN", max_length=12, choices=ESTADOS_DIAN, default="pendiente")
+    motivo_dian = models.TextField("motivo de la DIAN", blank=True, default="")
+    fecha_estado_dian = models.DateField(
+        "fecha del estado DIAN", null=True, blank=True)
+    rechazo_notificado = models.DateTimeField(
+        "rechazo avisado por correo", null=True, blank=True)
+
     id_alegra = models.CharField("id del asiento en Alegra", max_length=30, blank=True, default="")
     enviada_alegra = models.DateTimeField("enviada a Alegra", null=True, blank=True)
 

@@ -16,7 +16,12 @@ from .clasificacion import (
     construir_asiento_nota_credito_compra,
 )
 from .models import FacturaCompra, FacturaVenta, Tercero
-from .parser import FacturaInvalida, parsear_factura
+from .parser import (
+    FacturaInvalida,
+    es_respuesta_dian,
+    parsear_factura,
+    parsear_respuesta_dian,
+)
 from .plan_cuentas import plan_de_empresa
 from .ventas import construir_asiento_nota_credito, construir_asiento_venta
 
@@ -46,7 +51,12 @@ def tercero_del_emisor(empresa, datos):
 
 
 def procesar_xml(empresa, contenido):
-    """Un XML (bytes) → documento causado/registrado, duplicado o error."""
+    """Un XML (bytes) → documento causado/registrado, duplicado o error.
+
+    Un mismo 'subir XML' acepta también el ApplicationResponse de la DIAN
+    (resultado de validación de una factura emitida, P6.3)."""
+    if es_respuesta_dian(contenido):
+        return _aplicar_respuesta_dian(empresa, contenido)
     try:
         datos = parsear_factura(contenido)
     except FacturaInvalida as error:
@@ -68,6 +78,57 @@ def procesar_xml(empresa, contenido):
         "error",
         f"El documento no menciona a {empresa.razon_social} (NIT {empresa.nit}): "
         f"emisor {datos.nit_emisor}, adquiriente {datos.nit_adquiriente}.",
+    )
+
+
+def _aplicar_respuesta_dian(empresa, contenido):
+    """Refleja en la factura emitida el resultado de validación de la DIAN (P6.3)."""
+    try:
+        rta = parsear_respuesta_dian(contenido)
+    except FacturaInvalida as error:
+        return Resultado("error", f"No se pudo leer la respuesta DIAN: {error}")
+
+    ventas = FacturaVenta.objects.de_empresa(empresa)
+    factura = None
+    if rta.cufe_referencia:
+        factura = ventas.filter(cufe=rta.cufe_referencia).first()
+    if factura is None and rta.numero_referencia:
+        factura = ventas.filter(numero=rta.numero_referencia).first()
+    if factura is None:
+        ref = rta.numero_referencia or rta.cufe_referencia or "sin identificar"
+        return Resultado(
+            "error",
+            f"La respuesta de la DIAN es sobre la factura {ref}, que no está "
+            "registrada en esta empresa. Registra primero la factura emitida.",
+        )
+
+    if rta.estado == "indeterminado":
+        # No se pudo clasificar el código: se guarda el motivo, queda pendiente
+        # para revisión humana (no se marca aceptada/rechazada a la ligera).
+        factura.motivo_dian = (
+            f"[código DIAN {rta.codigo}] {rta.motivo}").strip()
+        factura.fecha_estado_dian = rta.fecha
+        factura.save(update_fields=["motivo_dian", "fecha_estado_dian", "actualizada"])
+        return Resultado(
+            "creado",
+            f"Respuesta de la DIAN registrada sobre {factura.numero}, pero el "
+            f"código «{rta.codigo}» no es concluyente; revísala manualmente.",
+            documento=factura, tipo="respuesta_dian",
+        )
+
+    factura.estado_dian = rta.estado
+    factura.motivo_dian = rta.motivo
+    factura.fecha_estado_dian = rta.fecha
+    if rta.estado == "aceptada":
+        factura.rechazo_notificado = None  # por si venía de un rechazo corregido
+    factura.save(update_fields=["estado_dian", "motivo_dian", "fecha_estado_dian",
+                                "rechazo_notificado", "actualizada"])
+    verbo = "RECHAZADA" if rta.estado == "rechazada" else "aceptada"
+    return Resultado(
+        "creado",
+        f"La DIAN marcó la factura {factura.numero} como {verbo}."
+        + (f" Motivo: {rta.motivo}" if rta.estado == "rechazada" and rta.motivo else ""),
+        documento=factura, tipo="respuesta_dian",
     )
 
 

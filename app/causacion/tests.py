@@ -8,7 +8,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.conf import settings
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -1156,4 +1158,72 @@ class PruebasMultiTenant(CasoConEmpresa):
         respuesta = self.client.get(reverse("causacion:detalle",
                                             args=[self.factura_b.pk]))
         self.assertEqual(respuesta.status_code, 404)
+
+
+class PruebasMonitoreoDian(CasoConEmpresa):
+    """Casos P6.3: la respuesta de validación de la DIAN marca la factura
+    emitida como aceptada/rechazada y alerta el rechazo."""
+
+    def subir(self, nombre):
+        archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def subir_respuesta(self, nombre):
+        # Las respuestas DIAN viven aparte de las facturas en los fixtures
+        datos = (DATOS_PRUEBA / "respuestas-dian" / nombre).read_bytes()
+        archivo = SimpleUploadedFile(nombre, datos, content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def _venta_registrada(self):
+        self.subir("P2.1-venta-estandar.xml")  # FE-104
+        return FacturaVenta.objects.de_empresa(self.empresa).get(numero="FE-104")
+
+    def test_p63_rechazo_marca_factura_y_guarda_motivo(self):
+        self._venta_registrada()
+        respuesta = self.subir_respuesta("P6.3-rechazo-dian.xml")
+        self.assertContains(respuesta, "RECHAZADA")
+        venta = FacturaVenta.objects.de_empresa(self.empresa).get(numero="FE-104")
+        self.assertEqual(venta.estado_dian, "rechazada")
+        self.assertIn("no coincide con el RUT", venta.motivo_dian)
+        self.assertEqual(venta.fecha_estado_dian, date(2026, 7, 13))
+
+    def test_aceptacion_marca_factura_aceptada(self):
+        self._venta_registrada()
+        self.subir_respuesta("P6.3-aceptacion-dian.xml")
+        venta = FacturaVenta.objects.de_empresa(self.empresa).get(numero="FE-104")
+        self.assertEqual(venta.estado_dian, "aceptada")
+
+    def test_respuesta_sin_factura_registrada_avisa(self):
+        # Llega la respuesta de la DIAN pero la factura no está en el sistema
+        respuesta = self.subir_respuesta("P6.3-rechazo-dian.xml")
+        self.assertContains(respuesta, "no está registrada")
+        self.assertEqual(FacturaVenta.objects.de_empresa(self.empresa).count(), 0)
+
+    def test_el_panel_destaca_los_rechazos(self):
+        self._venta_registrada()
+        self.subir_respuesta("P6.3-rechazo-dian.xml")
+        respuesta = self.client.get(reverse("causacion:monitoreo_dian"))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Rechazadas por la DIAN")
+        self.assertContains(respuesta, "FE-104")
+
+    def test_comando_avisa_el_rechazo_una_sola_vez(self):
+        venta = self._venta_registrada()
+        self.subir_respuesta("P6.3-rechazo-dian.xml")
+        self.empresa.correo_alertas = "contadora@learnway.example.com"
+        self.empresa.save()
+
+        call_command("alertar_rechazos_dian")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("contadora@learnway.example.com", mail.outbox[0].to)
+        self.assertIn("FE-104", mail.outbox[0].body)
+        venta.refresh_from_db()
+        self.assertIsNotNone(venta.rechazo_notificado)
+
+        # Segunda corrida: no reenvía el mismo rechazo
+        mail.outbox.clear()
+        call_command("alertar_rechazos_dian")
+        self.assertEqual(len(mail.outbox), 0)
 

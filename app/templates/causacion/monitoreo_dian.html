@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block titulo %}Monitoreo DIAN — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Monitoreo DIAN</h1>
+  <p class="suave">{{ empresa }} · estado de las facturas emitidas ante la DIAN.
+     La app lee el resultado de validación (ApplicationResponse) que recibes; no
+     consulta la DIAN — eso lo hace tu software de facturación.</p>
+
+  {% if rechazadas %}
+    <div class="tarjeta" style="border-color: var(--error)">
+      <h2 style="color: var(--error); margin-top:0">⚠ Rechazadas por la DIAN ({{ rechazadas|length }})</h2>
+      <p class="ayuda">Corrígelas y reemítelas en tu software de facturación cuanto antes.</p>
+      <div class="tabla-envoltura">
+        <table>
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Cliente</th>
+              <th>Fecha DIAN</th>
+              <th class="numero">Total</th>
+              <th>Motivo del rechazo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in rechazadas %}
+              <tr>
+                <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' v.pk %}">{{ v.numero }}</a></td>
+                <td>{{ v.nombre_cliente }}</td>
+                <td>{{ v.fecha_estado_dian|default:"—" }}</td>
+                <td class="numero">${{ v.total|floatformat:"0g" }}</td>
+                <td>{{ v.motivo_dian|default:"(sin detalle)" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="tarjeta" style="border-color: var(--exito)">
+      <p style="margin:0; color: var(--exito)">✓ No hay facturas rechazadas por la DIAN.</p>
+    </div>
+  {% endif %}
+
+  <div class="tarjeta">
+    <h2>Resumen</h2>
+    <table>
+      <tbody>
+        <tr><td>Aceptadas por la DIAN</td><td class="numero">{{ aceptadas|length }}</td></tr>
+        <tr><td>Pendientes de respuesta</td><td class="numero">{{ pendientes|length }}</td></tr>
+        <tr><td>Rechazadas</td><td class="numero">{{ rechazadas|length }}</td></tr>
+        <tr><td><strong>Total emitidas</strong></td><td class="numero"><strong>{{ total }}</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="ayuda">¿Recibiste el XML de respuesta de la DIAN? Súbelo en
+       <a class="fila-enlace" href="{% url 'causacion:subir' %}">Subir factura</a>:
+       la app reconoce el ApplicationResponse y actualiza el estado.</p>
+  </div>
+
+  {% if pendientes %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Pendientes de respuesta de la DIAN</h2>
+      <table>
+        <thead>
+          <tr><th>Documento</th><th>Cliente</th><th>Emisión</th><th class="numero">Total</th></tr>
+        </thead>
+        <tbody>
+          {% for v in pendientes %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' v.pk %}">{{ v.numero }}</a></td>
+              <td>{{ v.nombre_cliente }}</td>
+              <td>{{ v.fecha_emision }}</td>
+              <td class="numero">${{ v.total|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

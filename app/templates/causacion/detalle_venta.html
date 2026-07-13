@@ -13,6 +13,13 @@
       <tbody>
         <tr><th>Cliente</th><td>{{ venta.nombre_cliente }} (NIT {{ venta.nit_cliente }})</td></tr>
         <tr><th>Fecha de emisión</th><td>{{ venta.fecha_emision }}</td></tr>
+        {% if venta.tipo == "venta" %}
+          <tr><th>Estado DIAN</th>
+            <td>
+              <span class="insignia insignia-{% if venta.estado_dian == 'rechazada' %}rechazada{% elif venta.estado_dian == 'aceptada' %}aprobada{% else %}pendiente{% endif %}">{{ venta.get_estado_dian_display }}</span>
+              {% if venta.motivo_dian %}<div class="suave" style="margin-top:4px">{{ venta.motivo_dian }}</div>{% endif %}
+            </td></tr>
+        {% endif %}
         {% if venta.factura_original %}
           <tr><th>Reversa a</th>
               <td><a class="fila-enlace" href="{% url 'causacion:detalle_venta' venta.factura_original.pk %}">{{ venta.factura_original.numero }}</a></td></tr>

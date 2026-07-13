@@ -12,6 +12,8 @@ urlpatterns = [
     path("foto/causar/", views.foto_causar, name="foto_causar"),
     # Ventas (P2) — antes de <uuid:pk> para que "ventas" no se confunda con un id
     path("ventas/", views.bandeja_ventas, name="bandeja_ventas"),
+    # Monitoreo DIAN de facturas emitidas (P6.3)
+    path("ventas/dian/", views.monitoreo_dian, name="monitoreo_dian"),
     path("ventas/<uuid:pk>/", views.detalle_venta, name="detalle_venta"),
     path("ventas/<uuid:pk>/aprobar/", views.aprobar_venta, name="aprobar_venta"),
     path("ventas/<uuid:pk>/rechazar/", views.rechazar_venta, name="rechazar_venta"),

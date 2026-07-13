@@ -23,11 +23,30 @@ NS = {
 }
 _RAIZ_FACTURA = "{urn:oasis:names:specification:ubl:schema:xsd:Invoice-2}Invoice"
 _RAIZ_NOTA_CREDITO = "{urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2}CreditNote"
+_RAIZ_RESPUESTA = ("{urn:oasis:names:specification:ubl:schema:xsd:"
+                   "ApplicationResponse-2}ApplicationResponse")
 _RUTA_FISCAL = "cac:Party/cac:PartyTaxScheme/"
+
+# ResponseCode del ApplicationResponse DIAN (resultado de la validación previa).
+# Códigos por confirmar contra la resolución vigente (como las demás semillas):
+# la determinación real usa el código Y el texto de la descripción.
+_CODIGOS_RECHAZO = {"02", "2", "034", "rechazado", "rechazada"}
+_CODIGOS_ACEPTA = {"00", "0", "01", "1", "032", "033", "aceptado", "aceptada", "validado"}
 
 
 class FacturaInvalida(Exception):
     """XML rechazado: no es una factura UBL utilizable. Mensaje mostrable al usuario."""
+
+
+@dataclass
+class RespuestaDian:
+    """Resultado de validación de la DIAN sobre una factura emitida (P6.3)."""
+    cufe_referencia: str      # CUFE (cbc:UUID) de la factura evaluada
+    numero_referencia: str    # número (cbc:ID) de la factura evaluada
+    estado: str               # "aceptada" | "rechazada" | "indeterminado"
+    codigo: str               # ResponseCode crudo de la DIAN
+    motivo: str               # Description de la DIAN (texto para el auxiliar)
+    fecha: date | None        # IssueDate del ApplicationResponse
 
 
 @dataclass
@@ -207,4 +226,63 @@ def parsear_factura(contenido):
         fecha_vencimiento=fecha_vencimiento,
         correo_adquiriente=_texto_opcional(
             adquiriente, "cac:Party/cac:Contact/cbc:ElectronicMail"),
+    )
+
+
+def es_respuesta_dian(contenido):
+    """¿El XML es un ApplicationResponse de la DIAN (no una factura)? Rápido y seguro."""
+    try:
+        raiz = ET.fromstring(contenido)
+    except (DefusedXmlException, ParseError, ValueError):
+        return False
+    return raiz.tag == _RAIZ_RESPUESTA
+
+
+def parsear_respuesta_dian(contenido):
+    """ApplicationResponse DIAN → RespuestaDian, o levanta FacturaInvalida.
+
+    La app NO consulta la DIAN (eso lo hace Alegra/Siigo): lee el documento de
+    respuesta que la DIAN ya emitió y que el auxiliar recibe (correo/carpeta).
+    """
+    try:
+        raiz = ET.fromstring(contenido)
+    except DefusedXmlException:
+        raise FacturaInvalida(
+            "el archivo contiene construcciones XML peligrosas y fue rechazado.")
+    except (ParseError, ValueError):
+        raise FacturaInvalida("el archivo no es un XML bien formado.")
+
+    if raiz.tag != _RAIZ_RESPUESTA:
+        raise FacturaInvalida("el XML no es un ApplicationResponse de la DIAN.")
+
+    respuesta = raiz.find("cac:DocumentResponse/cac:Response", NS)
+    referencia = raiz.find("cac:DocumentResponse/cac:DocumentReference", NS)
+    if respuesta is None or referencia is None:
+        raise FacturaInvalida(
+            "el ApplicationResponse no tiene DocumentResponse/DocumentReference.")
+
+    codigo = _texto_opcional(respuesta, "cbc:ResponseCode")
+    motivo = _texto_opcional(respuesta, "cbc:Description")
+    clave = codigo.strip().lower()
+    texto = motivo.lower()
+    if clave in _CODIGOS_RECHAZO or "rechaz" in texto or "no validad" in texto:
+        estado = "rechazada"
+    elif clave in _CODIGOS_ACEPTA or "acept" in texto or "validad" in texto:
+        estado = "aceptada"
+    else:
+        estado = "indeterminado"
+
+    fecha_texto = _texto_opcional(raiz, "cbc:IssueDate")
+    try:
+        fecha = date.fromisoformat(fecha_texto) if fecha_texto else None
+    except ValueError:
+        fecha = None
+
+    return RespuestaDian(
+        cufe_referencia=_texto_opcional(referencia, "cbc:UUID"),
+        numero_referencia=_texto_opcional(referencia, "cbc:ID"),
+        estado=estado,
+        codigo=codigo,
+        motivo=motivo,
+        fecha=fecha,
     )
