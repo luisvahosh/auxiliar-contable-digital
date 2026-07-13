@@ -22,3 +22,21 @@ class ArticuloNormativo(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.referencia})"
+
+
+class ConsultaCache(models.Model):
+    """Respuestas ya generadas, por pregunta normalizada: una pregunta
+    repetida se responde al instante, sin volver a llamar a la IA."""
+
+    pregunta = models.CharField(max_length=500, unique=True)  # normalizada
+    respuesta = models.TextField()
+    fuentes = models.JSONField(default=list)  # temas de las fichas citadas
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creada"]
+        verbose_name = "consulta en caché"
+        verbose_name_plural = "consultas en caché"
+
+    def __str__(self):
+        return self.pregunta[:60]

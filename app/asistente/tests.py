@@ -49,6 +49,22 @@ class PruebasConsulta(CasoConEmpresa):
             resultado = consultar("retención servicios")
         self.assertIn("art. 392", resultado["respuesta"])
 
+    def test_la_segunda_vez_viene_de_cache_sin_llamar_a_la_ia(self):
+        from asistente.models import ConsultaCache
+        falsa = type("R", (), {"ok": True, "json": lambda self: {
+            "choices": [{"message": {"content": "Respuesta art. 392."}}]}})()
+        # embed a None: fuerza búsqueda por términos y aísla la llamada del LLM
+        with patch.dict("os.environ", {"NVIDIA_API_KEY": "nvapi-x"}), \
+             patch("asistente.rag.embed", return_value=None), \
+             patch("asistente.rag.requests.post", return_value=falsa) as post:
+            consultar("¿Retención de honorarios?")        # llama a la IA
+            self.assertEqual(post.call_count, 1)
+            self.assertEqual(ConsultaCache.objects.count(), 1)
+            # Misma pregunta (con otra puntuación/mayúsculas): NO llama de nuevo
+            r2 = consultar("retencion de honorarios")
+        self.assertEqual(post.call_count, 1)              # no volvió a llamar
+        self.assertTrue(r2["cacheada"])
+
     def test_pregunta_sin_coincidencia_avisa(self):
         with patch.dict("os.environ", {"NVIDIA_API_KEY": ""}):
             resultado = consultar("zzzz qwerty xkcd")

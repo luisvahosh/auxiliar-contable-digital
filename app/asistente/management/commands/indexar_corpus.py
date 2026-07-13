@@ -35,4 +35,8 @@ class Command(BaseCommand):
                 hechos += 1
             else:
                 fallidos += 1
-        self.stdout.write(f"Indexados {hechos}; fallidos {fallidos}.")
+        # El corpus cambió: la caché de respuestas queda obsoleta
+        from asistente.models import ConsultaCache
+        borradas = ConsultaCache.objects.all().delete()[0]
+        self.stdout.write(f"Indexados {hechos}; fallidos {fallidos}. "
+                          f"Caché de respuestas limpiada ({borradas}).")

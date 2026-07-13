@@ -21,6 +21,7 @@
     <div class="tarjeta">
       <h2>Respuesta</h2>
       <p class="porque" style="white-space:pre-line">{{ resultado.respuesta }}</p>
+      {% if resultado.cacheada %}<p class="ayuda">⚡ Respuesta instantánea (ya consultada antes).</p>{% endif %}
       <p class="ayuda" style="color: var(--alerta)">⚠ {{ resultado.disclaimer }}</p>
     </div>
     {% if resultado.fuentes %}

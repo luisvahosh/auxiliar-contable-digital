@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import ArticuloNormativo
+from .models import ArticuloNormativo, ConsultaCache
+
+
+@admin.register(ConsultaCache)
+class ConsultaCacheAdmin(admin.ModelAdmin):
+    list_display = ("pregunta", "creada")
+    search_fields = ("pregunta",)
 
 
 @admin.register(ArticuloNormativo)

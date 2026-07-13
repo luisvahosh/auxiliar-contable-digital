@@ -20,6 +20,7 @@ from .models import ArticuloNormativo
 
 TIEMPO_MAXIMO = 60
 TOP_K = 3
+DIAS_CACHE = 30
 
 DISCLAIMER = ("Esta es una orientación general de apoyo, no asesoría oficial. "
               "Valídala con tu contador y contra el texto vigente de la norma.")
@@ -77,8 +78,10 @@ def _responder_con_llm(pregunta, fichas):
         return None
     url = os.environ.get("IA_ASISTENTE_URL",
                          "https://integrate.api.nvidia.com/v1").rstrip("/")
+    # 8b elegido por benchmark (jul 2026): ~1.4s vs el 70b que no respondía a
+    # tiempo; misma calidad para respuestas cortas sobre contexto acotado.
     modelo = os.environ.get("IA_ASISTENTE_MODELO",
-                            "meta/llama-3.1-70b-instruct")
+                            "meta/llama-3.1-8b-instruct")
     contexto = "\n\n".join(
         f"[{a.referencia}] {a.titulo}\n{a.texto}" for a in fichas)
     instruccion = (
@@ -91,7 +94,7 @@ def _responder_con_llm(pregunta, fichas):
     try:
         respuesta = requests.post(
             f"{url}/chat/completions",
-            json={"model": modelo, "temperature": 0.1, "max_tokens": 600,
+            json={"model": modelo, "temperature": 0.1, "max_tokens": 450,
                   "messages": [{"role": "user", "content": instruccion}]},
             headers={"Authorization": f"Bearer {key}"}, timeout=TIEMPO_MAXIMO)
         if not respuesta.ok:
@@ -101,8 +104,30 @@ def _responder_con_llm(pregunta, fichas):
         return None
 
 
+def _clave_cache(pregunta):
+    # Sin acentos, sin puntuación, espacios colapsados: «¿Retención?» = «retencion»
+    limpio = re.sub(r"[^a-z0-9ñ ]", " ", _normalizar(pregunta))
+    return re.sub(r"\s+", " ", limpio).strip()[:500]
+
+
 def consultar(pregunta):
-    """→ dict con respuesta, fichas fuente y disclaimer."""
+    """→ dict con respuesta, fichas fuente y disclaimer.
+    Cachea la respuesta por pregunta normalizada: una repetida no llama a la IA."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from .models import ConsultaCache
+
+    clave = _clave_cache(pregunta)
+    reciente = ConsultaCache.objects.filter(
+        pregunta=clave, creada__gte=timezone.now() - timedelta(days=DIAS_CACHE)
+    ).first()
+    if reciente:
+        fichas = list(ArticuloNormativo.objects.filter(tema__in=reciente.fuentes))
+        return {"respuesta": reciente.respuesta, "fuentes": fichas,
+                "disclaimer": DISCLAIMER, "cacheada": True}
+
     fichas = recuperar(pregunta)
     if not fichas:
         return {
@@ -118,4 +143,11 @@ def consultar(pregunta):
                      "las fichas más relacionadas con tu pregunta:\n\n" +
                      "\n\n".join(f"• {a.titulo} ({a.referencia}): {a.texto}"
                                  for a in fichas))
-    return {"respuesta": respuesta, "fuentes": fichas, "disclaimer": DISCLAIMER}
+        return {"respuesta": respuesta, "fuentes": fichas, "disclaimer": DISCLAIMER}
+
+    # Solo se cachean respuestas del LLM (las de respaldo no)
+    ConsultaCache.objects.update_or_create(
+        pregunta=clave,
+        defaults={"respuesta": respuesta, "fuentes": [a.tema for a in fichas]})
+    return {"respuesta": respuesta, "fuentes": fichas, "disclaimer": DISCLAIMER,
+            "cacheada": False}

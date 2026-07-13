@@ -39,8 +39,25 @@
                box-shadow: 0 8px 24px rgba(15,23,42,.12); }
     .submenu a { padding: 8px 10px; border-radius: 6px; }
     .submenu a:hover { background: var(--superficie); }
-    @media (max-width: 640px) {
-      .submenu { position: static; box-shadow: none; border: 0; padding: 4px 0 4px 12px; }
+    /* Hamburguesa: en móvil todo el menú colapsa en un botón */
+    .hamburguesa > summary { cursor: pointer; list-style: none; font-weight: 700;
+                             color: var(--primario); font-size: 18px; }
+    .hamburguesa > summary::-webkit-details-marker { display: none; }
+    .navlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+    @media (max-width: 720px) {
+      nav { align-items: flex-start; }
+      .hamburguesa { width: 100%; }
+      .navlinks { display: none; flex-direction: column; align-items: stretch;
+                  width: 100%; margin-top: 8px; gap: 4px; }
+      .hamburguesa[open] .navlinks { display: flex; }
+      .submenu { position: static; box-shadow: none; border: 0;
+                 padding: 2px 0 6px 16px; background: transparent; }
+      .navacciones { flex-direction: column; align-items: stretch; width: 100%;
+                     margin-left: 0 !important; margin-top: 8px; }
+    }
+    @media (min-width: 721px) {
+      .hamburguesa > summary { display: none; }  /* en PC no hay botón, todo visible */
+      .hamburguesa .navlinks { display: flex !important; }  /* siempre visible en PC */
     }
     main { max-width: 960px; margin: 0 auto; padding: 16px; }
     h1 { font-size: 24px; margin: 8px 0 16px; }
@@ -94,6 +111,9 @@
     <nav>
       <a class="marca" href="{% url 'core:inicio' %}">Auxiliar Contable</a>
       {% if user.is_authenticated and request.empresa %}
+      <details class="hamburguesa" style="width:100%">
+        <summary>☰ Menú</summary>
+        <div class="navlinks">
         <details class="menu">
           <summary>Facturación</summary>
           <div class="submenu">
@@ -133,7 +153,7 @@
           </div>
         </details>
         <a class="boton" href="{% url 'causacion:subir' %}">Subir factura</a>
-        <span style="margin-left:auto; display:flex; align-items:center; gap:12px">
+        <span class="navacciones" style="margin-left:auto; display:flex; align-items:center; gap:12px">
           {% if es_admin_empresa %}
             <a href="{% url 'core:configuracion' %}" title="Configuración de la empresa">⚙ Configuración</a>
           {% endif %}
@@ -143,6 +163,8 @@
             <button type="submit" class="boton boton-secundario" style="padding:6px 12px">Salir</button>
           </form>
         </span>
+        </div>
+      </details>
       {% endif %}
     </nav>
   </header>
