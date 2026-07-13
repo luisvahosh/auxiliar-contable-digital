@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "calendario",
     "cierre",
     "nomina",
+    "activos",
 ]
 
 MIDDLEWARE = [

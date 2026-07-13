@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block titulo %}Activo fijo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width:480px; margin:0 auto">
+    <h1>{% if instancia %}Editar «{{ instancia.nombre }}»{% else %}Nuevo activo fijo{% endif %}</h1>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% if formulario.non_field_errors %}
+          <p class="ayuda" style="color: var(--error)">{{ formulario.non_field_errors|striptags }}</p>
+        {% endif %}
+        {% for campo in formulario %}
+          <div style="margin-bottom:16px">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <div class="acciones">
+          <button type="submit" class="boton">Guardar</button>
+          <a class="boton boton-secundario" href="{% url 'activos:panel' %}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <p class="ayuda">La categoría define la vida útil (cómputo 5 años, oficina y
+       maquinaria 10, edificaciones 20). El valor residual es lo que se estima
+       recuperar al final; suele ser $0.</p>
+  </div>
+{% endblock %}

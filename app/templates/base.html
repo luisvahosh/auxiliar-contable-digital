@@ -85,6 +85,7 @@
         <a href="{% url 'calendario:calendario' %}">Calendario</a>
         <a href="{% url 'cierre:cierre' %}">Cierre</a>
         <a href="{% url 'nomina:panel' %}">Nómina</a>
+        <a href="{% url 'activos:panel' %}">Activos</a>
         <a class="boton" href="{% url 'causacion:subir' %}">Subir factura</a>
         <span style="margin-left:auto; display:flex; align-items:center; gap:12px">
           <a class="suave" href="{% url 'core:empresas' %}" title="Cambiar de empresa">{{ request.empresa.razon_social|truncatechars:22 }}</a>

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block titulo %}Depreciación {{ depreciacion.anio }}-{{ depreciacion.mes|stringformat:"02d" }}{% endblock %}
+
+{% block contenido %}
+  <h1>Depreciación {{ depreciacion.anio }}-{{ depreciacion.mes|stringformat:"02d" }}
+    <span class="insignia insignia-{{ depreciacion.estado }}">{{ depreciacion.get_estado_display }}</span>
+  </h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Cuota por activo</h2>
+    <table>
+      <thead><tr><th>Activo</th><th class="numero">Cuota del mes</th>
+             <th class="numero">Dep. acumulada</th><th class="numero">Valor en libros</th></tr></thead>
+      <tbody>
+        {% for fila in depreciacion.detalle %}
+          <tr>
+            <td>{{ fila.nombre }}</td>
+            <td class="numero">${{ fila.cuota|floatformat:"0g" }}</td>
+            <td class="numero">${{ fila.acumulada_despues|floatformat:"0g" }}</td>
+            <td class="numero">${{ fila.valor_en_libros|floatformat:"0g" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td>Total del mes</td><td class="numero"><strong>${{ depreciacion.total|floatformat:"0g" }}</strong></td><td></td><td></td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento propuesto</h2>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr></thead>
+      <tbody>
+        {% for renglon in renglones %}
+          <tr>
+            <td>{{ renglon.cuenta }}</td>
+            <td>{{ renglon.nombre }}</td>
+            <td class="numero">{% if renglon.debito %}${{ renglon.debito|floatformat:"0g" }}{% endif %}</td>
+            <td class="numero">{% if renglon.credito %}${{ renglon.credito|floatformat:"0g" }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="2">Sumas iguales</td>
+            <td class="numero">${{ total_debitos|floatformat:"0g" }}</td>
+            <td class="numero">${{ total_creditos|floatformat:"0g" }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Cómo se calculó</h2>
+    <p class="porque">{{ depreciacion.explicacion }}</p>
+  </div>
+
+  {% if depreciacion.estado == "pendiente" %}
+    <div class="acciones">
+      <form method="post" action="{% url 'activos:decidir' depreciacion.pk 'aprobada' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton">Aprobar depreciación</button>
+      </form>
+      <form method="post" action="{% url 'activos:decidir' depreciacion.pk 'rechazada' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton boton-peligro">Rechazar</button>
+      </form>
+      <a class="boton boton-secundario" href="{% url 'activos:panel' %}">Volver</a>
+    </div>
+  {% else %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'activos:panel' %}">Volver</a>
+    </div>
+  {% endif %}
+{% endblock %}

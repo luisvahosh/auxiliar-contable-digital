@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block titulo %}Activos fijos — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Activos fijos</h1>
+  <p class="suave">{{ empresa }} · depreciación en línea recta por categoría.</p>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Inventario de activos</h2>
+    {% if activos %}
+      <table>
+        <thead><tr><th>Activo</th><th>Categoría</th><th class="numero">Costo</th>
+               <th class="numero">Dep. acumulada</th><th class="numero">Valor en libros</th><th></th></tr></thead>
+        <tbody>
+          {% for a in activos %}
+            <tr>
+              <td>{{ a.nombre }}{% if not a.activo %} <span class="insignia insignia-rechazada">Baja</span>{% endif %}</td>
+              <td>{{ a.get_categoria_display }}</td>
+              <td class="numero">${{ a.costo|floatformat:"0g" }}</td>
+              <td class="numero">${{ a.depreciacion_acumulada|floatformat:"0g" }}</td>
+              <td class="numero"><strong>${{ a.valor_en_libros|floatformat:"0g" }}</strong></td>
+              <td><a class="fila-enlace" href="{% url 'activos:activo_editar' a.pk %}">Editar</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Aún no hay activos registrados.</p>
+    {% endif %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'activos:activo_nuevo' %}">Agregar activo</a>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Depreciar el mes</h2>
+    <form method="post" action="{% url 'activos:depreciar' %}">
+      {% csrf_token %}
+      <label for="{{ formulario_depreciar.periodo.id_for_label }}">{{ formulario_depreciar.periodo.label }}</label>
+      {{ formulario_depreciar.periodo }}
+      <button type="submit" class="boton" style="margin-left:8px">Calcular depreciación</button>
+    </form>
+    <p class="ayuda">Calcula la cuota de todos los activos, sin pasarse del valor
+       depreciable. Queda pendiente de tu aprobación; al aprobar, actualiza el
+       valor en libros de cada activo.</p>
+  </div>
+
+  {% if depreciaciones %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Depreciaciones</h2>
+      <table>
+        <thead><tr><th>Período</th><th class="numero">Total</th><th>Estado</th></tr></thead>
+        <tbody>
+          {% for d in depreciaciones %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'activos:detalle' d.pk %}">{{ d.anio }}-{{ d.mes|stringformat:"02d" }}</a></td>
+              <td class="numero">${{ d.total|floatformat:"0g" }}</td>
+              <td><span class="insignia insignia-{{ d.estado }}">{{ d.get_estado_display }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

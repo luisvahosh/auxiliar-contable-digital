@@ -54,6 +54,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/calendario/` — P6: calendario tributario por NIT y alertas por correo.
 - `app/cierre/` — P7: lista de chequeo del mes y paquete ZIP del contador.
 - `app/nomina/` — P8: planta de personal y liquidación mensual con asiento.
+- `app/activos/` — P10: activos fijos y depreciación línea recta.
 - Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
@@ -187,11 +188,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   efecto por tipo (constitutivo/no constitutivo/reduce_base/descuento);
   el motor ajusta base de aportes/provisiones y neto; asiento cuadra con
   descuentos en 237010. Pantalla Nómina → Novedades. 144 tests.
-- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica; fase 3 tributario
-  profundo restante (exógena, caja menor, activos fijos); validación con
-  mes real de XML DIAN (P7.1); confirmar calendario y SMMLV contra
-  decretos; CSV contra Siigo real; buzón IMAP; P6.3 monitoreo DIAN; forzar
-  2FA a admins.
+- **Hecho (día 6, P10):** activos fijos — app `activos/`: ActivoFijo por
+  categoría (vida útil + cuentas PUC en parametros.py), DepreciacionMensual
+  línea recta topada al valor depreciable (P10.2) y sin depreciar antes de
+  adquirir (P10.5); aprobar actualiza depreciacion_acumulada; asiento por
+  categoría cuadrado. 155 tests.
+- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica; fase 3 restante
+  (exógena formatos 1001/1007, caja menor); validación con mes real de XML
+  DIAN (P7.1); confirmar calendario y SMMLV contra decretos; CSV contra
+  Siigo real; buzón IMAP; P6.3 monitoreo DIAN; forzar 2FA a admins.
 
 ## Git
 

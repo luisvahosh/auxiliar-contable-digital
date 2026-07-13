@@ -476,6 +476,23 @@ La liquidación de "mes perfecto" ya no alcanza.*
   **incapacidades** se registran igual (los días a cargo de EPS/ARL) — con
   la salvedad de que el pago de la EPS es un trámite aparte.
 
+## Paso 30 — Activos fijos y depreciación (P10)
+
+*Escenario: la empresa compró un portátil de $6.000.000. No va al gasto de
+una vez: se capitaliza y se deprecia mes a mes.*
+
+- [ ] **Activos → Agregar activo**: registrar un equipo de cómputo
+  ($6.000.000, vida útil 5 años) y, opcional, una camioneta.
+- [ ] **Depreciar el mes**: la cuota del portátil es **$100.000**
+  (6.000.000 / 60 meses). Revisar el asiento: gasto de depreciación contra
+  depreciación acumulada, cuadrado.
+- [ ] **Aprobar**: el valor en libros del activo baja a $5.900.000 en el
+  inventario. Depreciar el mes siguiente vuelve a bajarlo.
+- [ ] Controles: el mismo mes no se deprecia dos veces; un activo comprado
+  después del período no genera cuota; y cuando llega al final de su vida
+  útil, la última cuota es solo el saldo y luego $0 (no se pasa del valor
+  depreciable).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

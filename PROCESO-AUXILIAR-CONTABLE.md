@@ -204,6 +204,28 @@ digitación.
 | P9.4 | Cuadre con el 350 | Suma de todos los certificados del año | = total de créditos a las cuentas 2365 del período |
 | P9.5 | Sin retención | Proveedor RST o bajo base mínima | No aparece en el listado de certificados |
 
+### P10. Activos fijos y depreciación (fase 3)
+
+**Disparador:** compra de un activo (se capitaliza, no va al gasto — enlaza con
+P1.7) + cierre mensual (depreciación del período).
+
+**Cómo lo hace el auxiliar:** registra cada activo con su categoría (que define
+la vida útil), y cada mes calcula la depreciación en línea recta
+((costo − valor residual) / vida útil en meses), sin pasarse del valor
+depreciable. Registra el asiento (gasto de depreciación contra depreciación
+acumulada) y lleva el control del valor en libros. La app calcula y propone;
+el humano aprueba.
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P10.1 | Depreciación línea recta | Equipo de cómputo $6.000.000, vida 5 años | Cuota mensual $100.000; asiento gasto vs. depreciación acumulada |
+| P10.2 | No pasarse del valor depreciable | Activo casi totalmente depreciado | La última cuota es el saldo, no la cuota plena; luego $0 |
+| P10.3 | Un mes, una depreciación | Depreciar dos veces el mismo mes | La segunda se rechaza |
+| P10.4 | Valor residual | Activo con residual > 0 | Deprecia costo − residual, no el costo total |
+| P10.5 | No deprecia antes de adquirir | Activo comprado a mitad de período | No genera depreciación de meses anteriores a su compra |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.
