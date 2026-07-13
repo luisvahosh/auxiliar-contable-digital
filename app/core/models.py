@@ -17,7 +17,24 @@ class Empresa(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nit = models.CharField("NIT", max_length=20, unique=True)
+    digito_verificacion = models.CharField("dígito de verificación", max_length=1, blank=True)
     razon_social = models.CharField("razón social", max_length=200)
+    # Datos fiscales (panel de configuración) — alimentan cálculos por empresa
+    ciudad = models.CharField("municipio", max_length=80, blank=True, default="Bogotá D.C.")
+    responsable_iva = models.BooleanField(
+        "responsable de IVA", default=True,
+        help_text="Antes 'régimen común'. Si no lo es, no discrimina IVA")
+    regimen_simple = models.BooleanField(
+        "Régimen Simple de Tributación (RST)", default=False,
+        help_text="La empresa tributa por el RST")
+    es_autorretenedor = models.BooleanField(
+        "autorretenedor de renta", default=False)
+    es_agente_retencion = models.BooleanField(
+        "agente de retención en la fuente", default=True,
+        help_text="Practica retefuente a sus proveedores")
+    tarifa_ica_por_mil = models.DecimalField(
+        "tarifa de ICA (por mil)", max_digits=5, decimal_places=2, default=0,
+        help_text="Tarifa del municipio para la actividad principal, en x1000")
     # Alertas del calendario tributario (guía P6.2)
     correo_alertas = models.EmailField(
         "correo para alertas tributarias", blank=True,

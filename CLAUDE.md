@@ -193,10 +193,19 @@ Toda funcionalidad de dominio se valida contra los casos de
   línea recta topada al valor depreciable (P10.2) y sin depreciar antes de
   adquirir (P10.5); aprobar actualiza depreciacion_acumulada; asiento por
   categoría cuadrado. 155 tests.
-- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica; fase 3 restante
-  (exógena formatos 1001/1007, caja menor); validación con mes real de XML
-  DIAN (P7.1); confirmar calendario y SMMLV contra decretos; CSV contra
-  Siigo real; buzón IMAP; P6.3 monitoreo DIAN; forzar 2FA a admins.
+- **Consolidación multi-empresa (día 6, en curso):** panel de configuración
+  por empresa (datos fiscales: ciudad, responsable IVA, RST, autorretenedor,
+  agente retención, tarifa ICA, exoneración) y panel de usuarios (listar
+  membresías, cambiar rol, quitar acceso, revocar invitaciones), ambos solo
+  admin. 163 tests.
+  - **SIGUIENTE de la consolidación (acordado):** (1) plan de cuentas por
+    empresa — HOY ~100 cuentas PUC hardcoded en 12 archivos; catálogo por
+    empresa sembrado con PUC estándar, del que lean todos los motores; luego
+    (2) migración a PostgreSQL en contenedor Hostinger (solo DATABASE_URL +
+    compose, no toca código; hacerlo al final de la consolidación).
+- **Sigue (después):** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
+  caja menor; validación mes real XML DIAN (P7.1); confirmar calendario y
+  SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3; forzar 2FA.
 
 ## Git
 

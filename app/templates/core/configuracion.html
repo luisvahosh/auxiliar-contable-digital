@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block titulo %}Configuración — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Configuración de {{ request.empresa.razon_social }}</h1>
+  <p class="suave">NIT {{ request.empresa.nit }}. Estos datos alimentan los
+     cálculos de retenciones, ICA y nómina de esta empresa.</p>
+
+  <div class="tarjeta">
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom:16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="boton">Guardar configuración</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Otras configuraciones</h2>
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'causacion:conexiones' %}">Conexiones contables</a>
+      <a class="boton boton-secundario" href="{% url 'core:usuarios' %}">Usuarios</a>
+      <a class="boton boton-secundario" href="{% url 'core:configurar_2fa' %}">Segundo factor (2FA)</a>
+    </div>
+    <p class="ayuda">El plan de cuentas por empresa se parametrizará próximamente
+       (hoy usa el PUC estándar).</p>
+  </div>
+{% endblock %}

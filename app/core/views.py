@@ -1,13 +1,18 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.core.mail import send_mail
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django_otp import devices_for_user, login as otp_login, user_has_device
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
-from .forms import FormularioInvitacion, FormularioRegistro, FormularioToken2FA
-from .models import Invitacion, Membresia
+from .forms import (
+    FormularioConfiguracionEmpresa,
+    FormularioInvitacion,
+    FormularioRegistro,
+    FormularioToken2FA,
+)
+from .models import ROLES, Invitacion, Membresia
 from .tenancy import cambiar_empresa, rol_en_empresa
 
 
@@ -196,6 +201,83 @@ def empresas(request):
         "membresias": membresias,
         "es_admin": rol_en_empresa(request, request.empresa) == "admin",
     })
+
+
+def _exige_admin(request):
+    return rol_en_empresa(request, request.empresa) == "admin"
+
+
+def configuracion(request):
+    """Panel de configuración de la empresa activa (solo admin)."""
+    if not _exige_admin(request):
+        messages.error(request, "Solo el administrador de la empresa puede "
+                                "cambiar la configuración.")
+        return redirect("core:inicio")
+    formulario = FormularioConfiguracionEmpresa(
+        request.POST or None, instance=request.empresa)
+    if request.method == "POST" and formulario.is_valid():
+        formulario.save()
+        messages.success(request, "Configuración de la empresa actualizada.")
+        return redirect("core:configuracion")
+    return render(request, "core/configuracion.html", {"formulario": formulario})
+
+
+def usuarios(request):
+    """Panel de usuarios de la empresa: membresías + invitaciones (solo admin)."""
+    if not _exige_admin(request):
+        messages.error(request, "Solo el administrador puede gestionar usuarios.")
+        return redirect("core:inicio")
+    empresa = request.empresa
+    from django.utils import timezone
+    return render(request, "core/usuarios.html", {
+        "membresias": empresa.membresias.select_related("usuario").order_by("creada"),
+        "invitaciones": empresa.invitaciones.filter(
+            usada_en__isnull=True, expira__gt=timezone.now()).order_by("-creada"),
+        "roles": ROLES,
+        "yo": request.user.pk,
+    })
+
+
+@require_POST
+def cambiar_rol(request, membresia_id):
+    if not _exige_admin(request):
+        return redirect("core:inicio")
+    membresia = get_object_or_404(
+        Membresia, pk=membresia_id, empresa=request.empresa)
+    rol = request.POST.get("rol")
+    if rol in dict(ROLES) and membresia.usuario_id != request.user.pk:
+        membresia.rol = rol
+        membresia.save(update_fields=["rol"])
+        messages.success(request, f"Rol de {membresia.usuario} actualizado.")
+    else:
+        messages.error(request, "No puedes cambiar tu propio rol.")
+    return redirect("core:usuarios")
+
+
+@require_POST
+def quitar_usuario(request, membresia_id):
+    if not _exige_admin(request):
+        return redirect("core:inicio")
+    membresia = get_object_or_404(
+        Membresia, pk=membresia_id, empresa=request.empresa)
+    if membresia.usuario_id == request.user.pk:
+        messages.error(request, "No puedes quitarte a ti mismo.")
+    else:
+        nombre = str(membresia.usuario)
+        membresia.delete()
+        messages.info(request, f"{nombre} ya no tiene acceso a la empresa.")
+    return redirect("core:usuarios")
+
+
+@require_POST
+def revocar_invitacion(request, invitacion_id):
+    if not _exige_admin(request):
+        return redirect("core:inicio")
+    invitacion = get_object_or_404(
+        Invitacion, pk=invitacion_id, empresa=request.empresa)
+    invitacion.delete()
+    messages.info(request, "Invitación revocada.")
+    return redirect("core:usuarios")
 
 
 @require_POST

@@ -2,7 +2,19 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
 
-from .models import ROLES
+from .models import ROLES, Empresa
+
+
+class FormularioConfiguracionEmpresa(forms.ModelForm):
+    """Datos fiscales de la empresa (panel de configuración)."""
+
+    class Meta:
+        model = Empresa
+        fields = ["razon_social", "digito_verificacion", "ciudad",
+                  "responsable_iva", "regimen_simple", "es_autorretenedor",
+                  "es_agente_retencion", "exonerada_parafiscales",
+                  "tarifa_ica_por_mil", "correo_alertas",
+                  "dias_anticipacion_alertas", "enviar_recordatorios_cobro"]
 
 
 class FormularioLogin(AuthenticationForm):

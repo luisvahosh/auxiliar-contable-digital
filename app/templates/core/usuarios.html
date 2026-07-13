@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block titulo %}Usuarios — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Usuarios de {{ request.empresa.razon_social }}</h1>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Con acceso</h2>
+    <table>
+      <thead><tr><th>Usuario</th><th>Rol</th><th></th></tr></thead>
+      <tbody>
+        {% for m in membresias %}
+          <tr>
+            <td>{{ m.usuario.get_full_name|default:m.usuario.username }}{% if m.usuario_id == yo %} <span class="insignia insignia-aprobada">Tú</span>{% endif %}</td>
+            <td>
+              {% if m.usuario_id == yo %}
+                {{ m.get_rol_display }}
+              {% else %}
+                <form method="post" action="{% url 'core:cambiar_rol' m.pk %}" style="display:inline-flex; gap:6px">
+                  {% csrf_token %}
+                  <select name="rol" onchange="this.form.submit()">
+                    {% for valor, etiqueta in roles %}
+                      <option value="{{ valor }}" {% if valor == m.rol %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.usuario_id != yo %}
+                <form method="post" action="{% url 'core:quitar_usuario' m.pk %}" style="margin:0">
+                  {% csrf_token %}
+                  <button type="submit" class="fila-enlace" style="background:none;border:0;cursor:pointer;color:var(--error)">Quitar acceso</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="acciones">
+      <a class="boton" href="{% url 'core:invitar' %}">Invitar usuario</a>
+    </div>
+  </div>
+
+  {% if invitaciones %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Invitaciones pendientes</h2>
+      <table>
+        <thead><tr><th>Correo</th><th>Rol</th><th>Vence</th><th></th></tr></thead>
+        <tbody>
+          {% for i in invitaciones %}
+            <tr>
+              <td>{{ i.correo }}</td>
+              <td>{{ i.get_rol_display }}</td>
+              <td>{{ i.expira|date:"Y-m-d H:i" }}</td>
+              <td>
+                <form method="post" action="{% url 'core:revocar_invitacion' i.pk %}" style="margin:0">
+                  {% csrf_token %}
+                  <button type="submit" class="fila-enlace" style="background:none;border:0;cursor:pointer;color:var(--error)">Revocar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}

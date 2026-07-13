@@ -493,6 +493,24 @@ una vez: se capitaliza y se deprecia mes a mes.*
   útil, la última cuota es solo el saldo y luego $0 (no se pasa del valor
   depreciable).
 
+## Paso 31 — Panel de configuración y de usuarios (multi-empresa)
+
+*Escenario: cada empresa cliente configura sus propios datos fiscales y su
+propio equipo de usuarios, sin ver a las demás.*
+
+- [ ] Como administrador: **Mis empresas → Configuración de la empresa**.
+  Editar municipio, régimen (responsable de IVA, RST), si es autorretenedor
+  o agente de retención, exoneración de parafiscales y la tarifa de ICA.
+  Estos datos alimentan los cálculos de esa empresa.
+- [ ] **Mis empresas → Usuarios**: ver quién tiene acceso, cambiar el rol de
+  un colega (admin/operador/lectura) con el selector, quitarle el acceso, y
+  ver/revocar las invitaciones pendientes. No puedes cambiarte el rol ni
+  quitarte a ti mismo.
+- [ ] Un usuario operador no entra ni a Configuración ni a Usuarios.
+- [ ] Nota: el **plan de cuentas por empresa** (que cada empresa use sus
+  cuentas contables) es el siguiente paso de la consolidación; hoy la app
+  usa el PUC estándar.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

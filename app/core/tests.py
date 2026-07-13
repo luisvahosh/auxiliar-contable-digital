@@ -3,6 +3,7 @@ Pruebas de acceso e identidad (PLAN.md §12): sin registro abierto, tokens de
 un solo uso, errores que no revelan nada e invisibilidad entre empresas.
 """
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -281,6 +282,80 @@ class PruebasCodigosDeRespaldo(CasoConEmpresa):
             device__user=self.usuario).values_list("token", flat=True))
         self.assertEqual(len(nuevos), 8)
         self.assertFalse(viejos & nuevos)
+
+
+class PruebasPanelConfiguracion(CasoConEmpresa):
+    """Panel de configuración de la empresa (solo admin)."""
+
+    def test_admin_edita_los_datos_fiscales(self):
+        respuesta = self.client.post(reverse("core:configuracion"), {
+            "razon_social": "LEARNWAY SAS", "digito_verificacion": "7",
+            "ciudad": "Medellín", "responsable_iva": "on",
+            "es_agente_retencion": "on", "exonerada_parafiscales": "on",
+            "tarifa_ica_por_mil": "9.66", "dias_anticipacion_alertas": "5"},
+            follow=True)
+        self.assertContains(respuesta, "actualizada")
+        self.empresa.refresh_from_db()
+        self.assertEqual(self.empresa.ciudad, "Medellín")
+        self.assertEqual(self.empresa.tarifa_ica_por_mil, Decimal("9.66"))
+
+    def test_operador_no_entra_a_configuracion(self):
+        operador = Usuario.objects.create_user(username="op3@x.co",
+                                               password="clave-larga-123")
+        Membresia.objects.create(usuario=operador, empresa=self.empresa, rol="operador")
+        self.client.force_login(operador)
+        respuesta = self.client.get(reverse("core:configuracion"), follow=True)
+        self.assertContains(respuesta, "Solo el administrador")
+
+
+class PruebasPanelUsuarios(CasoConEmpresa):
+    """Panel de usuarios: membresías, roles e invitaciones (solo admin)."""
+
+    def setUp(self):
+        super().setUp()
+        self.otro = Usuario.objects.create_user(username="colega@x.co",
+                                                password="clave-larga-123")
+        self.membresia_otro = Membresia.objects.create(
+            usuario=self.otro, empresa=self.empresa, rol="operador")
+
+    def test_lista_los_usuarios_de_la_empresa(self):
+        respuesta = self.client.get(reverse("core:usuarios"))
+        self.assertContains(respuesta, "colega@x.co")
+
+    def test_cambiar_rol_de_otro(self):
+        self.client.post(reverse("core:cambiar_rol", args=[self.membresia_otro.pk]),
+                         {"rol": "admin"})
+        self.membresia_otro.refresh_from_db()
+        self.assertEqual(self.membresia_otro.rol, "admin")
+
+    def test_no_puedo_cambiar_mi_propio_rol(self):
+        mi_membresia = Membresia.objects.get(usuario=self.usuario, empresa=self.empresa)
+        respuesta = self.client.post(
+            reverse("core:cambiar_rol", args=[mi_membresia.pk]),
+            {"rol": "operador"}, follow=True)
+        self.assertContains(respuesta, "tu propio rol")
+        mi_membresia.refresh_from_db()
+        self.assertEqual(mi_membresia.rol, "admin")
+
+    def test_quitar_acceso_a_otro(self):
+        self.client.post(reverse("core:quitar_usuario", args=[self.membresia_otro.pk]))
+        self.assertFalse(Membresia.objects.filter(pk=self.membresia_otro.pk).exists())
+
+    def test_no_puedo_quitarme_a_mi_mismo(self):
+        mi_membresia = Membresia.objects.get(usuario=self.usuario, empresa=self.empresa)
+        respuesta = self.client.post(
+            reverse("core:quitar_usuario", args=[mi_membresia.pk]), follow=True)
+        self.assertContains(respuesta, "a ti mismo")
+        self.assertTrue(Membresia.objects.filter(pk=mi_membresia.pk).exists())
+
+    def test_no_toca_usuarios_de_otra_empresa(self):
+        otra = Empresa.objects.create(nit="800111222", razon_social="OTRA SAS")
+        ajeno = Usuario.objects.create_user(username="ajeno@x.co", password="clave-larga-123")
+        membresia_ajena = Membresia.objects.create(usuario=ajeno, empresa=otra, rol="admin")
+        respuesta = self.client.post(
+            reverse("core:quitar_usuario", args=[membresia_ajena.pk]))
+        self.assertEqual(respuesta.status_code, 404)  # no es de mi empresa
+        self.assertTrue(Membresia.objects.filter(pk=membresia_ajena.pk).exists())
 
 
 class PruebasMultiEmpresa(CasoConEmpresa):

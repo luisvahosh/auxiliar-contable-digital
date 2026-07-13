@@ -37,5 +37,11 @@ urlpatterns = [
     path("empresas/", views.empresas, name="empresas"),
     path("empresas/cambiar/", views.cambiar, name="cambiar_empresa"),
     path("empresas/invitar/", views.invitar, name="invitar"),
+    path("configuracion/", views.configuracion, name="configuracion"),
+    path("usuarios/", views.usuarios, name="usuarios"),
+    path("usuarios/<uuid:membresia_id>/rol/", views.cambiar_rol, name="cambiar_rol"),
+    path("usuarios/<uuid:membresia_id>/quitar/", views.quitar_usuario, name="quitar_usuario"),
+    path("invitaciones/<uuid:invitacion_id>/revocar/", views.revocar_invitacion,
+         name="revocar_invitacion"),
     path("sin-empresa/", views.sin_empresa, name="sin_empresa"),
 ]
