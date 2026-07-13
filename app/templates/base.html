@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1d4ed8">
   <title>{% block titulo %}Auxiliar Contable Digital{% endblock %}</title>
   <style>
     /* Tokens semánticos (PLAN.md §11) — mobile-first */
@@ -17,8 +18,18 @@
       --info: #1e40af; --info-fondo: #dbeafe;
     }
     * { box-sizing: border-box; }
+    html { color-scheme: light; }
     body { font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.5;
            background: var(--superficie); color: var(--sobre-superficie); margin: 0; }
+    /* Foco visible por teclado (accesibilidad) */
+    a:focus-visible, button:focus-visible, summary:focus-visible,
+    input:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--primario); outline-offset: 2px; border-radius: 4px; }
+    /* Saltar al contenido: primer tabulador para quien usa teclado */
+    .saltar { position: absolute; left: -9999px; top: 8px; z-index: 100;
+              background: var(--primario); color: #fff; padding: 8px 14px;
+              border-radius: 8px; text-decoration: none; }
+    .saltar:focus { left: 16px; }
     header { background: var(--superficie-elevada); border-bottom: 1px solid var(--borde); }
     nav { max-width: 960px; margin: 0 auto; padding: 12px 16px;
           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
@@ -95,7 +106,7 @@
     input[type="file"] { display: block; margin: 8px 0 16px; max-width: 100%; }
     .boton { display: inline-block; background: var(--primario); color: #fff; border: 0;
              padding: 10px 18px; border-radius: 8px; font-size: 16px; font-weight: 600;
-             cursor: pointer; text-decoration: none; }
+             cursor: pointer; text-decoration: none; touch-action: manipulation; }
     .boton-secundario { background: var(--superficie-elevada); color: var(--sobre-superficie);
                         border: 1px solid var(--borde); }
     .boton-peligro { background: var(--error); }
@@ -107,12 +118,13 @@
   </style>
 </head>
 <body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
   <header>
     <nav>
       <a class="marca" href="{% url 'core:inicio' %}">Auxiliar Contable</a>
       {% if user.is_authenticated and request.empresa %}
       <details class="hamburguesa" style="width:100%">
-        <summary>☰ Menú</summary>
+        <summary><span aria-hidden="true">☰</span> Menú</summary>
         <div class="navlinks">
         <details class="menu">
           <summary>Facturación</summary>
@@ -173,6 +185,6 @@
       {% for mensaje in messages %}<li class="{{ mensaje.tags }}">{{ mensaje }}</li>{% endfor %}
     </ul>
   {% endif %}
-  <main>{% block contenido %}{% endblock %}</main>
+  <main id="contenido">{% block contenido %}{% endblock %}</main>
 </body>
 </html>

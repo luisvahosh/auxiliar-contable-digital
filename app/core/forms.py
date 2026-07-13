@@ -37,10 +37,16 @@ class FormularioLogin(AuthenticationForm):
 class FormularioRegistro(forms.Form):
     """El invitado define su nombre y contraseña; el correo viene del token."""
 
-    nombre = forms.CharField(label="Tu nombre", max_length=150)
-    contrasena = forms.CharField(label="Contraseña", widget=forms.PasswordInput,
-                                 help_text="Mínimo 10 caracteres, no común, no solo números.")
-    confirmacion = forms.CharField(label="Repite la contraseña", widget=forms.PasswordInput)
+    nombre = forms.CharField(
+        label="Tu nombre", max_length=150,
+        widget=forms.TextInput(attrs={"autocomplete": "name"}))
+    contrasena = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        help_text="Mínimo 10 caracteres, no común, no solo números.")
+    confirmacion = forms.CharField(
+        label="Repite la contraseña",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
 
     def clean(self):
         datos = super().clean()

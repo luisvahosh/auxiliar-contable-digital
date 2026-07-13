@@ -10,7 +10,8 @@
   <div class="tarjeta">
     <form method="get">
       <label for="q">Tu pregunta</label>
-      <input type="text" id="q" name="q" value="{{ pregunta }}"
+      <input type="search" id="q" name="q" value="{{ pregunta }}"
+             autocomplete="off" enterkeyhint="search"
              placeholder="Ej.: ¿qué retención aplica a un servicio de vigilancia?"
              style="width:100%; margin:8px 0" autofocus>
       <button type="submit" class="boton">Preguntar</button>
