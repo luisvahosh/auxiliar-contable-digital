@@ -281,9 +281,19 @@ Toda funcionalidad de dominio se valida contra los casos de
   checkbox+label (sin JS, se ve completo en PC / colapsa en móvil); auditoría
   web-design-guidelines aplicada (saltar-al-contenido, foco visible,
   theme-color, autocomplete en registro).
-- **Sigue:** ampliar corpus del asistente (validar con contador); P8.9
-  pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1); confirmar
-  calendario/conceptos exógena contra resoluciones; CSV contra Siigo real.
+- **Hecho (día 7, P8.9):** exportes de nómina para el operador — desde una
+  liquidación APROBADA se descargan dos CSV: pre-PILA (por empleado: IBC +
+  aportes empleado/empleador desglosados) y resumen de nómina electrónica
+  (devengados/deducciones/neto). `nomina/exportes.py` (lógica pura); el
+  detalle por empleado ahora guarda `ibc` y `aportes` desglosados. SON
+  BORRADORES PARA ENTREGAR — la app no presenta ante PILA/DIAN (principio
+  asistir-no-reemplazar). Botones solo si aprobada; aislado por tenant. Con
+  esto P8 (nómina) queda cerrado en su alcance de apoyo. 226 tests. También:
+  buzón IMAP ahora es descubrible desde "Subir factura" (Configuración →
+  Buzón seguía siendo el único acceso).
+- **Sigue:** ampliar corpus del asistente (validar con contador); validación
+  mes real XML DIAN (P7.1); confirmar calendario/conceptos exógena contra
+  resoluciones; CSV contra Siigo real; confirmar códigos ResponseCode DIAN.
 
 ## Git
 

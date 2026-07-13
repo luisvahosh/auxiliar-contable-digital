@@ -179,6 +179,41 @@ def detalle(request, pk):
     })
 
 
+def _csv_nomina(nombre, encabezados, filas):
+    import csv
+    import io
+    salida = io.StringIO()
+    escritor = csv.writer(salida, delimiter=";", lineterminator="\r\n")
+    escritor.writerow(encabezados)
+    escritor.writerows(filas)
+    from django.http import HttpResponse
+    respuesta = HttpResponse(salida.getvalue().encode("utf-8-sig"),
+                             content_type="text/csv; charset=utf-8")
+    respuesta["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return respuesta
+
+
+def exportar_pre_pila(request, pk):
+    """Borrador de planilla PILA para ENTREGAR al operador (P8.9)."""
+    from .exportes import ENCABEZADOS_PRE_PILA, filas_pre_pila
+    empresa = request.empresa
+    liquidacion = get_object_or_404(
+        LiquidacionNomina.objects.de_empresa(empresa), pk=pk, estado="aprobada")
+    nombre = f"pre-pila-{liquidacion.anio}-{liquidacion.mes:02d}.csv"
+    return _csv_nomina(nombre, ENCABEZADOS_PRE_PILA, filas_pre_pila(liquidacion))
+
+
+def exportar_nomina_electronica(request, pk):
+    """Resumen de devengados/deducciones para el proveedor de NE (P8.9)."""
+    from .exportes import ENCABEZADOS_NOMINA_ELECTRONICA, filas_nomina_electronica
+    empresa = request.empresa
+    liquidacion = get_object_or_404(
+        LiquidacionNomina.objects.de_empresa(empresa), pk=pk, estado="aprobada")
+    nombre = f"nomina-electronica-{liquidacion.anio}-{liquidacion.mes:02d}.csv"
+    return _csv_nomina(nombre, ENCABEZADOS_NOMINA_ELECTRONICA,
+                       filas_nomina_electronica(liquidacion))
+
+
 @require_POST
 def decidir(request, pk, decision):
     empresa = request.empresa

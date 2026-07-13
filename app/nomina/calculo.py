@@ -77,10 +77,14 @@ def liquidar_empleado(empleado, valores, exonerada, novedades=()):
         "novedades_descuento": str(nov["descuento"] + nov["reduce_base"]),
         "auxilio": str(auxilio),
         "devengado": str(devengado),
+        # IBC (base de cotización a seguridad social): el salario base, sin auxilio.
+        "ibc": str(salario_base),
         "salud_empleado": str(salud_empleado),
         "pension_empleado": str(pension_empleado),
         "otros_descuentos": str(nov["descuento"]),
         "neto": str(neto),
+        # Desglose de aportes patronales, insumo de la pre-PILA (P8.9).
+        "aportes": {rol: str(valor) for rol, valor in aportes.items()},
         "aportes_empleador": str(sum(aportes.values())),
         "provisiones": str(sum(provisiones.values())),
     }

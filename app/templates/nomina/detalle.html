@@ -72,6 +72,20 @@
        tu aplicativo; aquí se aprueba para registrar la causación contable.</p>
   </div>
 
+  {% if liquidacion.estado == "aprobada" %}
+    <div class="tarjeta">
+      <h2>Entregar al operador</h2>
+      <p class="ayuda">Borradores para que tu <strong>operador de PILA</strong> y tu
+         <strong>proveedor de nómina electrónica</strong> los carguen y verifiquen.
+         La app NO presenta nada ante la PILA ni la DIAN — eso lo hace tu aplicativo
+         de nómina.</p>
+      <div class="acciones">
+        <a class="boton boton-secundario" href="{% url 'nomina:exportar_pre_pila' liquidacion.pk %}">Descargar pre-PILA (CSV)</a>
+        <a class="boton boton-secundario" href="{% url 'nomina:exportar_nomina_electronica' liquidacion.pk %}">Resumen nómina electrónica (CSV)</a>
+      </div>
+    </div>
+  {% endif %}
+
   {% if liquidacion.estado == "pendiente" %}
     <div class="acciones">
       <form method="post" action="{% url 'nomina:decidir' liquidacion.pk 'aprobada' %}">

@@ -21,6 +21,15 @@
     <p class="ayuda">Tómale una foto y la app lee los campos por ti.</p>
     <a class="boton boton-secundario" href="{% url 'causacion:foto' %}">Causar desde una foto</a>
   </div>
+
+  {% if es_admin_empresa %}
+  <div class="tarjeta">
+    <h2>¿Las facturas te llegan por correo?</h2>
+    <p class="ayuda">Conecta el buzón y la app las lee sola de los adjuntos (XML y ZIP)
+       y las deja en la bandeja, sin que subas nada a mano.</p>
+    <a class="boton boton-secundario" href="{% url 'causacion:buzon' %}">Configurar buzón de correo</a>
+  </div>
+  {% endif %}
   <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos) y
      la app detecta sola qué es — una <strong>compra</strong> (te la facturaron),
      una <strong>venta</strong> (la emitió tu empresa) o una <strong>nota

@@ -228,3 +228,63 @@ class PruebasFlujoNomina(CasoConEmpresa):
         # (cubierto por diseño: de_empresa; verificación directa del manager)
         self.assertNotIn(liquidacion,
                          LiquidacionNomina.objects.de_empresa(otra))
+
+
+class PruebasExportesOperador(CasoConEmpresa):
+    """Casos P8.9: exportes pre-PILA y nómina electrónica para el operador.
+    Son borradores para ENTREGAR, la app no presenta ante PILA/DIAN."""
+
+    def setUp(self):
+        super().setUp()
+        empleado_de(self.empresa)  # Ana, 1 SMMLV
+        self.client.post(reverse("nomina:liquidar"), {"periodo": "2026-07"})
+        self.liq = LiquidacionNomina.objects.de_empresa(self.empresa).get()
+
+    def _aprobar(self):
+        self.client.post(reverse("nomina:decidir", args=[self.liq.pk, "aprobada"]))
+
+    def test_el_detalle_guarda_ibc_y_desglose_de_aportes(self):
+        fila = self.liq.detalle[0]
+        self.assertIn("ibc", fila)
+        self.assertIn("aportes", fila)
+        # El IBC es el salario base (sin auxilio de transporte)
+        self.assertEqual(Decimal(fila["ibc"]), Decimal("1623500"))
+
+    def test_pre_pila_descarga_csv_con_el_empleado(self):
+        self._aprobar()
+        respuesta = self.client.get(
+            reverse("nomina:exportar_pre_pila", args=[self.liq.pk]))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("text/csv", respuesta["Content-Type"])
+        cuerpo = respuesta.content.decode("utf-8-sig")
+        self.assertIn("IBC", cuerpo)              # encabezado
+        self.assertIn("Ana Prueba", cuerpo)       # el empleado
+        self.assertIn("1623500", cuerpo)          # su IBC
+
+    def test_nomina_electronica_descarga_devengados_y_neto(self):
+        self._aprobar()
+        respuesta = self.client.get(
+            reverse("nomina:exportar_nomina_electronica", args=[self.liq.pk]))
+        self.assertEqual(respuesta.status_code, 200)
+        cuerpo = respuesta.content.decode("utf-8-sig")
+        self.assertIn("Total devengado", cuerpo)
+        self.assertIn("Ana Prueba", cuerpo)
+
+    def test_no_se_exporta_una_liquidacion_pendiente(self):
+        # Sin aprobar: los exportes al operador no están disponibles
+        respuesta = self.client.get(
+            reverse("nomina:exportar_pre_pila", args=[self.liq.pk]))
+        self.assertEqual(respuesta.status_code, 404)
+
+    def test_exporte_aislado_por_tenant(self):
+        self._aprobar()
+        otra = Empresa.objects.create(nit="800111222", razon_social="OTRA SAS")
+        from core.models import Membresia
+        Membresia.objects.create(usuario=self.usuario, empresa=otra, rol="admin")
+        sesion = self.client.session
+        sesion["empresa_activa"] = str(otra.id)
+        sesion.save()
+        # Con la empresa B activa, la liquidación de A no se puede exportar
+        respuesta = self.client.get(
+            reverse("nomina:exportar_pre_pila", args=[self.liq.pk]))
+        self.assertEqual(respuesta.status_code, 404)
