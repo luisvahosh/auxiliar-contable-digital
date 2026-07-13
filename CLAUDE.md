@@ -66,7 +66,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/activos/` — P10: activos fijos y depreciación línea recta.
 - `app/cajamenor/` — P11: fondo fijo, vales y reembolso que los legaliza.
 - `app/exogena/` — P12: pre-armado de exógena 1001/1007 (lectura transversal).
-- Próximas apps por vertical: `asistente/`.
+- `app/asistente/` — asistente IA normativo (RAG con citas; fase 1 del PLAN).
 
 ## Estado y siguiente paso
 
@@ -248,11 +248,19 @@ Toda funcionalidad de dominio se valida contra los casos de
   (IMAP-SSL, lee no vistos, extrae XML de adjuntos y ZIP, pasa por
   procesar_xml, marca leídos), comando `revisar_buzones` programable,
   UI Configuración → Buzón con "Revisar ahora" (solo admin). 194 tests.
-- **Sigue:** asistente IA normativo (fase 1 PLAN; RAG con pgvector — ya hay
-  Postgres — + NVIDIA/embeddings + corpus normativo colombiano); P8.9
-  exportes pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1);
-  confirmar calendario/SMMLV/conceptos exógena contra decretos; CSV contra
-  Siigo real; P6.3 monitoreo DIAN.
+- **Hecho (día 6):** asistente IA normativo (fase 1 PLAN) — app `asistente/`:
+  ArticuloNormativo (corpus GLOBAL, no por tenant), RAG semántico
+  (embeddings NVIDIA + coseno en Python, no necesita pgvector aún) con
+  respaldo por términos SIN acentos; respuesta con LLM que usa solo el
+  contexto y cita fuentes + disclaimer. Corpus semilla de 12 fichas
+  (retenciones/IVA/factura/exógena/nómina, valores 2026 verificados).
+  Comandos indexar_corpus y agregar_articulo. estatuto.co bloquea scraping
+  (403) → fichas curadas, el contador amplía con texto oficial. 203 tests.
+  Verificado end-to-end con la key real: "pago a abogado" → art. 392, 10/11%.
+- **Sigue:** ampliar corpus con más artículos (validar con contador); P8.9
+  pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1); confirmar
+  calendario/conceptos exógena contra resoluciones; CSV contra Siigo real;
+  P6.3 monitoreo DIAN.
 
 ## Git
 

@@ -594,6 +594,24 @@ una por una y subirlas, la app las lee del correo y las causa.*
 - [ ] Para revisión automática a diario, se programa el comando
   `revisar_buzones` (como las alertas y recordatorios de cobro).
 
+## Paso 36 — Asistente normativo (IA con citas)
+
+*Escenario: al auxiliar le surge una duda tributaria y quiere una orientación
+rápida con la fuente, antes de confirmar con el contador.*
+
+- [ ] Abrir **Asistente** en el menú y preguntar en lenguaje natural, p. ej.
+  *"le pago 800 mil a un abogado por una asesoría, ¿qué retención le hago?"*.
+- [ ] La respuesta explica (honorarios, art. 392, 10%/11% según declarante,
+  excepciones de RST/autorretenedor) y **cita las fuentes** abajo. Siempre
+  aparece el aviso de validar con el contador.
+- [ ] Prueba escribiendo **sin tildes** (retencion, iva): igual encuentra.
+- [ ] El corpus arranca con 12 fichas de los temas que la app maneja
+  (retenciones, IVA, factura electrónica, exógena, nómina). El administrador
+  las amplía con `agregar_articulo` y las indexa con `indexar_corpus`.
+- [ ] **OJO:** es orientación de apoyo, no asesoría oficial — el aviso lo
+  repite en cada respuesta. Requiere `NVIDIA_API_KEY` para la mejor calidad;
+  sin ella responde por coincidencia de términos.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/
