@@ -195,6 +195,37 @@ class CuentaContable(models.Model):
         return f"{self.rol}: {self.codigo} ({self.empresa_id})"
 
 
+class BuzonCorreo(models.Model):
+    """Cuenta de correo de la empresa de la que se leen las facturas que
+    envían los proveedores (PLAN §4). La contraseña se guarda CIFRADA.
+
+    Con Gmail/Outlook con 2FA se usa una 'contraseña de aplicación', no la
+    del correo. El motor de ingesta es el mismo procesar_xml de todos los
+    canales."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    empresa = models.OneToOneField("core.Empresa", on_delete=models.CASCADE,
+                                   related_name="buzon")
+    servidor = models.CharField("servidor IMAP", max_length=120,
+                                help_text="Ej.: imap.gmail.com, outlook.office365.com")
+    puerto = models.PositiveIntegerField(default=993)
+    usuario = models.EmailField("correo")
+    clave = CampoCifrado("contraseña (o contraseña de aplicación)")
+    carpeta = models.CharField(max_length=60, default="INBOX")
+    activo = models.BooleanField(default=True)
+    ultima_revision = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        verbose_name = "buzón de correo"
+        verbose_name_plural = "buzones de correo"
+
+    def __str__(self):
+        return f"Buzón {self.usuario} — {self.empresa.razon_social}"
+
+
 class ConexionContable(models.Model):
     """Credenciales de la empresa hacia SU software contable (PLAN §4).
 

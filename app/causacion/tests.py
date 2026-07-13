@@ -967,6 +967,96 @@ class PruebasPlanDeCuentas(CasoConEmpresa):
         self.assertContains(respuesta, "Solo el administrador")
 
 
+class PruebasBuzonCorreo(CasoConEmpresa):
+    """Ingesta automática desde el correo (PLAN §4): IMAP mockeado."""
+
+    def _mensaje_con_adjunto(self, nombre, datos):
+        import email.message
+        raiz = email.message.EmailMessage()
+        raiz["Subject"] = "Factura electrónica"
+        subtipo = "zip" if nombre.endswith(".zip") else "xml"
+        raiz.add_attachment(datos, maintype="application", subtype=subtipo,
+                            filename=nombre)
+        return raiz.as_bytes()
+
+    def _imap_falso(self, mensajes):
+        """Un IMAP4_SSL de mentira que devuelve los mensajes dados."""
+        from unittest.mock import MagicMock
+        cliente = MagicMock()
+        cliente.login.return_value = ("OK", [b""])
+        cliente.select.return_value = ("OK", [b"1"])
+        ids = b" ".join(str(i).encode() for i in range(1, len(mensajes) + 1))
+        cliente.search.return_value = ("OK", [ids])
+        cliente.fetch.side_effect = [
+            ("OK", [(b"", m)]) for m in mensajes]
+        cliente.store.return_value = ("OK", [b""])
+        return cliente
+
+    def crear_buzon(self):
+        from .models import BuzonCorreo
+        return BuzonCorreo.objects.create(
+            empresa=self.empresa, servidor="imap.x.co", usuario="fac@x.co",
+            clave="secreta", carpeta="INBOX", activo=True)
+
+    def test_lee_xml_adjunto_y_lo_causa(self):
+        from unittest.mock import patch
+        from .buzon import revisar_buzon
+        buzon = self.crear_buzon()
+        xml = contenido("P1.1-factura-honorarios.xml")
+        cliente = self._imap_falso([self._mensaje_con_adjunto("factura.xml", xml)])
+        with patch("causacion.buzon.imaplib.IMAP4_SSL", return_value=cliente):
+            resumen = revisar_buzon(buzon)
+        self.assertEqual(resumen.creados, 1)
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 1)
+        cliente.store.assert_called()  # marcó el correo como leído
+
+    def test_lee_xml_dentro_de_zip(self):
+        import io
+        import zipfile
+        from unittest.mock import patch
+        from .buzon import revisar_buzon
+        buzon = self.crear_buzon()
+        zbuf = io.BytesIO()
+        with zipfile.ZipFile(zbuf, "w") as z:
+            z.writestr("P1.1.xml", contenido("P1.1-factura-honorarios.xml"))
+        cliente = self._imap_falso([self._mensaje_con_adjunto("factura.zip", zbuf.getvalue())])
+        with patch("causacion.buzon.imaplib.IMAP4_SSL", return_value=cliente):
+            resumen = revisar_buzon(buzon)
+        self.assertEqual(resumen.creados, 1)
+
+    def test_credenciales_malas_dan_error_claro(self):
+        import imaplib
+        from unittest.mock import MagicMock, patch
+        from .buzon import BuzonError, revisar_buzon
+        buzon = self.crear_buzon()
+        cliente = MagicMock()
+        cliente.login.side_effect = imaplib.IMAP4.error("bad")
+        with patch("causacion.buzon.imaplib.IMAP4_SSL", return_value=cliente):
+            with self.assertRaises(BuzonError) as ctx:
+                revisar_buzon(buzon)
+        self.assertIn("contraseña de aplicación", str(ctx.exception))
+
+    def test_la_clave_del_buzon_se_guarda_cifrada(self):
+        from django.db import connection
+        buzon = self.crear_buzon()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT clave FROM causacion_buzoncorreo WHERE id = %s",
+                           [buzon.pk.hex])
+            crudo = cursor.fetchone()[0]
+        self.assertNotIn("secreta", crudo)
+        self.assertEqual(buzon.__class__.objects.get(pk=buzon.pk).clave, "secreta")
+
+    def test_solo_admin_configura_el_buzon(self):
+        from django.contrib.auth import get_user_model
+        from core.models import Membresia
+        op = get_user_model().objects.create_user(username="op5@x.co",
+                                                  password="clave-larga-123")
+        Membresia.objects.create(usuario=op, empresa=self.empresa, rol="operador")
+        self.client.force_login(op)
+        respuesta = self.client.get(reverse("causacion:buzon"), follow=True)
+        self.assertContains(respuesta, "Solo el administrador")
+
+
 class PruebasConexionContable(CasoConEmpresa):
     """Panel de conexiones: cada empresa conecta SU cuenta del software contable."""
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block titulo %}Buzón de correo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Buzón de correo</h1>
+  <p class="suave">Conecta el correo donde llegan las facturas de tus proveedores:
+     la app lee los adjuntos XML (o ZIP) y los causa por ti — sin mirar factura
+     por factura. Todo queda pendiente de tu aprobación.</p>
+
+  {% if buzon %}
+    <div class="tarjeta">
+      <h2>{{ buzon.usuario }}
+        {% if buzon.activo %}<span class="insignia insignia-aprobada">Activo</span>
+        {% else %}<span class="insignia insignia-rechazada">Inactivo</span>{% endif %}
+      </h2>
+      <p class="ayuda">
+        {% if buzon.ultima_revision %}Última revisión: {{ buzon.ultima_revision|date:"Y-m-d H:i" }}.{% else %}Aún no se ha revisado.{% endif %}
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="revisar">
+        <button type="submit" class="boton">Revisar ahora</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="tarjeta">
+    <h2>{% if buzon %}Editar la configuración{% else %}Configurar el buzón{% endif %}</h2>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="guardar">
+      {% for campo in formulario %}
+        <div style="margin-bottom:16px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+          {{ campo }}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="boton">Guardar buzón</button>
+    </form>
+    <p class="ayuda">La contraseña se guarda cifrada. Servidores comunes:
+       Gmail <code>imap.gmail.com</code>, Outlook <code>outlook.office365.com</code>
+       (puerto 993). En cuentas con verificación en dos pasos, usa una
+       <strong>contraseña de aplicación</strong>, no la del correo.</p>
+  </div>
+
+  <p class="ayuda">Para revisión automática a diario, se programa el comando
+     <code>revisar_buzones</code> (como las alertas y recordatorios).</p>
+{% endblock %}

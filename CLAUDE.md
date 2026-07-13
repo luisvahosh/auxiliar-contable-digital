@@ -238,11 +238,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   DIAN, NC descuenta) y 1007 (ingresos por cliente), con export CSV para el
   prevalidador. Apoyo del auxiliar, no reporta ante DIAN. Conceptos/cuantías
   a confirmar contra resolución anual. 189 tests.
-- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica (para entregar al
-  operador); validación mes real XML DIAN (P7.1); confirmar calendario,
-  SMMLV y conceptos exógena contra decretos/resoluciones; CSV contra Siigo
-  real; buzón IMAP; P6.3 monitoreo DIAN; asistente IA normativo (fase 1
-  del PLAN, requiere NVIDIA_API_KEY + pgvector — ya hay Postgres).
+- **Hecho (día 6, buzón IMAP):** ingesta automática desde correo (PLAN §4) —
+  modelo BuzonCorreo por empresa (clave cifrada), `causacion/buzon.py`
+  (IMAP-SSL, lee no vistos, extrae XML de adjuntos y ZIP, pasa por
+  procesar_xml, marca leídos), comando `revisar_buzones` programable,
+  UI Configuración → Buzón con "Revisar ahora" (solo admin). 194 tests.
+- **Sigue:** asistente IA normativo (fase 1 PLAN; RAG con pgvector — ya hay
+  Postgres — + NVIDIA/embeddings + corpus normativo colombiano); P8.9
+  exportes pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1);
+  confirmar calendario/SMMLV/conceptos exógena contra decretos; CSV contra
+  Siigo real; P6.3 monitoreo DIAN.
 
 ## Git
 

@@ -573,6 +573,27 @@ pre-arma desde lo ya causado y la revisa antes de presentarla.*
 - [ ] **OJO:** los códigos de concepto y las cuantías mínimas cambian por
   resolución anual de la DIAN — confírmalos antes de presentar.
 
+## Paso 35 — Buzón de correo: facturas sin mirar una por una (PLAN §4)
+
+*Escenario: los proveedores mandan las facturas al correo. En vez de abrirlas
+una por una y subirlas, la app las lee del correo y las causa.*
+
+- [ ] **Configuración → Buzón de correo**: poner el servidor IMAP
+  (Gmail `imap.gmail.com`, Outlook `outlook.office365.com`, puerto 993),
+  el correo y la contraseña. Con cuentas que tengan verificación en dos
+  pasos, usar una **contraseña de aplicación** (no la del correo).
+- [ ] **Revisar ahora**: la app se conecta, lee los correos no vistos,
+  extrae los XML (adjuntos directos o dentro de un ZIP, como los envía la
+  DIAN) y los causa por el mismo motor de siempre. Reporta cuántas nuevas,
+  duplicadas y con error. Todo queda **pendiente de aprobación** en las
+  bandejas.
+- [ ] Los correos procesados se marcan como leídos (no se borra nada); la
+  próxima revisión solo mira los nuevos.
+- [ ] La contraseña del correo se guarda **cifrada**; solo el administrador
+  configura el buzón.
+- [ ] Para revisión automática a diario, se programa el comando
+  `revisar_buzones` (como las alertas y recordatorios de cobro).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

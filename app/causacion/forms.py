@@ -1,7 +1,34 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Tercero
+from .models import BuzonCorreo, Tercero
+
+
+class FormularioBuzon(forms.ModelForm):
+    """Configuración del buzón de correo de la empresa."""
+
+    clave = forms.CharField(
+        label="Contraseña (o contraseña de aplicación)",
+        widget=forms.PasswordInput(render_value=False, attrs={"autocomplete": "off"}),
+        required=False,
+        help_text="Con Gmail/Outlook con verificación en dos pasos, usa una "
+                  "contraseña de aplicación. Déjala vacía para no cambiarla.")
+
+    class Meta:
+        model = BuzonCorreo
+        fields = ["servidor", "puerto", "usuario", "carpeta", "activo"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # La clave es obligatoria solo al crear (no al editar sin cambiarla)
+        if self.instance and self.instance.pk:
+            self.fields["clave"].help_text += " (ya hay una guardada)."
+
+    def clean(self):
+        datos = super().clean()
+        if not (self.instance and self.instance.pk) and not datos.get("clave"):
+            self.add_error("clave", "La contraseña es obligatoria al configurar el buzón.")
+        return datos
 
 TAMANO_MAXIMO = 2 * 1024 * 1024  # las facturas UBL reales pesan pocos KB
 

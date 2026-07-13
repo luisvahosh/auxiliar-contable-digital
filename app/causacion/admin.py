@@ -1,7 +1,14 @@
 from django.contrib import admin
 
-from .models import (ConexionContable, CuentaContable, FacturaCompra,
-                     FacturaVenta, MapeoCuentaAlegra, Tercero)
+from .models import (BuzonCorreo, ConexionContable, CuentaContable,
+                     FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero)
+
+
+@admin.register(BuzonCorreo)
+class BuzonCorreoAdmin(admin.ModelAdmin):
+    list_display = ("empresa", "usuario", "servidor", "activo", "ultima_revision")
+    list_filter = ("activo",)
+    exclude = ("clave",)  # la contraseña no se muestra ni edita desde el admin
 
 
 @admin.register(CuentaContable)

@@ -313,6 +313,58 @@ def plan_cuentas_vista(request):
     return render(request, "causacion/plan_cuentas.html", {"grupos": grupos})
 
 
+# ---------- Buzón de correo: ingesta automática de facturas (PLAN §4) ----------
+
+def buzon(request):
+    """Configurar el buzón de correo y revisarlo bajo demanda (solo admin)."""
+    from core.tenancy import rol_en_empresa
+
+    from .buzon import BuzonError, revisar_buzon
+    from .forms import FormularioBuzon
+    from .models import BuzonCorreo
+
+    empresa = _empresa_activa(request)
+    if rol_en_empresa(request, empresa) != "admin":
+        messages.error(request, "Solo el administrador puede configurar el buzón.")
+        return redirect("core:inicio")
+
+    instancia = BuzonCorreo.objects.de_empresa(empresa).first()
+
+    if request.method == "POST" and request.POST.get("accion") == "revisar":
+        if instancia is None or not instancia.activo:
+            messages.error(request, "Configura y activa el buzón primero.")
+            return redirect("causacion:buzon")
+        try:
+            resumen = revisar_buzon(instancia)
+        except BuzonError as error:
+            messages.error(request, f"No se pudo revisar el buzón: {error}")
+            return redirect("causacion:buzon")
+        messages.success(
+            request,
+            f"Buzón revisado: {resumen.correos} correo(s), {resumen.creados} "
+            f"factura(s) nueva(s), {resumen.duplicados} ya causada(s), "
+            f"{resumen.errores} con error. Revisa las bandejas: quedan pendientes.")
+        return redirect("causacion:bandeja")
+
+    formulario = FormularioBuzon(request.POST or None, instance=instancia)
+    if request.method == "POST" and request.POST.get("accion") == "guardar":
+        if formulario.is_valid():
+            nuevo = formulario.save(commit=False)
+            nuevo.empresa = empresa
+            if formulario.cleaned_data.get("clave"):
+                nuevo.clave = formulario.cleaned_data["clave"]
+            elif instancia:
+                nuevo.clave = instancia.clave  # conservar la guardada
+            nuevo.save()
+            messages.success(request, "Buzón guardado. Usa «Revisar ahora» para "
+                                      "traer las facturas pendientes.")
+            return redirect("causacion:buzon")
+
+    return render(request, "causacion/buzon.html", {
+        "formulario": formulario, "buzon": instancia,
+    })
+
+
 # ---------- Conexiones contables por empresa (PLAN §4) ----------
 
 def conexiones(request):
