@@ -4,6 +4,15 @@ Software que hace el trabajo del auxiliar contable colombiano sobre el software
 contable existente (Alegra/Siigo). Contexto completo: `PLAN.md`.
 Guía de pruebas de dominio: `PROCESO-AUXILIAR-CONTABLE.md`.
 
+**Principio de alcance (no negociable):** la app ASISTE al auxiliar, NO
+reemplaza los aplicativos especializados. Igual que en contabilidad trabaja
+sobre Alegra/Siigo, la **nómina (P8) es apoyo del auxiliar y causación
+contable — NO un software de nómina**: no compite con Aleluya/Nominapp ni
+presenta PILA/nómina electrónica. Sus cálculos son borrador para revisión
+humana; los exportes (P8.9) son para ENTREGAR al operador, no reemplazarlo.
+Ningún vertical debe posicionarse como fuente oficial que sustituya al
+sistema especializado del cliente.
+
 ## Cómo correr (Windows, desarrollo local — sin Docker por ahora)
 
 ```
