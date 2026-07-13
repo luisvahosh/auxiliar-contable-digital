@@ -55,6 +55,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/cierre/` — P7: lista de chequeo del mes y paquete ZIP del contador.
 - `app/nomina/` — P8: planta de personal y liquidación mensual con asiento.
 - `app/activos/` — P10: activos fijos y depreciación línea recta.
+- `app/cajamenor/` — P11: fondo fijo, vales y reembolso que los legaliza.
 - Próximas apps por vertical: `asistente/`.
 
 ## Estado y siguiente paso
@@ -213,9 +214,14 @@ Toda funcionalidad de dominio se valida contra los casos de
     migrate al arrancar crea esquema+semillas; falta solo createsuperuser
     (postgres arranca vacío). 168 tests.
   - **CONSOLIDACIÓN MULTI-EMPRESA COMPLETA.**
-- **Sigue (después):** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
-  caja menor; validación mes real XML DIAN (P7.1); confirmar calendario y
-  SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3; forzar 2FA.
+- **Hecho (día 6, P11):** caja menor — app `cajamenor/`: CajaMenor (fondo
+  fijo), GastoCajaMenor (vales con categoría del plan), ReembolsoCajaMenor
+  (legaliza vales, asiento gastos+IVA vs bancos, aprobación humana);
+  efectivo disponible = monto − vales pendientes; no excede el fondo (P11.5);
+  usa el plan de cuentas por empresa. 177 tests.
+- **Sigue:** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
+  validación mes real XML DIAN (P7.1); confirmar calendario y SMMLV contra
+  decretos; CSV contra Siigo real; buzón IMAP; P6.3; asistente IA normativo.
 
 ## Git
 

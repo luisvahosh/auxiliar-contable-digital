@@ -11,6 +11,7 @@ urlpatterns = [
     path("cierre/", include("cierre.urls")),
     path("nomina/", include("nomina.urls")),
     path("activos/", include("activos.urls")),
+    path("caja-menor/", include("cajamenor.urls")),
     path("", include("core.urls")),
     # Soportes (fotos): servidos por la app también en el contenedor beta.
     # Los nombres son UUID no adivinables; endurecer con auth cuando el

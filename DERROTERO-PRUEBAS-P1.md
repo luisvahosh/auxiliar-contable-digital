@@ -527,6 +527,25 @@ honorarios van a 511005, no a 5110. La app debe usar TUS cuentas.*
   son independientes por empresa.
 - [ ] Solo el administrador edita el plan.
 
+## Paso 33 — Caja menor (P11)
+
+*Escenario: hay un fondo de efectivo para gastos pequeños (papelería, taxis,
+cafetería). Se gasta con vales y se repone cuando se agota.*
+
+- [ ] **Caja menor → Constituir un fondo**: crear uno de $500.000.
+  El asiento de constitución es débito caja menor, crédito bancos.
+- [ ] En el fondo, **registrar vales**: papelería $50.000 + IVA, un taxi
+  $30.000. El **efectivo disponible** baja con cada vale; el arqueo cuadra
+  (efectivo + vales pendientes = $500.000).
+- [ ] Probar un vale mayor que el efectivo disponible: se rechaza.
+- [ ] **Reembolsar (legalizar vales)**: genera el asiento de legalización
+  (cada cuenta de gasto + IVA descontable contra bancos), cuadrado, y queda
+  **pendiente de aprobación**.
+- [ ] **Aprobar** el reembolso: el fondo vuelve a su monto fijo (los vales
+  quedan reembolsados y el efectivo disponible vuelve a $500.000).
+- [ ] Las cuentas de gasto salen del **plan de cuentas** de la empresa
+  (editables en Configuración → Plan de cuentas, grupo Caja menor).
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

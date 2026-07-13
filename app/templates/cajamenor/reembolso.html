@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reembolso — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Reembolso de {{ reembolso.caja.nombre }}
+    <span class="insignia insignia-{{ reembolso.estado }}">{{ reembolso.get_estado_display }}</span>
+  </h1>
+  <p class="suave">{{ reembolso.fecha }} · ${{ reembolso.total|floatformat:"0g" }}</p>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Vales legalizados</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th class="numero">Total</th></tr></thead>
+      <tbody>
+        {% for g in reembolso.gastos.all %}
+          <tr><td>{{ g.fecha }}</td><td>{{ g.concepto }}</td>
+              <td class="numero">${{ g.total|floatformat:"0g" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento propuesto</h2>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr></thead>
+      <tbody>
+        {% for r in renglones %}
+          <tr><td>{{ r.cuenta }}</td><td>{{ r.nombre }}</td>
+              <td class="numero">{% if r.debito %}${{ r.debito|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero">{% if r.credito %}${{ r.credito|floatformat:"0g" }}{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="2">Sumas iguales</td>
+            <td class="numero">${{ total_debitos|floatformat:"0g" }}</td>
+            <td class="numero">${{ total_creditos|floatformat:"0g" }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Explicación</h2>
+    <p class="porque">{{ reembolso.explicacion }}</p>
+  </div>
+
+  {% if reembolso.estado == "pendiente" %}
+    <div class="acciones">
+      <form method="post" action="{% url 'cajamenor:decidir' reembolso.pk 'aprobado' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton">Aprobar reembolso</button>
+      </form>
+      <form method="post" action="{% url 'cajamenor:decidir' reembolso.pk 'rechazado' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton boton-peligro">Rechazar</button>
+      </form>
+      <a class="boton boton-secundario" href="{% url 'cajamenor:detalle' reembolso.caja.pk %}">Volver al fondo</a>
+    </div>
+  {% else %}
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'cajamenor:detalle' reembolso.caja.pk %}">Volver al fondo</a>
+    </div>
+  {% endif %}
+{% endblock %}

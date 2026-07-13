@@ -63,6 +63,12 @@ CUENTAS_ESTANDAR = {
     "activo_vehiculos": ("1540", "Flota y equipo de transporte"),
     "depacum_vehiculos": ("159225", "Depreciación acumulada — transporte"),
     "gastodep_vehiculos": ("516025", "Gasto depreciación — transporte"),
+    # --- Caja menor ---
+    "caja_menor": ("110505", "Caja menor"),
+    "cm_papeleria": ("519530", "Útiles, papelería y fotocopias"),
+    "cm_transporte": ("519525", "Combustibles, transporte y acarreos"),
+    "cm_cafeteria": ("519545", "Cafetería, aseo y elementos"),
+    "cm_otros": ("519595", "Otros gastos diversos de caja menor"),
 }
 
 # Agrupación para mostrar el plan ordenado en la UI
@@ -85,6 +91,16 @@ GRUPOS = [
         "activo_equipo_oficina", "depacum_equipo_oficina", "gastodep_equipo_oficina",
         "activo_equipo_computo", "depacum_equipo_computo", "gastodep_equipo_computo",
         "activo_vehiculos", "depacum_vehiculos", "gastodep_vehiculos"]),
+    ("Caja menor", ["caja_menor", "cm_papeleria", "cm_transporte",
+                    "cm_cafeteria", "cm_otros"]),
+]
+
+# Categorías de gasto ofrecidas al registrar un vale de caja menor (rol → etiqueta)
+CATEGORIAS_CAJA_MENOR = [
+    ("cm_papeleria", "Papelería y fotocopias"),
+    ("cm_transporte", "Transporte y combustible"),
+    ("cm_cafeteria", "Cafetería y aseo"),
+    ("cm_otros", "Otros gastos menores"),
 ]
 
 

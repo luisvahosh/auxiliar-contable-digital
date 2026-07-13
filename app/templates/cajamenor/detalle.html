@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ caja.nombre }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>{{ caja.nombre }}</h1>
+
+  <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom:16px">
+    <div class="tarjeta" style="margin:0">
+      <p class="suave" style="margin:0">Monto fijo</p>
+      <p class="numero" style="font-size:22px; font-weight:700; margin:4px 0 0">${{ caja.monto_fijo|floatformat:"0g" }}</p>
+    </div>
+    <div class="tarjeta" style="margin:0">
+      <p class="suave" style="margin:0">Efectivo disponible</p>
+      <p class="numero" style="font-size:22px; font-weight:700; margin:4px 0 0">${{ caja.efectivo_disponible|floatformat:"0g" }}</p>
+    </div>
+    <div class="tarjeta" style="margin:0">
+      <p class="suave" style="margin:0">Vales pendientes</p>
+      <p class="numero" style="font-size:22px; font-weight:700; margin:4px 0 0">${{ caja.total_vales_pendientes|floatformat:"0g" }}</p>
+    </div>
+  </div>
+  <p class="ayuda">Arqueo: efectivo disponible + vales pendientes = monto fijo
+     (${{ caja.monto_fijo|floatformat:"0g" }}).</p>
+
+  <div class="tarjeta">
+    <h2>Registrar un vale</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% if formulario.non_field_errors %}
+        <p class="ayuda" style="color: var(--error)">{{ formulario.non_field_errors|striptags }}</p>
+      {% endif %}
+      <div style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))">
+        {% for campo in formulario %}
+          <div>
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="acciones">
+        <button type="submit" class="boton">Registrar vale</button>
+      </div>
+    </form>
+  </div>
+
+  {% if vales %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Vales pendientes de reembolso</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th>
+               <th class="numero">Base</th><th class="numero">IVA</th><th class="numero">Total</th></tr></thead>
+        <tbody>
+          {% for v in vales %}
+            <tr>
+              <td>{{ v.fecha }}</td>
+              <td>{{ v.concepto }}</td>
+              <td>{{ v.get_categoria_display|default:v.categoria }}</td>
+              <td class="numero">${{ v.base|floatformat:"0g" }}</td>
+              <td class="numero">{% if v.iva %}${{ v.iva|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero">${{ v.total|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="acciones">
+        <form method="post" action="{% url 'cajamenor:reembolsar' caja.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="boton">Reembolsar (legalizar vales)</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Asiento de constitución</h2>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr></thead>
+      <tbody>
+        {% for r in asiento_constitucion %}
+          <tr><td>{{ r.cuenta }}</td><td>{{ r.nombre }}</td>
+              <td class="numero">{% if r.debito %}${{ r.debito|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero">{% if r.credito %}${{ r.credito|floatformat:"0g" }}{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if reembolsos %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Reembolsos</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th class="numero">Total</th><th>Estado</th></tr></thead>
+        <tbody>
+          {% for r in reembolsos %}
+            <tr>
+              <td><a class="fila-enlace" href="{% url 'cajamenor:reembolso' r.pk %}">{{ r.fecha }}</a></td>
+              <td class="numero">${{ r.total|floatformat:"0g" }}</td>
+              <td><span class="insignia insignia-{{ r.estado }}">{{ r.get_estado_display }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <div class="acciones">
+    <a class="boton boton-secundario" href="{% url 'cajamenor:panel' %}">Volver</a>
+  </div>
+{% endblock %}

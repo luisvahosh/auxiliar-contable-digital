@@ -226,6 +226,29 @@ el humano aprueba.
 | P10.4 | Valor residual | Activo con residual > 0 | Deprecia costo − residual, no el costo total |
 | P10.5 | No deprecia antes de adquirir | Activo comprado a mitad de período | No genera depreciación de meses anteriores a su compra |
 
+### P11. Caja menor (fase 3)
+
+**Disparador:** constitución del fondo + gastos menores del día a día +
+reembolso cuando se agota.
+
+**Cómo lo hace el auxiliar:** constituye un fondo fijo en efectivo (débito
+caja menor, crédito bancos). Cada gasto menor se registra como un vale con su
+cuenta y su IVA. Cuando el fondo se agota, hace el reembolso: legaliza todos
+los vales pendientes (débito a cada cuenta de gasto + IVA descontable, crédito
+bancos) para reponer el fondo a su monto original. Control permanente: efectivo
+disponible + vales pendientes = monto fijo del fondo.
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P11.1 | Constituir el fondo | Caja menor de $500.000 | Asiento: débito caja menor, crédito bancos |
+| P11.2 | Registrar un vale | Gasto de papelería $50.000 + IVA | Vale con su cuenta y su IVA; baja el efectivo disponible |
+| P11.3 | Arqueo | Fondo con vales | Efectivo disponible + vales pendientes = monto fijo |
+| P11.4 | Reembolso | Fondo con varios vales pendientes | Asiento de legalización (gastos + IVA vs. bancos); el fondo vuelve a su monto y los vales quedan reembolsados |
+| P11.5 | No exceder el fondo | Vale mayor que el efectivo disponible | Se rechaza con aviso |
+| P11.6 | Humano aprueba | Reembolso creado | Queda pendiente de aprobación; nada se contabiliza sin visto bueno |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.

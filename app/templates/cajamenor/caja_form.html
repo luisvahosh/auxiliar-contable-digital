@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block titulo %}Constituir fondo — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width:480px; margin:0 auto">
+    <h1>Constituir un fondo de caja menor</h1>
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% for campo in formulario %}
+          <div style="margin-bottom:16px">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <div class="acciones">
+          <button type="submit" class="boton">Constituir</button>
+          <a class="boton boton-secundario" href="{% url 'cajamenor:panel' %}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+    <p class="ayuda">Al constituirlo, el asiento es débito a caja menor y crédito
+       a bancos por el monto del fondo.</p>
+  </div>
+{% endblock %}

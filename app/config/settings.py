@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "cierre",
     "nomina",
     "activos",
+    "cajamenor",
 ]
 
 MIDDLEWARE = [
