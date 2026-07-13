@@ -269,7 +269,7 @@ Toda funcionalidad de dominio se valida contra los casos de
 - **Sigue:** ampliar corpus del asistente (validar con contador); P8.9
   pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1); confirmar
   calendario/conceptos exógena contra resoluciones; CSV contra Siigo real;
-  P6.3 monitoreo DIAN; balance general (requiere utilidad del ejercicio).
+  P6.3 monitoreo DIAN.
 
 ## Git
 

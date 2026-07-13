@@ -13,6 +13,7 @@
 
   <div class="acciones" style="margin-bottom:12px">
     <a class="boton boton-secundario" href="{% url 'informes:resultados' %}?anio={{ anio }}{% if mes %}&mes={{ mes }}{% endif %}">Estado de resultados</a>
+    <a class="boton boton-secundario" href="{% url 'informes:general' %}?anio={{ anio }}{% if mes %}&mes={{ mes }}{% endif %}">Balance general</a>
     <a class="boton boton-secundario" href="{% url 'informes:exportar_balance' %}?anio={{ anio }}{% if mes %}&mes={{ mes }}{% endif %}">Descargar CSV</a>
   </div>
 

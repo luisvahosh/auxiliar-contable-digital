@@ -80,6 +80,32 @@ class PruebasEstadoResultados(CasoConEmpresa):
         self.assertEqual(er["utilidad"], Decimal("3000000"))
 
 
+class PruebasBalanceGeneral(CasoConEmpresa):
+    def test_ecuacion_contable_cuadra(self):
+        from .logica import balance_general
+        compra(self.empresa, "F-1")   # activo 240802, pasivos, gasto 511005
+        venta(self.empresa, "FE-1")   # activo 130505, ingreso, pasivo IVA
+        bg = balance_general(self.empresa, 2026)
+        # Activo = Pasivo + Patrimonio + Utilidad
+        self.assertTrue(bg["cuadra"])
+        self.assertEqual(bg["total_activos"], bg["total_pasivo_patrimonio"])
+        # La utilidad (5.000.000 ingreso − 2.000.000 gasto) entra al patrimonio
+        self.assertEqual(bg["utilidad"], Decimal("3000000"))
+
+    def test_activos_incluyen_clientes_e_iva(self):
+        from .logica import balance_general
+        venta(self.empresa, "FE-1")
+        cuentas = {a["cuenta"] for a in balance_general(self.empresa, 2026)["activos"]}
+        self.assertIn("130505", cuentas)  # clientes (cartera)
+
+    def test_la_vista_general_renderiza(self):
+        from django.urls import reverse
+        venta(self.empresa, "FE-1")
+        respuesta = self.client.get(reverse("informes:general") + "?anio=2026")
+        self.assertContains(respuesta, "Balance general")
+        self.assertContains(respuesta, "Total activos")
+
+
 class PruebasConsolidaModulos(CasoConEmpresa):
     def test_p135_incluye_nomina_activos_caja(self):
         from activos.models import DepreciacionMensual

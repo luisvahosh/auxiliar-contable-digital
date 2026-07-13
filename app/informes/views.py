@@ -5,7 +5,12 @@ from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .logica import balance_comprobacion, estado_resultados, libro_mayor
+from .logica import (
+    balance_comprobacion,
+    balance_general,
+    estado_resultados,
+    libro_mayor,
+)
 
 
 def _periodo(request):
@@ -40,6 +45,14 @@ def resultados(request):
     anio, mes = _periodo(request)
     return render(request, "informes/resultados.html", {
         "er": estado_resultados(request.empresa, anio, mes),
+        **_contexto_periodo(request),
+    })
+
+
+def general(request):
+    anio, mes = _periodo(request)
+    return render(request, "informes/general.html", {
+        "bg": balance_general(request.empresa, anio, mes),
         **_contexto_periodo(request),
     })
 

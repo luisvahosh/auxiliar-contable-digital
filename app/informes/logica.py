@@ -131,6 +131,37 @@ def estado_resultados(empresa, anio, mes=None):
             "utilidad": ingresos - costos - gastos, "detalle": detalle}
 
 
+def balance_general(empresa, anio, mes=None):
+    """Activos (clase 1), pasivos (2) y patrimonio (3) por saldo, más la
+    utilidad del ejercicio (de resultados). Cuadra por construcción si el
+    balance de comprobación cuadra: Activo = Pasivo + Patrimonio + Utilidad."""
+    bal = balance_comprobacion(empresa, anio, mes)
+    activos, pasivos, patrimonio = [], [], []
+    total_a = total_p = total_pat = Decimal("0")
+    for f in bal["filas"]:
+        clase = f["cuenta"][:1]
+        saldo = f["saldo"]  # débito − crédito
+        if clase == "1":
+            activos.append({**f, "valor": saldo})       # activo: saldo débito
+            total_a += saldo
+        elif clase == "2":
+            pasivos.append({**f, "valor": -saldo})       # pasivo: saldo crédito
+            total_p += -saldo
+        elif clase == "3":
+            patrimonio.append({**f, "valor": -saldo})    # patrimonio: saldo crédito
+            total_pat += -saldo
+    utilidad = estado_resultados(empresa, anio, mes)["utilidad"]
+    total_pp = total_p + total_pat + utilidad
+    return {
+        "activos": activos, "total_activos": total_a,
+        "pasivos": pasivos, "total_pasivos": total_p,
+        "patrimonio": patrimonio, "total_patrimonio": total_pat,
+        "utilidad": utilidad,
+        "total_pasivo_patrimonio": total_pp,
+        "cuadra": total_a == total_pp,
+    }
+
+
 def libro_mayor(empresa, cuenta, anio, mes=None):
     """Movimientos de una cuenta con su documento de origen y saldo corriente."""
     movs = [m for m in movimientos_del_periodo(empresa, anio, mes) if m.cuenta == cuenta]

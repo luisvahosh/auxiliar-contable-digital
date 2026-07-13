@@ -630,6 +630,10 @@ consolidada — no módulo por módulo, sino todo junto por cuenta.*
 - [ ] Tocar una cuenta en el balance abre su **libro mayor**: cada movimiento
   con el documento de origen (Compra FVS-847, Nómina 2026-07…) y el saldo
   corriente.
+- [ ] **Balance general**: activos, pasivos y patrimonio por saldo, con la
+  utilidad del ejercicio llevada al patrimonio. Verificar el badge "Cuadra":
+  Activo = Pasivo + Patrimonio + Utilidad (la ecuación contable). Completa
+  los tres estados financieros básicos junto con el estado de resultados.
 
 ## Cierre — revisión de bandeja
 
