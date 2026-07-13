@@ -50,25 +50,24 @@
                box-shadow: 0 8px 24px rgba(15,23,42,.12); }
     .submenu a { padding: 8px 10px; border-radius: 6px; }
     .submenu a:hover { background: var(--superficie); }
-    /* Hamburguesa: en móvil todo el menú colapsa en un botón */
-    .hamburguesa > summary { cursor: pointer; list-style: none; font-weight: 700;
-                             color: var(--primario); font-size: 18px; }
-    .hamburguesa > summary::-webkit-details-marker { display: none; }
+    /* Hamburguesa: en móvil el menú colapsa en un botón (checkbox hack, sin JS).
+       El checkbox oculto guarda el estado abierto/cerrado; el label es el botón. */
+    .menu-toggle { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+    .hamburguesa-btn { display: none; cursor: pointer; font-weight: 700;
+                       color: var(--primario); font-size: 18px; padding: 4px 0; }
+    .menu-toggle:focus-visible ~ .hamburguesa-btn {
+      outline: 2px solid var(--primario); outline-offset: 2px; border-radius: 4px; }
     .navlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
     @media (max-width: 720px) {
       nav { align-items: flex-start; }
-      .hamburguesa { width: 100%; }
+      .hamburguesa-btn { display: block; }  /* en móvil aparece el botón ☰ */
       .navlinks { display: none; flex-direction: column; align-items: stretch;
                   width: 100%; margin-top: 8px; gap: 4px; }
-      .hamburguesa[open] .navlinks { display: flex; }
+      .menu-toggle:checked ~ .navlinks { display: flex; }  /* abierto: se ve el menú */
       .submenu { position: static; box-shadow: none; border: 0;
                  padding: 2px 0 6px 16px; background: transparent; }
       .navacciones { flex-direction: column; align-items: stretch; width: 100%;
                      margin-left: 0 !important; margin-top: 8px; }
-    }
-    @media (min-width: 721px) {
-      .hamburguesa > summary { display: none; }  /* en PC no hay botón, todo visible */
-      .hamburguesa .navlinks { display: flex !important; }  /* siempre visible en PC */
     }
     main { max-width: 960px; margin: 0 auto; padding: 16px; }
     h1 { font-size: 24px; margin: 8px 0 16px; }
@@ -123,8 +122,8 @@
     <nav>
       <a class="marca" href="{% url 'core:inicio' %}">Auxiliar Contable</a>
       {% if user.is_authenticated and request.empresa %}
-      <details class="hamburguesa" style="width:100%">
-        <summary><span aria-hidden="true">☰</span> Menú</summary>
+      <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Abrir o cerrar el menú">
+      <label for="menu-toggle" class="hamburguesa-btn"><span aria-hidden="true">☰</span> Menú</label>
         <div class="navlinks">
         <details class="menu">
           <summary>Facturación</summary>
@@ -176,7 +175,6 @@
           </form>
         </span>
         </div>
-      </details>
       {% endif %}
     </nav>
   </header>
