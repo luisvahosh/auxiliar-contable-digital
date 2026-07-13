@@ -612,6 +612,25 @@ rápida con la fuente, antes de confirmar con el contador.*
   repite en cada respuesta. Requiere `NVIDIA_API_KEY` para la mejor calidad;
   sin ella responde por coincidencia de términos.
 
+## Paso 37 — Informes contables (P13)
+
+*Escenario: el auxiliar (o el contador) necesita ver la contabilidad
+consolidada — no módulo por módulo, sino todo junto por cuenta.*
+
+- [ ] Abrir **Informes** en el menú → **Balance de comprobación**. Consolida
+  TODOS los asientos aprobados del período: compras, ventas, nómina,
+  depreciación, caja menor y conciliación, agregados por cuenta con débitos,
+  créditos y saldo.
+- [ ] Verificar el badge **"Cuadra"**: el total de débitos = total de créditos
+  (el control contable fundamental). Si aprobaste documentos de los pasos
+  anteriores, aquí aparecen todos juntos.
+- [ ] Filtrar por año y mes con los selectores; **Descargar CSV** del balance.
+- [ ] **Estado de resultados**: ingresos (clase 4) − costos − gastos =
+  utilidad o pérdida del período, con el detalle por cuenta.
+- [ ] Tocar una cuenta en el balance abre su **libro mayor**: cada movimiento
+  con el documento de origen (Compra FVS-847, Nómina 2026-07…) y el saldo
+  corriente.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

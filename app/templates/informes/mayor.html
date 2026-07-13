@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titulo %}Libro mayor {{ cuenta }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Libro mayor — cuenta {{ cuenta }}</h1>
+  {% include "informes/_periodo.html" %}
+  <div class="acciones" style="margin-bottom:12px">
+    <a class="boton boton-secundario" href="{% url 'informes:balance' %}?anio={{ anio }}{% if mes %}&mes={{ mes }}{% endif %}">Volver al balance</a>
+  </div>
+
+  {% if filas %}
+    <div class="tarjeta tabla-envoltura">
+      <table>
+        <thead><tr><th>Fecha</th><th>Documento</th><th class="numero">Débito</th>
+               <th class="numero">Crédito</th><th class="numero">Saldo</th></tr></thead>
+        <tbody>
+          {% for f in filas %}
+            <tr>
+              <td>{{ f.fecha }}</td>
+              <td>{{ f.origen }}</td>
+              <td class="numero">{% if f.debito %}${{ f.debito|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero">{% if f.credito %}${{ f.credito|floatformat:"0g" }}{% endif %}</td>
+              <td class="numero">${{ f.saldo|floatformat:"0g" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="tarjeta"><p>Sin movimientos en esta cuenta para el período.</p></div>
+  {% endif %}
+{% endblock %}

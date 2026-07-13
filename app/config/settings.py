@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "cajamenor",
     "exogena",
     "asistente",
+    "informes",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block titulo %}Estado de resultados — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Estado de resultados</h1>
+  {% include "informes/_periodo.html" %}
+  <div class="acciones" style="margin-bottom:12px">
+    <a class="boton boton-secundario" href="{% url 'informes:balance' %}?anio={{ anio }}{% if mes %}&mes={{ mes }}{% endif %}">Balance de comprobación</a>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <table>
+      <tbody>
+        <tr><th>Ingresos</th><td class="numero">${{ er.ingresos|floatformat:"0g" }}</td></tr>
+        {% for c in er.detalle.ingresos %}
+          <tr><td class="suave" style="padding-left:24px">{{ c.cuenta }} {{ c.nombre }}</td>
+              <td class="numero suave">${{ c.monto|floatformat:"0g" }}</td></tr>
+        {% endfor %}
+        <tr><th>(−) Costos de ventas</th><td class="numero">${{ er.costos|floatformat:"0g" }}</td></tr>
+        {% for c in er.detalle.costos %}
+          <tr><td class="suave" style="padding-left:24px">{{ c.cuenta }} {{ c.nombre }}</td>
+              <td class="numero suave">${{ c.monto|floatformat:"0g" }}</td></tr>
+        {% endfor %}
+        <tr><th>(−) Gastos</th><td class="numero">${{ er.gastos|floatformat:"0g" }}</td></tr>
+        {% for c in er.detalle.gastos %}
+          <tr><td class="suave" style="padding-left:24px">{{ c.cuenta }} {{ c.nombre }}</td>
+              <td class="numero suave">${{ c.monto|floatformat:"0g" }}</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td>{% if er.utilidad >= 0 %}Utilidad del período{% else %}Pérdida del período{% endif %}</td>
+            <td class="numero"><strong>${{ er.utilidad|floatformat:"0g" }}</strong></td></tr>
+      </tfoot>
+    </table>
+  </div>
+  <p class="ayuda">Ingresos (clase 4) − costos (6/7) − gastos (5). Informe de
+     apoyo; el estado financiero oficial lo valida el contador.</p>
+{% endblock %}

@@ -67,6 +67,9 @@ Toda funcionalidad de dominio se valida contra los casos de
 - `app/cajamenor/` — P11: fondo fijo, vales y reembolso que los legaliza.
 - `app/exogena/` — P12: pre-armado de exógena 1001/1007 (lectura transversal).
 - `app/asistente/` — asistente IA normativo (RAG con citas; fase 1 del PLAN).
+- `app/informes/` — P13: balance de comprobación, estado de resultados y
+  libro mayor (lectura transversal que consolida los asientos de todos los
+  módulos).
 
 ## Estado y siguiente paso
 
@@ -257,10 +260,16 @@ Toda funcionalidad de dominio se valida contra los casos de
   Comandos indexar_corpus y agregar_articulo. estatuto.co bloquea scraping
   (403) → fichas curadas, el contador amplía con texto oficial. 203 tests.
   Verificado end-to-end con la key real: "pago a abogado" → art. 392, 10/11%.
-- **Sigue:** ampliar corpus con más artículos (validar con contador); P8.9
+- **Hecho (día 6, P13):** informes contables — app `informes/` (lectura
+  transversal): `movimientos_del_periodo` recolecta los asientos aprobados
+  de TODOS los módulos (compras, ventas, nómina, depreciación, caja menor,
+  conciliación); balance de comprobación por cuenta con verificación de
+  cuadre, estado de resultados (clases PUC 4/5/6) y libro mayor por cuenta
+  con saldo corriente; export CSV. 212 tests.
+- **Sigue:** ampliar corpus del asistente (validar con contador); P8.9
   pre-PILA/nómina electrónica; validación mes real XML DIAN (P7.1); confirmar
   calendario/conceptos exógena contra resoluciones; CSV contra Siigo real;
-  P6.3 monitoreo DIAN.
+  P6.3 monitoreo DIAN; balance general (requiere utilidad del ejercicio).
 
 ## Git
 

@@ -272,6 +272,29 @@ prevalidador. La suma debe cuadrar con las compras y ventas del año.
 | P12.5 | Export CSV | Formato listo | Descarga el CSV por tercero, insumo del prevalidador DIAN |
 | P12.6 | Notas crédito | Compra/venta con nota crédito posterior | El valor reportado refleja el neto (descuenta la reversa) |
 
+### P13. Informes contables (transversal)
+
+**Disparador:** cuando el auxiliar o el contador necesitan ver la contabilidad
+consolidada (mensual, anual o a demanda).
+
+**Cómo lo hace el auxiliar:** consolida TODOS los asientos aprobados del
+período (compras, ventas, nómina, depreciación, caja menor, conciliación) en
+un **balance de comprobación** por cuenta (débitos, créditos, saldo), verifica
+que cuadre (débitos totales = créditos totales), y arma el **estado de
+resultados** (ingresos − costos − gastos = utilidad). Puede ver el **libro
+mayor** de cada cuenta (de qué documento viene cada movimiento).
+
+**Casos de prueba:**
+
+| # | Escenario | Entrada | Resultado esperado |
+|---|---|---|---|
+| P13.1 | Balance de comprobación | Asientos de varios módulos aprobados | Por cuenta: débitos, créditos y saldo; el total de débitos = total de créditos |
+| P13.2 | Solo aprobados y del período | Documentos pendientes o de otro período | No entran en los informes |
+| P13.3 | Estado de resultados | El período | Ingresos (clase 4) − gastos (5) − costos (6) = utilidad o pérdida |
+| P13.4 | Libro mayor por cuenta | Una cuenta con varios movimientos | Detalle de cada movimiento con su documento de origen |
+| P13.5 | Consolida todos los módulos | Nómina, activos y caja menor aprobados | Sus asientos aparecen en el balance |
+| P13.6 | Export | Balance listo | Descarga el CSV del balance de comprobación |
+
 ### P8. Procesos de fases posteriores (probar cuando lleguen)
 
 **Caja menor (F3):** foto de recibos → OCR → paquete de legalización que cuadra con el monto del fondo. **Activos fijos (F3):** depreciación mensual automática, línea recta, meses correctos. **Certificados de retención (F3):** generación masiva anual por tercero; los valores cuadran con los auxiliares. **Exógena (F3):** pre-armado de formatos 1001/1007/2276; los totales cruzan contra la contabilidad. **Nómina (F4):** novedades → liquidación con provisiones; pre-PILA cuadra con la planilla del operador.

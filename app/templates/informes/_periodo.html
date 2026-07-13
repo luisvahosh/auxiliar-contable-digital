@@ -1,0 +1,11 @@
+{% load static %}
+<p class="suave">Período:
+  {% for a in anios %}
+    {% if a == anio %}<strong>{{ a }}</strong>{% else %}<a class="fila-enlace" href="?anio={{ a }}{% if mes %}&mes={{ mes }}{% endif %}">{{ a }}</a>{% endif %}{% if not forloop.last %} · {% endif %}
+  {% endfor %}
+  &nbsp;|&nbsp; Mes:
+  {% if not mes %}<strong>todo el año</strong>{% else %}<a class="fila-enlace" href="?anio={{ anio }}">todo el año</a>{% endif %}
+  {% for m in meses %}
+    · {% if m == mes %}<strong>{{ m }}</strong>{% else %}<a class="fila-enlace" href="?anio={{ anio }}&mes={{ m }}">{{ m }}</a>{% endif %}
+  {% endfor %}
+</p>
