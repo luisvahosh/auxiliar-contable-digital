@@ -5,9 +5,11 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from collections import defaultdict
+
 from .calculo import liquidar_mes
-from .forms import FormularioEmpleado, FormularioLiquidar
-from .models import Empleado, LiquidacionNomina
+from .forms import FormularioEmpleado, FormularioLiquidar, FormularioNovedad
+from .models import Empleado, LiquidacionNomina, NovedadNomina
 
 
 def panel(request):
@@ -42,6 +44,34 @@ def empleado(request, pk=None):
     })
 
 
+def novedades(request):
+    """Registrar y listar las novedades del mes (P8.8)."""
+    empresa = request.empresa
+    formulario = FormularioNovedad(request.POST or None, empresa=empresa)
+    if request.method == "POST" and formulario.is_valid():
+        novedad = formulario.save(commit=False)
+        novedad.empresa = empresa
+        novedad.anio, novedad.mes = formulario.cleaned_data["periodo"]
+        novedad.save()
+        messages.success(request, f"Novedad registrada para {novedad.empleado.nombre}. "
+                                  "Se aplicará al liquidar ese mes.")
+        return redirect("nomina:novedades")
+    return render(request, "nomina/novedades.html", {
+        "formulario": formulario,
+        "novedades": NovedadNomina.objects.de_empresa(empresa)
+                     .select_related("empleado")[:60],
+    })
+
+
+@require_POST
+def borrar_novedad(request, pk):
+    empresa = request.empresa
+    novedad = get_object_or_404(NovedadNomina.objects.de_empresa(empresa), pk=pk)
+    novedad.delete()
+    messages.info(request, "Novedad eliminada.")
+    return redirect("nomina:novedades")
+
+
 @require_POST
 def liquidar(request):
     empresa = request.empresa
@@ -62,8 +92,13 @@ def liquidar(request):
         messages.error(request, "No hay empleados activos: registra la planta primero.")
         return redirect("nomina:panel")
 
+    # P8.8: novedades del mes agrupadas por empleado
+    novedades = defaultdict(list)
+    for novedad in NovedadNomina.objects.de_empresa(empresa).filter(anio=anio, mes=mes):
+        novedades[novedad.empleado_id].append(novedad)
+
     try:
-        resultado = liquidar_mes(empresa, empleados, anio, mes)
+        resultado = liquidar_mes(empresa, empleados, anio, mes, dict(novedades))
     except ValueError as error:
         messages.error(request, str(error))
         return redirect("nomina:panel")

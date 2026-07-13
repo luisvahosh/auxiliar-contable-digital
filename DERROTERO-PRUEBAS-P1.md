@@ -455,6 +455,27 @@ les retuvo el año pasado. El auxiliar los emite desde lo ya causado.*
   **descontada** por la reversa; un proveedor de Régimen Simple o bajo la
   base mínima **no aparece** (no se le retuvo).
 
+## Paso 29 — Novedades de nómina (P8.8)
+
+*Escenario: este mes hubo horas extra, un bono y un descuento de préstamo.
+La liquidación de "mes perfecto" ya no alcanza.*
+
+- [ ] **Nómina → Novedades del mes**: registrar para un empleado (todas del
+  mismo período que vas a liquidar):
+  - una **hora extra diurna** por $150.000 (sube la base),
+  - un **bono no salarial** por $300.000 (suma al neto, no a la base),
+  - un **préstamo/libranza** por $250.000 (descuenta solo del neto).
+- [ ] Volver a **Nómina → Liquidar** ese mes (si ya lo habías liquidado,
+  bórralo antes en el admin). La liquidación aplica cada novedad:
+  - la columna **"Novedades +"** muestra los devengos extra,
+  - la salud/pensión se calculan sobre la base ajustada,
+  - **"Otros desc."** muestra el préstamo,
+  - el asiento sigue **cuadrando** y el descuento del préstamo queda en su
+    propia cuenta por pagar (237010).
+- [ ] Los **días no laborados** reducen la base de aportes; las
+  **incapacidades** se registran igual (los días a cargo de EPS/ARL) — con
+  la salvedad de que el pago de la EPS es un trámite aparte.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

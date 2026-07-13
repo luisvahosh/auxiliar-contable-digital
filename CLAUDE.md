@@ -183,11 +183,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   las NC de proveedor descuentan la base; retención total cuadra con créditos
   a 2365 (P9.4). Listado en Terceros → Certificados y certificado individual
   imprimible. 138 tests.
-- **Sigue:** P8.8 novedades (horas extra, incapacidades, retiros) y P8.9
-  exportes pre-PILA/nómina electrónica; fase 3 tributario profundo restante
-  (exógena, caja menor, activos fijos); validación con mes real de XML DIAN
-  (P7.1); confirmar calendario y SMMLV contra decretos; CSV contra Siigo
-  real; buzón IMAP; P6.3 monitoreo DIAN; forzar 2FA a admins.
+- **Hecho (día 6, P8.8):** novedades de nómina — modelo NovedadNomina con
+  efecto por tipo (constitutivo/no constitutivo/reduce_base/descuento);
+  el motor ajusta base de aportes/provisiones y neto; asiento cuadra con
+  descuentos en 237010. Pantalla Nómina → Novedades. 144 tests.
+- **Sigue:** P8.9 exportes pre-PILA/nómina electrónica; fase 3 tributario
+  profundo restante (exógena, caja menor, activos fijos); validación con
+  mes real de XML DIAN (P7.1); confirmar calendario y SMMLV contra
+  decretos; CSV contra Siigo real; buzón IMAP; P6.3 monitoreo DIAN; forzar
+  2FA a admins.
 
 ## Git
 

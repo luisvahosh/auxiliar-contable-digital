@@ -17,64 +17,95 @@ def _al_peso(valor):
     return valor.quantize(PESO, rounding=ROUND_HALF_UP)
 
 
-def liquidar_empleado(empleado, valores, exonerada):
-    """Liquidación del mes para un empleado. → dict con todos los rubros."""
-    salario = empleado.salario
-    smmlv = valores["smmlv"]
-    auxilio = valores["auxilio_transporte"] if salario <= 2 * smmlv else Decimal("0")
-    devengado = salario + auxilio
+def _resumen_novedades(novedades):
+    """Suma las novedades por efecto. → (constitutivo, no_constitutivo,
+    reduce_base, descuento)."""
+    from .models import EFECTO_NOVEDAD
+    totales = {"constitutivo": Decimal("0"), "no_constitutivo": Decimal("0"),
+               "reduce_base": Decimal("0"), "descuento": Decimal("0")}
+    for novedad in novedades:
+        efecto = EFECTO_NOVEDAD[novedad.tipo][1]
+        totales[efecto] += novedad.valor
+    return totales
 
-    salud_empleado = _al_peso(salario * p.SALUD_EMPLEADO)
-    pension_empleado = _al_peso(salario * p.PENSION_EMPLEADO)
-    deducciones = salud_empleado + pension_empleado
+
+def liquidar_empleado(empleado, valores, exonerada, novedades=()):
+    """Liquidación del mes para un empleado, aplicando sus novedades (P8.8).
+    → dict con todos los rubros."""
+    smmlv = valores["smmlv"]
+    nov = _resumen_novedades(novedades)
+
+    # Base salarial del mes = salario + devengos constitutivos − días no trabajados.
+    # Sobre ella se calculan deducciones, aportes y provisiones (salvo auxilio).
+    salario_base = empleado.salario + nov["constitutivo"] - nov["reduce_base"]
+    if salario_base < 0:
+        salario_base = Decimal("0")
+
+    # El auxilio de transporte se define por el salario contratado, no por la base.
+    auxilio = valores["auxilio_transporte"] if empleado.salario <= 2 * smmlv else Decimal("0")
+    devengado = salario_base + auxilio + nov["no_constitutivo"]
+
+    salud_empleado = _al_peso(salario_base * p.SALUD_EMPLEADO)
+    pension_empleado = _al_peso(salario_base * p.PENSION_EMPLEADO)
+    deducciones = salud_empleado + pension_empleado + nov["descuento"]
     neto = devengado - deducciones
 
     # Exoneración art. 114-1 E.T.: salud patronal, SENA e ICBF no se pagan
     # para salarios < 10 SMMLV si la empresa es beneficiaria.
-    paga_plenos = (not exonerada) or salario >= 10 * smmlv
+    paga_plenos = (not exonerada) or empleado.salario >= 10 * smmlv
     aportes = {
-        "pension": _al_peso(salario * p.PENSION_EMPLEADOR),
-        "salud": _al_peso(salario * p.SALUD_EMPLEADOR) if paga_plenos else Decimal("0"),
-        "arl": _al_peso(salario * p.ARL_NIVEL_1),
-        "caja": _al_peso(salario * p.CAJA_COMPENSACION),
-        "sena": _al_peso(salario * p.SENA) if paga_plenos else Decimal("0"),
-        "icbf": _al_peso(salario * p.ICBF) if paga_plenos else Decimal("0"),
+        "pension": _al_peso(salario_base * p.PENSION_EMPLEADOR),
+        "salud": _al_peso(salario_base * p.SALUD_EMPLEADOR) if paga_plenos else Decimal("0"),
+        "arl": _al_peso(salario_base * p.ARL_NIVEL_1),
+        "caja": _al_peso(salario_base * p.CAJA_COMPENSACION),
+        "sena": _al_peso(salario_base * p.SENA) if paga_plenos else Decimal("0"),
+        "icbf": _al_peso(salario_base * p.ICBF) if paga_plenos else Decimal("0"),
     }
+    base_prestaciones = salario_base + auxilio  # el auxilio sí es base de prestaciones
     provisiones = {
-        "cesantias": _al_peso(devengado * p.CESANTIAS),
-        "intereses": _al_peso(devengado * p.INTERESES_CESANTIAS),
-        "prima": _al_peso(devengado * p.PRIMA),
-        "vacaciones": _al_peso(salario * p.VACACIONES),
+        "cesantias": _al_peso(base_prestaciones * p.CESANTIAS),
+        "intereses": _al_peso(base_prestaciones * p.INTERESES_CESANTIAS),
+        "prima": _al_peso(base_prestaciones * p.PRIMA),
+        "vacaciones": _al_peso(salario_base * p.VACACIONES),
     }
 
     return {
         "empleado": empleado.nombre,
         "cedula": empleado.cedula,
-        "salario": str(salario),
+        "salario": str(empleado.salario),
+        "novedades_devengo": str(nov["constitutivo"] + nov["no_constitutivo"]),
+        "novedades_descuento": str(nov["descuento"] + nov["reduce_base"]),
         "auxilio": str(auxilio),
         "devengado": str(devengado),
         "salud_empleado": str(salud_empleado),
         "pension_empleado": str(pension_empleado),
+        "otros_descuentos": str(nov["descuento"]),
         "neto": str(neto),
         "aportes_empleador": str(sum(aportes.values())),
         "provisiones": str(sum(provisiones.values())),
     }
 
 
-def liquidar_mes(empresa, empleados, anio, mes):
+def liquidar_mes(empresa, empleados, anio, mes, novedades_por_empleado=None):
     """Liquidación consolidada del mes: detalle por empleado, totales,
     asiento balanceado y explicación."""
     valores = p.parametros_del_anio(anio)
     exonerada = empresa.exonerada_parafiscales
+    novedades_por_empleado = novedades_por_empleado or {}
 
-    detalle = [liquidar_empleado(e, valores, exonerada) for e in empleados]
+    detalle = [
+        liquidar_empleado(e, valores, exonerada,
+                          novedades_por_empleado.get(e.pk, []))
+        for e in empleados
+    ]
 
     def suma(campo):
         return sum(Decimal(fila[campo]) for fila in detalle)
 
-    salarios = suma("salario")
     auxilios = suma("auxilio")
-    deducciones = suma("salud_empleado") + suma("pension_empleado")
+    sueldos = suma("devengado") - auxilios          # gasto de sueldos (incluye novedades)
+    deducciones_seg = suma("salud_empleado") + suma("pension_empleado")
+    otros_descuentos = suma("otros_descuentos")
     neto = suma("neto")
     aportes = suma("aportes_empleador")
     provisiones = suma("provisiones")
@@ -87,12 +118,13 @@ def liquidar_mes(empresa, empleados, anio, mes):
         renglones.append({"cuenta": cuenta_nombre[0], "nombre": cuenta_nombre[1],
                           "debito": str(debito), "credito": str(credito)})
 
-    renglon(p.CUENTA_SUELDOS, debito=salarios)
+    renglon(p.CUENTA_SUELDOS, debito=sueldos)
     renglon(p.CUENTA_AUXILIO, debito=auxilios)
     renglon(p.CUENTA_APORTES, debito=aportes)
     renglon(p.CUENTA_PRESTACIONES, debito=provisiones)
     renglon(p.CUENTA_SALARIOS_POR_PAGAR, credito=neto)
-    renglon(p.CUENTA_APORTES_POR_PAGAR, credito=deducciones + aportes)
+    renglon(p.CUENTA_APORTES_POR_PAGAR, credito=deducciones_seg + aportes)
+    renglon(p.CUENTA_DESCUENTOS_NOMINA, credito=otros_descuentos)
     renglon(p.CUENTA_PROVISIONES, credito=provisiones)
 
     debitos = sum(Decimal(r["debito"]) for r in renglones)
@@ -100,21 +132,24 @@ def liquidar_mes(empresa, empleados, anio, mes):
     if debitos != creditos:
         raise ValueError(f"Asiento de nómina desbalanceado: {debitos} ≠ {creditos}.")
 
+    hay_novedades = any(novedades_por_empleado.values())
     explicacion = (
         f"Liquidación {anio}-{mes:02d} de {len(detalle)} empleado(s) con SMMLV "
         f"${valores['smmlv']:,.0f} y auxilio ${valores['auxilio_transporte']:,.0f} "
         f"(VERIFICAR contra decretos del año). Deducciones del empleado: salud 4% y "
         f"pensión 4%. Empresa {'EXONERADA' if exonerada else 'NO exonerada'} de salud "
         "patronal, SENA e ICBF (art. 114-1 E.T.) para salarios < 10 SMMLV. "
-        "Provisiones: cesantías 8.33%, intereses 1%, prima 8.33% (sobre devengado) "
-        "y vacaciones 4.17% (sobre salario). Sin novedades: mes completo para todos."
+        "Provisiones: cesantías 8.33%, intereses 1%, prima 8.33% y vacaciones 4.17%. "
+        + ("Con novedades del mes (horas extra, bonos, descuentos): los devengos "
+           "constitutivos y los días no laborados ajustan la base de aportes y "
+           "provisiones." if hay_novedades else "Sin novedades: mes completo para todos.")
     )
 
     return {
         "detalle": detalle,
         "totales": {
-            "devengado": salarios + auxilios,
-            "deducciones": deducciones,
+            "devengado": sueldos + auxilios,
+            "deducciones": deducciones_seg + otros_descuentos,
             "neto": neto,
             "aportes_empleador": aportes,
             "provisiones": provisiones,

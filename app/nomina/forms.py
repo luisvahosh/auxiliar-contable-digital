@@ -2,7 +2,7 @@ from datetime import date
 
 from django import forms
 
-from .models import Empleado
+from .models import Empleado, NovedadNomina
 
 
 class FormularioEmpleado(forms.ModelForm):
@@ -22,6 +22,36 @@ class FormularioEmpleado(forms.ModelForm):
         if salario <= 0:
             raise forms.ValidationError("El salario debe ser mayor que cero.")
         return salario
+
+
+class FormularioNovedad(forms.ModelForm):
+    periodo = forms.CharField(
+        label="Mes de la novedad",
+        widget=forms.TextInput(attrs={"type": "month"}))
+
+    class Meta:
+        model = NovedadNomina
+        fields = ["empleado", "tipo", "cantidad", "valor", "descripcion"]
+
+    def __init__(self, *args, empresa=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if empresa is not None:
+            self.fields["empleado"].queryset = Empleado.objects.de_empresa(
+                empresa).filter(activo=True)
+
+    def clean_periodo(self):
+        try:
+            anio, mes = map(int, self.cleaned_data["periodo"].split("-"))
+            date(anio, mes, 1)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Formato AAAA-MM.")
+        return anio, mes
+
+    def clean_valor(self):
+        valor = self.cleaned_data["valor"]
+        if valor <= 0:
+            raise forms.ValidationError("El valor en pesos debe ser mayor que cero.")
+        return valor
 
 
 class FormularioLiquidar(forms.Form):

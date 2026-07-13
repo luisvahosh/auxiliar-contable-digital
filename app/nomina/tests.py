@@ -10,7 +10,7 @@ from core.models import Empresa
 from core.pruebas import CasoConEmpresa
 
 from .calculo import liquidar_empleado, liquidar_mes
-from .models import Empleado, LiquidacionNomina
+from .models import Empleado, LiquidacionNomina, NovedadNomina
 from .parametros import parametros_del_anio
 
 
@@ -63,6 +63,74 @@ class PruebasCalculo(CasoConEmpresa):
         self.assertEqual(parametros_del_anio(2026)["smmlv"], Decimal("1623500"))
         # Año futuro sin datos: usa el último conocido
         self.assertEqual(parametros_del_anio(2027)["smmlv"], Decimal("1623500"))
+
+
+class PruebasNovedades(CasoConEmpresa):
+    """Caso P8.8: novedades del mes aplicadas a la liquidación."""
+
+    def setUp(self):
+        super().setUp()
+        self.empleado = empleado_de(self.empresa, salario="2000000")
+
+    def novedad(self, tipo, valor, anio=2026, mes=7):
+        return NovedadNomina.objects.create(
+            empresa=self.empresa, empleado=self.empleado, anio=anio, mes=mes,
+            tipo=tipo, valor=Decimal(valor))
+
+    def liquidar(self):
+        return liquidar_mes(
+            self.empresa, [self.empleado], 2026, 7,
+            {self.empleado.pk: list(NovedadNomina.objects.de_empresa(self.empresa))})
+
+    def test_hora_extra_constitutiva_sube_base_y_neto(self):
+        self.novedad("he_diurna", "150000")
+        fila = self.liquidar()["detalle"][0]
+        # Base ahora 2.150.000: salud 4% = 86.000 (antes 80.000)
+        self.assertEqual(Decimal(fila["salud_empleado"]), Decimal("86000"))
+        self.assertEqual(Decimal(fila["novedades_devengo"]), Decimal("150000"))
+
+    def test_bono_no_salarial_suma_neto_pero_no_base(self):
+        sin = self.liquidar()["detalle"][0]
+        self.novedad("bono_no_salarial", "300000")
+        con = self.liquidar()["detalle"][0]
+        # La base no cambia: salud sigue igual
+        self.assertEqual(Decimal(con["salud_empleado"]), Decimal(sin["salud_empleado"]))
+        # Pero el devengado y el neto suben exactamente el bono
+        self.assertEqual(Decimal(con["devengado"]) - Decimal(sin["devengado"]),
+                         Decimal("300000"))
+        self.assertEqual(Decimal(con["neto"]) - Decimal(sin["neto"]), Decimal("300000"))
+
+    def test_dias_no_laborados_reducen_la_base(self):
+        self.novedad("dias_no_laborados", "200000")
+        fila = self.liquidar()["detalle"][0]
+        # Base 1.800.000: salud 4% = 72.000
+        self.assertEqual(Decimal(fila["salud_empleado"]), Decimal("72000"))
+
+    def test_prestamo_descuenta_solo_del_neto(self):
+        self.novedad("prestamo", "250000")
+        fila = self.liquidar()["detalle"][0]
+        self.assertEqual(Decimal(fila["otros_descuentos"]), Decimal("250000"))
+        self.assertEqual(Decimal(fila["salud_empleado"]), Decimal("80000"))  # base intacta
+
+    def test_el_asiento_sigue_cuadrando_con_novedades(self):
+        self.novedad("he_diurna", "150000")
+        self.novedad("bono_no_salarial", "300000")
+        self.novedad("prestamo", "250000")
+        self.novedad("dias_no_laborados", "100000")
+        resultado = self.liquidar()
+        debitos = sum(Decimal(r["debito"]) for r in resultado["asiento"])
+        creditos = sum(Decimal(r["credito"]) for r in resultado["asiento"])
+        self.assertEqual(debitos, creditos)
+        # El descuento del préstamo aparece como pasivo separado
+        self.assertIn("237010", {r["cuenta"] for r in resultado["asiento"]})
+
+    def test_registrar_novedad_por_la_vista(self):
+        respuesta = self.client.post(reverse("nomina:novedades"), {
+            "empleado": str(self.empleado.pk), "periodo": "2026-07",
+            "tipo": "he_diurna", "cantidad": "10", "valor": "150000",
+            "descripcion": "10 horas extra"}, follow=True)
+        self.assertContains(respuesta, "Novedad registrada")
+        self.assertEqual(NovedadNomina.objects.de_empresa(self.empresa).count(), 1)
 
 
 class PruebasFlujoNomina(CasoConEmpresa):

@@ -31,6 +31,7 @@
     {% endif %}
     <div class="acciones">
       <a class="boton boton-secundario" href="{% url 'nomina:empleado_nuevo' %}">Agregar empleado</a>
+      <a class="boton boton-secundario" href="{% url 'nomina:novedades' %}">Novedades del mes</a>
     </div>
   </div>
 
@@ -42,9 +43,9 @@
       {{ formulario_liquidar.periodo }}
       <button type="submit" class="boton" style="margin-left:8px">Liquidar nómina</button>
     </form>
-    <p class="ayuda">Liquida a todos los empleados activos por mes completo
-       (las novedades — horas extra, incapacidades, retiros — llegan en la
-       siguiente iteración). La liquidación queda pendiente de tu aprobación.</p>
+    <p class="ayuda">Liquida a todos los empleados activos, aplicando las
+       novedades que hayas registrado para ese mes (horas extra, bonos,
+       descuentos). La liquidación queda pendiente de tu aprobación.</p>
   </div>
 
   {% if liquidaciones %}

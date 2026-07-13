@@ -179,7 +179,7 @@ las presenta el humano (v1 no presenta nada ante entidades).**
 | P8.5 | Un mes, una liquidación | Liquidar dos veces el mismo mes | La segunda se rechaza: ya existe |
 | P8.6 | Humano en el circuito | Liquidación creada | Queda pendiente; nada se contabiliza sin aprobación |
 | P8.7 | Parámetros por año | SMMLV/auxilio del año correcto | Cambiar de año usa los valores de ese año (VERIFICAR contra decretos) |
-| P8.8 | Novedades | Horas extra, incapacidades, retiros | *Pendiente de la siguiente iteración* |
+| P8.8 | Novedades | Horas extra, incapacidades, días no laborados, bonos | La liquidación del mes aplica cada novedad: recargos que suman al devengado, descuentos por días no laborados/incapacidad, bonos (constitutivos o no de salario); el asiento sigue cuadrando |
 | P8.9 | Nómina electrónica DIAN y pre-PILA | Liquidación aprobada | *Pendiente: exportes para el operador de PILA y el proveedor de nómina electrónica* |
 
 ### P9. Certificados de retención en la fuente (fase 3 — el trámite de febrero)

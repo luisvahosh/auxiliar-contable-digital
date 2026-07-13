@@ -11,27 +11,30 @@
     <h2>Liquidación por empleado</h2>
     <table>
       <thead>
-        <tr><th>Empleado</th><th class="numero">Salario</th><th class="numero">Auxilio</th>
-            <th class="numero">Devengado</th><th class="numero">Salud 4%</th>
-            <th class="numero">Pensión 4%</th><th class="numero">Neto</th></tr>
+        <tr><th>Empleado</th><th class="numero">Salario</th><th class="numero">Novedades +</th>
+            <th class="numero">Auxilio</th><th class="numero">Devengado</th>
+            <th class="numero">Salud 4%</th><th class="numero">Pensión 4%</th>
+            <th class="numero">Otros desc.</th><th class="numero">Neto</th></tr>
       </thead>
       <tbody>
         {% for fila in liquidacion.detalle %}
           <tr>
             <td>{{ fila.empleado }}</td>
             <td class="numero">${{ fila.salario|floatformat:"0g" }}</td>
+            <td class="numero">{% if fila.novedades_devengo != "0" %}${{ fila.novedades_devengo|floatformat:"0g" }}{% endif %}</td>
             <td class="numero">{% if fila.auxilio != "0" %}${{ fila.auxilio|floatformat:"0g" }}{% endif %}</td>
             <td class="numero">${{ fila.devengado|floatformat:"0g" }}</td>
             <td class="numero">${{ fila.salud_empleado|floatformat:"0g" }}</td>
             <td class="numero">${{ fila.pension_empleado|floatformat:"0g" }}</td>
+            <td class="numero">{% if fila.otros_descuentos != "0" %}${{ fila.otros_descuentos|floatformat:"0g" }}{% endif %}</td>
             <td class="numero"><strong>${{ fila.neto|floatformat:"0g" }}</strong></td>
           </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr><td>Totales</td><td></td><td></td>
+        <tr><td>Totales</td><td></td><td></td><td></td>
             <td class="numero">${{ liquidacion.total_devengado|floatformat:"0g" }}</td>
-            <td class="numero" colspan="2">${{ liquidacion.total_deducciones|floatformat:"0g" }}</td>
+            <td class="numero" colspan="3">${{ liquidacion.total_deducciones|floatformat:"0g" }}</td>
             <td class="numero">${{ liquidacion.total_neto|floatformat:"0g" }}</td></tr>
       </tfoot>
     </table>

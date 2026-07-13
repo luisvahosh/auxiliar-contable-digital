@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Empleado, LiquidacionNomina
+from .models import Empleado, LiquidacionNomina, NovedadNomina
+
+
+@admin.register(NovedadNomina)
+class NovedadNominaAdmin(admin.ModelAdmin):
+    list_display = ("empleado", "anio", "mes", "tipo", "valor", "empresa")
+    list_filter = ("tipo", "anio", "empresa")
 
 
 @admin.register(Empleado)

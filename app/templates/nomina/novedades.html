@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block titulo %}Novedades de nómina — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Novedades del mes</h1>
+  <p class="suave">Horas extra, recargos, bonos y descuentos. Se aplican al
+     liquidar el mes correspondiente. Registra las novedades <strong>antes</strong>
+     de liquidar.</p>
+
+  <div class="tarjeta">
+    <h2>Registrar novedad</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in formulario %}
+        <div style="margin-bottom:12px">
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+          {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <p class="ayuda">La cantidad (horas o días) es informativa; lo que afecta la
+         liquidación es el valor en pesos. Las horas extra y bonos salariales
+         suman a la base de aportes; los días no laborados la reducen; los
+         préstamos/embargos solo descuentan del neto.</p>
+      <button type="submit" class="boton">Registrar novedad</button>
+    </form>
+  </div>
+
+  {% if novedades %}
+    <div class="tarjeta tabla-envoltura">
+      <h2>Novedades registradas</h2>
+      <table>
+        <thead><tr><th>Empleado</th><th>Período</th><th>Tipo</th><th class="numero">Cantidad</th><th class="numero">Valor</th><th></th></tr></thead>
+        <tbody>
+          {% for n in novedades %}
+            <tr>
+              <td>{{ n.empleado.nombre }}</td>
+              <td>{{ n.anio }}-{{ n.mes|stringformat:"02d" }}</td>
+              <td>{{ n.get_tipo_display }}</td>
+              <td class="numero">{% if n.cantidad %}{{ n.cantidad|floatformat:"-2" }}{% endif %}</td>
+              <td class="numero">${{ n.valor|floatformat:"0g" }}</td>
+              <td>
+                <form method="post" action="{% url 'nomina:borrar_novedad' n.pk %}" style="margin:0">
+                  {% csrf_token %}
+                  <button type="submit" class="fila-enlace" style="background:none;border:0;cursor:pointer;color:var(--error)">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <div class="acciones">
+    <a class="boton boton-secundario" href="{% url 'nomina:panel' %}">Volver a nómina</a>
+  </div>
+{% endblock %}
