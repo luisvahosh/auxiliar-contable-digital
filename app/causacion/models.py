@@ -170,6 +170,31 @@ class FacturaVenta(models.Model):
         return self.nombre_cliente
 
 
+class CuentaContable(models.Model):
+    """Personalización del plan de cuentas de una empresa: el código y nombre
+    que ESTA empresa usa para un rol de la app (consolidación multi-empresa).
+    Lo no personalizado usa el valor por defecto de CUENTAS_ESTANDAR."""
+
+    empresa = models.ForeignKey("core.Empresa", on_delete=models.CASCADE,
+                                related_name="plan_cuentas")
+    rol = models.CharField("rol de la app", max_length=40)
+    codigo = models.CharField("código de cuenta", max_length=20)
+    nombre = models.CharField("nombre de cuenta", max_length=120)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "rol"],
+                                    name="cuenta_rol_unico_por_empresa"),
+        ]
+        verbose_name = "cuenta del plan"
+        verbose_name_plural = "plan de cuentas"
+
+    def __str__(self):
+        return f"{self.rol}: {self.codigo} ({self.empresa_id})"
+
+
 class ConexionContable(models.Model):
     """Credenciales de la empresa hacia SU software contable (PLAN §4).
 

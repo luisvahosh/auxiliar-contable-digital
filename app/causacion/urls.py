@@ -17,6 +17,8 @@ urlpatterns = [
     path("ventas/<uuid:pk>/rechazar/", views.rechazar_venta, name="rechazar_venta"),
     path("ventas/<uuid:pk>/siigo.csv", views.exportar_siigo_venta, name="exportar_siigo_venta"),
     path("ventas/<uuid:pk>/enviar-alegra/", views.enviar_alegra_venta, name="enviar_alegra_venta"),
+    # Plan de cuentas por empresa
+    path("plan-cuentas/", views.plan_cuentas_vista, name="plan_cuentas"),
     # Conexiones contables por empresa
     path("conexiones/", views.conexiones, name="conexiones"),
     # Cartera (P5.1)

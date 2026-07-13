@@ -511,6 +511,22 @@ propio equipo de usuarios, sin ver a las demás.*
   cuentas contables) es el siguiente paso de la consolidación; hoy la app
   usa el PUC estándar.
 
+## Paso 32 — Plan de cuentas por empresa (el corazón del multi-empresa)
+
+*Escenario: tu empresa usa un plan de cuentas distinto al PUC estándar — sus
+honorarios van a 511005, no a 5110. La app debe usar TUS cuentas.*
+
+- [ ] **Mis empresas → Configuración → Plan de cuentas**: verás todos los
+  "roles" que la app usa para armar asientos (compras, ventas, bancos,
+  nómina, activos), cada uno con su código y nombre por defecto (PUC estándar).
+- [ ] Cambiar, por ejemplo, el código de **gasto_honorarios** a `511005` y
+  guardar. Queda marcado "Personalizada"; el resto sigue en el estándar.
+- [ ] Causar una factura de honorarios (P1.1): el asiento ahora usa **511005**
+  en vez de 5110. Cada empresa arma sus asientos con SUS cuentas.
+- [ ] Otra empresa que no personalice sigue con el PUC estándar — los planes
+  son independientes por empresa.
+- [ ] Solo el administrador edita el plan.
+
 ## Cierre — revisión de bandeja
 
 - [ ] La bandeja muestra las 6 facturas con su cuenta, nivel (automática/

@@ -1,8 +1,10 @@
 """
 Motor de clasificación PUC y retención en la fuente — reglas explícitas.
 
-Fase actual: reglas deterministas por palabras clave, cada una explicable.
-Después (PLAN.md): la IA propone y estas reglas validan y acotan.
+Las reglas apuntan a ROLES de cuenta (gasto_honorarios, inventario_mercancias,
+…); el código y nombre concretos se resuelven contra el plan de cuentas de la
+empresa (plan_cuentas.plan_de_empresa) — así cada empresa usa SUS cuentas.
+
 Humano en el circuito (CLAUDE.md §3): toda propuesta lleva nivel
 (automática/sugerida) y su porqué; nada se contabiliza sin aprobación.
 """
@@ -12,35 +14,40 @@ from decimal import Decimal
 
 from .parametros import (
     CONCEPTOS_RETENCION,
-    CUENTA_COSTOS_GASTOS_POR_PAGAR,
-    CUENTA_IVA_DESCONTABLE,
-    CUENTA_PROVEEDORES,
     RESPONSABILIDADES_SIN_RETENCION,
     uvt_del_anio,
 )
+from .plan_cuentas import CUENTAS_ESTANDAR
 
-# (patrón sobre nota+líneas en minúsculas, cuenta PUC, nombre de cuenta, concepto de retención)
+# (patrón sobre nota+líneas en minúsculas, rol de cuenta, concepto de retención)
 REGLAS_PUC = [
-    (r"honorario|asesor[ií]a|consultor[ií]a", "5110", "Honorarios", "honorarios"),
-    (r"mercanc[ií]a", "1435", "Mercancías no fabricadas por la empresa", "compras"),
-    (r"aseo|cafeter[ií]a|vigilancia|limpieza", "5135", "Servicios — aseo y vigilancia", "servicios"),
-    (r"mantenimiento|reparaci[oó]n", "5145", "Mantenimiento y reparaciones", "servicios"),
-    (r"instalaci[oó]n|adecuaci[oó]n", "5145", "Mantenimiento y reparaciones", "servicios"),
-    (r"arrendamiento|alquiler|canon", "5120", "Arrendamientos", "arrendamiento_inmueble"),
+    (r"honorario|asesor[ií]a|consultor[ií]a", "gasto_honorarios", "honorarios"),
+    (r"mercanc[ií]a", "inventario_mercancias", "compras"),
+    (r"aseo|cafeter[ií]a|vigilancia|limpieza", "gasto_aseo_vigilancia", "servicios"),
+    (r"mantenimiento|reparaci[oó]n", "gasto_mantenimiento", "servicios"),
+    (r"instalaci[oó]n|adecuaci[oó]n", "gasto_mantenimiento", "servicios"),
+    (r"arrendamiento|alquiler|canon", "gasto_arrendamiento", "arrendamiento_inmueble"),
     (r"aire acondicionado|computador|servidor|maquinaria|veh[ií]culo",
-     "1524", "Propiedad, planta y equipo — equipo de oficina", "compras"),
+     "ppe_equipo_oficina", "compras"),
 ]
 
-CUENTA_SIN_REGLA = ("5195", "Gastos diversos", "servicios")
+ROL_SIN_REGLA = ("gasto_diversos", "servicios")
 
 
-def cuentas_reclasificables():
-    """Las cuentas que el usuario puede elegir al reclasificar a mano:
-    todas las de las reglas más el comodín. [(cuenta, nombre, concepto)]"""
+def _cuenta(plan, rol):
+    """(código, nombre) del rol en el plan (o el estándar como respaldo)."""
+    return plan.get(rol) or CUENTAS_ESTANDAR[rol]
+
+
+def cuentas_reclasificables(plan):
+    """Cuentas elegibles al reclasificar a mano: las de las reglas + comodín.
+    → [(código, nombre, concepto, rol)] con los valores del plan de la empresa."""
     vistas = {}
-    for _, cuenta, nombre, concepto in REGLAS_PUC:
-        vistas.setdefault(cuenta, (cuenta, nombre, concepto))
-    vistas.setdefault(CUENTA_SIN_REGLA[0], CUENTA_SIN_REGLA)
+    for _, rol, concepto in REGLAS_PUC:
+        codigo, nombre = _cuenta(plan, rol)
+        vistas.setdefault(codigo, (codigo, nombre, concepto, rol))
+    codigo, nombre = _cuenta(plan, ROL_SIN_REGLA[0])
+    vistas.setdefault(codigo, (codigo, nombre, ROL_SIN_REGLA[1], ROL_SIN_REGLA[0]))
     return sorted(vistas.values())
 
 
@@ -51,6 +58,7 @@ class Propuesta:
     concepto: str
     nivel: str            # "automatica" | "sugerida"
     explicacion: str
+    rol: str = ""         # rol de cuenta (para elegir la contrapartida)
     candidatas: list = field(default_factory=list)
 
 
@@ -63,48 +71,56 @@ class Retencion:
     porque: str
 
 
-def clasificar(factura):
-    """Propone la cuenta PUC del gasto/activo a partir del texto de la factura."""
+def clasificar(factura, plan):
+    """Propone la cuenta PUC del gasto/activo a partir del texto de la factura,
+    usando el plan de cuentas de la empresa."""
     texto = factura.texto_clasificable
-    coincidencias = []  # (cuenta, nombre, concepto, palabra que disparó)
-    for patron, cuenta, nombre, concepto in REGLAS_PUC:
+    coincidencias = []  # (rol, código, nombre, concepto, palabra)
+    roles_vistos = set()
+    for patron, rol, concepto in REGLAS_PUC:
         encontrado = re.search(patron, texto)
-        if encontrado and cuenta not in [c[0] for c in coincidencias]:
-            coincidencias.append((cuenta, nombre, concepto, encontrado.group(0)))
+        if encontrado and rol not in roles_vistos:
+            roles_vistos.add(rol)
+            codigo, nombre = _cuenta(plan, rol)
+            coincidencias.append((rol, codigo, nombre, concepto, encontrado.group(0)))
 
     if not coincidencias:
-        cuenta, nombre, concepto = CUENTA_SIN_REGLA
+        codigo, nombre = _cuenta(plan, ROL_SIN_REGLA[0])
         return Propuesta(
-            cuenta, nombre, concepto, "sugerida",
+            codigo, nombre, ROL_SIN_REGLA[1], "sugerida",
             "Ninguna regla reconoció el concepto de la factura. Se propone "
-            f"{cuenta} ({nombre}) como comodín: revisar y reclasificar antes de aprobar.",
+            f"{codigo} ({nombre}) como comodín: revisar y reclasificar antes de aprobar.",
+            rol=ROL_SIN_REGLA[0],
         )
 
     if len(coincidencias) == 1:
-        cuenta, nombre, concepto, palabra = coincidencias[0]
+        rol, codigo, nombre, concepto, palabra = coincidencias[0]
         return Propuesta(
-            cuenta, nombre, concepto, "automatica",
-            f"El texto de la factura menciona «{palabra}» → cuenta {cuenta} ({nombre}), "
+            codigo, nombre, concepto, "automatica",
+            f"El texto de la factura menciona «{palabra}» → cuenta {codigo} ({nombre}), "
             f"concepto de retención: {CONCEPTOS_RETENCION[concepto]['nombre']}.",
+            rol=rol,
         )
 
-    cuenta, nombre, concepto, _ = coincidencias[0]
-    opciones = "; ".join(f"{c} ({n}, por «{p}»)" for c, n, _, p in coincidencias)
+    rol, codigo, nombre, concepto, _ = coincidencias[0]
+    opciones = "; ".join(f"{c} ({n}, por «{p}»)" for _, c, n, _, p in coincidencias)
     return Propuesta(
-        cuenta, nombre, concepto, "sugerida",
+        codigo, nombre, concepto, "sugerida",
         f"El concepto es ambiguo — admite más de una cuenta PUC: {opciones}. "
         "La decisión (¿activo que se capitaliza o gasto del período?) cambia el "
         "asiento y la tarifa de retención; requiere revisión humana.",
-        candidatas=[{"cuenta": c, "nombre": n} for c, n, _, _ in coincidencias],
+        rol=rol,
+        candidatas=[{"cuenta": c, "nombre": n} for _, c, n, _, _ in coincidencias],
     )
 
 
-def calcular_retencion(factura, concepto, tercero=None):
+def calcular_retencion(factura, concepto, tercero=None, plan=None):
     """Retefuente a practicar según la calidad del proveedor, base mínima y tarifa.
 
     Si hay tercero (matriz de terceros, P3), su calidad manda sobre el XML;
-    sin tercero se lee el TaxLevelCode del XML y se asume declarante.
-    """
+    sin tercero se lee el TaxLevelCode del XML y se asume declarante. La cuenta
+    de retención se resuelve contra el plan de la empresa."""
+    plan = plan or dict(CUENTAS_ESTANDAR)
     if tercero is not None:
         origen = ("la matriz de terceros" if tercero.verificado
                   else "la matriz de terceros (pendiente de verificar contra el RUT)")
@@ -148,14 +164,15 @@ def calcular_retencion(factura, concepto, tercero=None):
         tarifa = datos["tarifa_persona_juridica"]
         calidad = "persona jurídica declarante"
     valor = (factura.subtotal * tarifa / 100).quantize(Decimal("1"))
+    codigo, nombre = plan.get(datos["rol_cuenta"]) or CUENTAS_ESTANDAR[datos["rol_cuenta"]]
     return Retencion(
-        valor, tarifa, datos["cuenta"], datos["nombre_cuenta"],
+        valor, tarifa, codigo, nombre,
         f"Retefuente por {datos['nombre'].lower()}: {tarifa}% sobre "
         f"${factura.subtotal:,.0f} = ${valor:,.0f} ({calidad}, según {origen}).",
     )
 
 
-def construir_asiento(factura, propuesta, retencion):
+def construir_asiento(factura, propuesta, retencion, plan):
     """Renglones del asiento de causación (partida doble). Los montos van como
     texto para guardarse en JSON sin perder precisión decimal."""
     renglones = []
@@ -168,12 +185,13 @@ def construir_asiento(factura, propuesta, retencion):
 
     renglon(propuesta.cuenta, propuesta.nombre_cuenta, debito=factura.subtotal)
     if factura.iva > 0:
-        renglon(*CUENTA_IVA_DESCONTABLE, debito=factura.iva)
+        renglon(*_cuenta(plan, "iva_descontable"), debito=factura.iva)
     if retencion.valor > 0:
         renglon(retencion.cuenta, retencion.nombre_cuenta, credito=retencion.valor)
-    contrapartida = (CUENTA_PROVEEDORES if propuesta.cuenta == "1435"
-                     else CUENTA_COSTOS_GASTOS_POR_PAGAR)
-    renglon(*contrapartida, credito=factura.total - retencion.valor)
+    # La compra de inventario se debe a proveedores; el resto, a costos y gastos.
+    rol_contrapartida = ("proveedores" if propuesta.rol == "inventario_mercancias"
+                         else "costos_gastos_por_pagar")
+    renglon(*_cuenta(plan, rol_contrapartida), credito=factura.total - retencion.valor)
 
     debitos = sum(Decimal(r["debito"]) for r in renglones)
     creditos = sum(Decimal(r["credito"]) for r in renglones)
@@ -183,7 +201,7 @@ def construir_asiento(factura, propuesta, retencion):
     return renglones
 
 
-def construir_asiento_nota_credito_compra(nota, original):
+def construir_asiento_nota_credito_compra(nota, original, plan):
     """Reversa (parcial o total) de una compra ya causada: se descarga la
     cuenta por pagar y se acreditan el gasto/activo y el IVA descontable.
     Devuelve (renglones, explicación)."""
@@ -198,13 +216,13 @@ def construir_asiento_nota_credito_compra(nota, original):
         (r for r in original.asiento
          if Decimal(r["credito"]) > 0 and r["cuenta"].startswith("2")
          and not r["cuenta"].startswith("2365")),
-        {"cuenta": CUENTA_COSTOS_GASTOS_POR_PAGAR[0],
-         "nombre": CUENTA_COSTOS_GASTOS_POR_PAGAR[1]},
+        {"cuenta": _cuenta(plan, "costos_gastos_por_pagar")[0],
+         "nombre": _cuenta(plan, "costos_gastos_por_pagar")[1]},
     )
     renglon(por_pagar["cuenta"], por_pagar["nombre"], debito=nota.total)
     renglon(original.cuenta_puc, original.nombre_cuenta_puc, credito=nota.subtotal)
     if nota.iva > 0:
-        renglon(*CUENTA_IVA_DESCONTABLE, credito=nota.iva)
+        renglon(*_cuenta(plan, "iva_descontable"), credito=nota.iva)
 
     debitos = sum(Decimal(r["debito"]) for r in renglones)
     creditos = sum(Decimal(r["credito"]) for r in renglones)

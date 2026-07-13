@@ -19,15 +19,12 @@ from decimal import Decimal, InvalidOperation
 
 from pypdf import PdfReader
 
-CUENTA_BANCOS = ("111005", "Bancos — moneda nacional")
-CUENTA_CLIENTES = ("1305", "Clientes nacionales")
-
-# Gastos bancarios reconocibles por la descripción del extracto (P4.2).
+# Gastos bancarios reconocibles por la descripción del extracto (P4.2):
+# (patrón, rol de cuenta). El código/nombre se resuelve contra el plan.
 GASTOS_BANCARIOS = [
-    (re.compile(r"gmf|4\s*x\s*1000|gravamen", re.IGNORECASE),
-     "531595", "Gravamen a los movimientos financieros (GMF)"),
+    (re.compile(r"gmf|4\s*x\s*1000|gravamen", re.IGNORECASE), "gmf"),
     (re.compile(r"cuota|comisi[oó]n|manejo|chequera|portal|iva\s+serv", re.IGNORECASE),
-     "530505", "Gastos bancarios — comisiones"),
+     "comisiones_bancarias"),
 ]
 
 ENCABEZADO_ESPERADO = ["fecha", "descripcion", "valor"]
@@ -149,11 +146,14 @@ def _nombre_en_descripcion(nombre, descripcion):
     return bool(_tokens_nombre(nombre) & _tokens_nombre(descripcion))
 
 
-def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas):
-    """Sugerencia de cruce para un movimiento. Devuelve un dict con
+def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas, cuentas):
+    """Sugerencia de cruce para un movimiento. `cuentas` es el dict rol→
+    (código, nombre) del plan de la empresa. Devuelve un dict con
     sugerencia, facturas vinculadas, asiento propuesto y explicación."""
     valor = movimiento["valor"]
     descripcion = movimiento["descripcion"]
+    banco = cuentas["bancos"]
+    cliente = cuentas["clientes"]
 
     if valor > 0:  # abono
         # Cruce exacto por el neto de cartera (total - retefuente practicada)
@@ -164,8 +164,8 @@ def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas):
                 return {
                     "sugerencia": "pago_cliente",
                     "factura_venta": venta,
-                    "asiento": [_renglon(*CUENTA_BANCOS, debito=valor),
-                                _renglon(*CUENTA_CLIENTES, credito=valor)],
+                    "asiento": [_renglon(*banco, debito=valor),
+                                _renglon(*cliente, credito=valor)],
                     "explicacion": f"Cruza exacto con la factura {venta.numero} de "
                                    f"{venta.nombre_cliente} (neto de cartera ${neto:,.0f}).",
                 }
@@ -176,8 +176,8 @@ def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas):
                 return {
                     "sugerencia": "pago_cliente_parcial",
                     "factura_venta": venta,
-                    "asiento": [_renglon(*CUENTA_BANCOS, debito=valor),
-                                _renglon(*CUENTA_CLIENTES, credito=valor)],
+                    "asiento": [_renglon(*banco, debito=valor),
+                                _renglon(*cliente, credito=valor)],
                     "explicacion": f"Pago parcial de la factura {venta.numero} de "
                                    f"{venta.nombre_cliente}: ${valor:,.0f} de un neto de "
                                    f"${neto:,.0f}. No se fuerza el cruce total; el saldo "
@@ -202,12 +202,13 @@ def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas):
 
     # cargo
     magnitud = -valor
-    for patron, cuenta, nombre in GASTOS_BANCARIOS:
+    for patron, rol in GASTOS_BANCARIOS:
         if patron.search(descripcion):
+            cuenta, nombre = cuentas[rol]
             return {
                 "sugerencia": "gasto_bancario",
                 "asiento": [_renglon(cuenta, nombre, debito=magnitud),
-                            _renglon(*CUENTA_BANCOS, credito=magnitud)],
+                            _renglon(*banco, credito=magnitud)],
                 "explicacion": f"Gasto bancario no registrado en libros ({nombre.lower()}): "
                                f"se propone el asiento por ${magnitud:,.0f}.",
             }
@@ -223,12 +224,12 @@ def sugerir(movimiento, ventas, compras, ventas_usadas, compras_usadas):
                 None,
             )
             cuenta_pago = (por_pagar["cuenta"], por_pagar["nombre"]) if por_pagar \
-                else ("2335", "Costos y gastos por pagar")
+                else cuentas["costos_gastos_por_pagar"]
             return {
                 "sugerencia": "pago_proveedor",
                 "factura_compra": compra,
                 "asiento": [_renglon(*cuenta_pago, debito=magnitud),
-                            _renglon(*CUENTA_BANCOS, credito=magnitud)],
+                            _renglon(*banco, credito=magnitud)],
                 "explicacion": f"Cruza exacto con el pago de la factura {compra.numero} de "
                                f"{compra.nombre_emisor} (neto ${neto:,.0f}).",
             }

@@ -198,11 +198,15 @@ Toda funcionalidad de dominio se valida contra los casos de
   agente retención, tarifa ICA, exoneración) y panel de usuarios (listar
   membresías, cambiar rol, quitar acceso, revocar invitaciones), ambos solo
   admin. 163 tests.
-  - **SIGUIENTE de la consolidación (acordado):** (1) plan de cuentas por
-    empresa — HOY ~100 cuentas PUC hardcoded en 12 archivos; catálogo por
-    empresa sembrado con PUC estándar, del que lean todos los motores; luego
-    (2) migración a PostgreSQL en contenedor Hostinger (solo DATABASE_URL +
-    compose, no toca código; hacerlo al final de la consolidación).
+  - **Plan de cuentas por empresa HECHO:** `causacion/plan_cuentas.py`
+    (CUENTAS_ESTANDAR = catálogo de ~45 roles con PUC por defecto;
+    plan_de_empresa(empresa) mezcla overrides), modelo `CuentaContable`
+    (rol→código/nombre por empresa). TODOS los motores refactorizados para
+    resolver por rol: causación (clasificacion/ventas/servicios), nómina
+    (calculo), activos (calculo), conciliación (motor). UI en Configuración
+    → Plan de cuentas (solo admin). 168 tests.
+  - **SIGUIENTE de la consolidación:** migración a PostgreSQL en contenedor
+    Hostinger (solo DATABASE_URL + compose, no toca código).
 - **Sigue (después):** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
   caja menor; validación mes real XML DIAN (P7.1); confirmar calendario y
   SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3; forzar 2FA.

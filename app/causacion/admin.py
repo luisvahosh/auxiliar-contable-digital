@@ -1,7 +1,14 @@
 from django.contrib import admin
 
-from .models import (ConexionContable, FacturaCompra, FacturaVenta,
-                     MapeoCuentaAlegra, Tercero)
+from .models import (ConexionContable, CuentaContable, FacturaCompra,
+                     FacturaVenta, MapeoCuentaAlegra, Tercero)
+
+
+@admin.register(CuentaContable)
+class CuentaContableAdmin(admin.ModelAdmin):
+    list_display = ("empresa", "rol", "codigo", "nombre")
+    list_filter = ("empresa",)
+    search_fields = ("rol", "codigo", "nombre")
 
 
 @admin.register(ConexionContable)

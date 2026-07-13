@@ -17,6 +17,7 @@ from .clasificacion import (
 )
 from .models import FacturaCompra, FacturaVenta, Tercero
 from .parser import FacturaInvalida, parsear_factura
+from .plan_cuentas import plan_de_empresa
 from .ventas import construir_asiento_nota_credito, construir_asiento_venta
 
 
@@ -77,10 +78,11 @@ def _compra(empresa, datos, contenido):
                          f"La factura {existente.numero} ya fue causada (CUFE duplicado). "
                          "No se creó un asiento doble.", existente, "compra")
 
+    plan = plan_de_empresa(empresa)
     tercero = tercero_del_emisor(empresa, datos)
-    propuesta = clasificar(datos)
-    retencion = calcular_retencion(datos, propuesta.concepto, tercero)
-    renglones = construir_asiento(datos, propuesta, retencion)
+    propuesta = clasificar(datos, plan)
+    retencion = calcular_retencion(datos, propuesta.concepto, tercero, plan)
+    renglones = construir_asiento(datos, propuesta, retencion, plan)
     try:
         factura = FacturaCompra.objects.create(
             empresa=empresa,
@@ -119,7 +121,7 @@ def _venta(empresa, datos, contenido):
                          f"La venta {existente.numero} ya fue registrada (CUFE duplicado). "
                          "No se creó un asiento doble.", existente, "venta")
 
-    renglones, explicacion = construir_asiento_venta(datos)
+    renglones, explicacion = construir_asiento_venta(datos, plan_de_empresa(empresa))
     try:
         venta = FacturaVenta.objects.create(
             empresa=empresa,
@@ -167,7 +169,8 @@ def _nota_credito_venta(empresa, datos, contenido):
             "registrada. Sube primero la factura de venta original.",
             reintentable=True)
 
-    renglones, explicacion = construir_asiento_nota_credito(datos, original)
+    renglones, explicacion = construir_asiento_nota_credito(
+        datos, original, plan_de_empresa(empresa))
     nota = FacturaVenta.objects.create(
         empresa=empresa,
         tipo="nota_credito",
@@ -211,7 +214,8 @@ def _nota_credito_compra(empresa, datos, contenido):
             "causada. Causa primero la factura original del proveedor.",
             reintentable=True)
 
-    renglones, explicacion = construir_asiento_nota_credito_compra(datos, original)
+    renglones, explicacion = construir_asiento_nota_credito_compra(
+        datos, original, plan_de_empresa(empresa))
     nota = FacturaCompra.objects.create(
         empresa=empresa,
         tipo="nota_credito",

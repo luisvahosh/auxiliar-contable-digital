@@ -110,6 +110,12 @@ def liquidar_mes(empresa, empleados, anio, mes, novedades_por_empleado=None):
     aportes = suma("aportes_empleador")
     provisiones = suma("provisiones")
 
+    from causacion.plan_cuentas import CUENTAS_ESTANDAR, plan_de_empresa
+    plan = plan_de_empresa(empresa)
+
+    def cta(rol):
+        return plan.get(rol) or CUENTAS_ESTANDAR[rol]
+
     renglones = []
 
     def renglon(cuenta_nombre, debito=Decimal("0"), credito=Decimal("0")):
@@ -118,14 +124,14 @@ def liquidar_mes(empresa, empleados, anio, mes, novedades_por_empleado=None):
         renglones.append({"cuenta": cuenta_nombre[0], "nombre": cuenta_nombre[1],
                           "debito": str(debito), "credito": str(credito)})
 
-    renglon(p.CUENTA_SUELDOS, debito=sueldos)
-    renglon(p.CUENTA_AUXILIO, debito=auxilios)
-    renglon(p.CUENTA_APORTES, debito=aportes)
-    renglon(p.CUENTA_PRESTACIONES, debito=provisiones)
-    renglon(p.CUENTA_SALARIOS_POR_PAGAR, credito=neto)
-    renglon(p.CUENTA_APORTES_POR_PAGAR, credito=deducciones_seg + aportes)
-    renglon(p.CUENTA_DESCUENTOS_NOMINA, credito=otros_descuentos)
-    renglon(p.CUENTA_PROVISIONES, credito=provisiones)
+    renglon(cta("nomina_sueldos"), debito=sueldos)
+    renglon(cta("nomina_auxilio"), debito=auxilios)
+    renglon(cta("nomina_aportes"), debito=aportes)
+    renglon(cta("nomina_prestaciones"), debito=provisiones)
+    renglon(cta("nomina_salarios_por_pagar"), credito=neto)
+    renglon(cta("nomina_aportes_por_pagar"), credito=deducciones_seg + aportes)
+    renglon(cta("nomina_descuentos"), credito=otros_descuentos)
+    renglon(cta("nomina_provisiones"), credito=provisiones)
 
     debitos = sum(Decimal(r["debito"]) for r in renglones)
     creditos = sum(Decimal(r["credito"]) for r in renglones)

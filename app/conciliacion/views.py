@@ -40,9 +40,12 @@ def bancos(request):
 
         extracto = ExtractoBancario.objects.create(
             empresa=empresa, nombre=archivo.name[:120])
+        from causacion.plan_cuentas import plan_de_empresa
+        cuentas = plan_de_empresa(empresa)
         ventas_usadas, compras_usadas = set(), set()
         for fila, crudo in enumerate(crudos, start=1):
-            propuesta = sugerir(crudo, ventas, compras, ventas_usadas, compras_usadas)
+            propuesta = sugerir(crudo, ventas, compras, ventas_usadas,
+                                compras_usadas, cuentas)
             MovimientoBancario.objects.create(
                 empresa=empresa,
                 extracto=extracto,

@@ -36,14 +36,19 @@ def depreciar_mes(empresa, activos, anio, mes):
         por_categoria[activo.categoria] = por_categoria.get(
             activo.categoria, Decimal("0")) + cuota
 
+    from causacion.plan_cuentas import CUENTAS_ESTANDAR, plan_de_empresa
+    plan = plan_de_empresa(empresa)
+
+    def cta(rol):
+        return plan.get(rol) or CUENTAS_ESTANDAR[rol]
+
     renglones = []
     for categoria, monto in por_categoria.items():
-        datos = p.CATEGORIAS[categoria]
-        renglones.append({"cuenta": datos["cuenta_gasto"][0],
-                          "nombre": datos["cuenta_gasto"][1],
+        gasto = cta(f"gastodep_{categoria}")
+        dep_acum = cta(f"depacum_{categoria}")
+        renglones.append({"cuenta": gasto[0], "nombre": gasto[1],
                           "debito": str(monto), "credito": "0"})
-        renglones.append({"cuenta": datos["cuenta_dep_acum"][0],
-                          "nombre": datos["cuenta_dep_acum"][1],
+        renglones.append({"cuenta": dep_acum[0], "nombre": dep_acum[1],
                           "debito": "0", "credito": str(monto)})
 
     total = sum(por_categoria.values(), Decimal("0"))

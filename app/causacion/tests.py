@@ -29,10 +29,12 @@ def contenido(nombre):
 
 def procesar(nombre):
     """Parsear + clasificar + retención + asiento, como lo hace la vista."""
+    from .plan_cuentas import CUENTAS_ESTANDAR
+    plan = dict(CUENTAS_ESTANDAR)
     factura = parsear_factura(contenido(nombre))
-    propuesta = clasificar(factura)
-    retencion = calcular_retencion(factura, propuesta.concepto)
-    renglones = construir_asiento(factura, propuesta, retencion)
+    propuesta = clasificar(factura, plan)
+    retencion = calcular_retencion(factura, propuesta.concepto, None, plan)
+    renglones = construir_asiento(factura, propuesta, retencion, plan)
     return factura, propuesta, retencion, renglones
 
 
@@ -904,6 +906,65 @@ class PruebasCertificadosRetencion(CasoConEmpresa):
             reverse("causacion:certificado_tercero", args=[2026, "111"]))
         self.assertContains(respuesta, "Certificado de retención")
         self.assertContains(respuesta, "F-1")
+
+
+class PruebasPlanDeCuentas(CasoConEmpresa):
+    """Consolidación multi-empresa: cada empresa usa SUS cuentas."""
+
+    def subir(self, nombre):
+        archivo = SimpleUploadedFile(nombre, contenido(nombre), content_type="text/xml")
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def test_override_cambia_el_asiento_causado(self):
+        from .models import CuentaContable
+        # Esta empresa usa 511005 (no 5110) para honorarios y 22050101 para proveedores
+        CuentaContable.objects.create(empresa=self.empresa, rol="gasto_honorarios",
+                                      codigo="511005", nombre="Honorarios contador")
+        CuentaContable.objects.create(empresa=self.empresa, rol="iva_descontable",
+                                      codigo="240801XX", nombre="IVA descontable propio")
+        self.subir("P1.1-factura-honorarios.xml")
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        cuentas = {r["cuenta"] for r in factura.asiento}
+        self.assertIn("511005", cuentas)      # la cuenta personalizada
+        self.assertIn("240801XX", cuentas)
+        self.assertNotIn("5110", cuentas)      # ya no la estándar
+        self.assertEqual(factura.cuenta_puc, "511005")
+
+    def test_sin_override_usa_el_estandar(self):
+        self.subir("P1.1-factura-honorarios.xml")
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.assertEqual(factura.cuenta_puc, "5110")  # PUC por defecto
+
+    def test_el_plan_es_por_empresa(self):
+        from core.models import Empresa
+        from .models import CuentaContable
+        from .plan_cuentas import plan_de_empresa
+        otra = Empresa.objects.create(nit="800111222", razon_social="OTRA SAS")
+        CuentaContable.objects.create(empresa=otra, rol="gasto_honorarios",
+                                      codigo="999999", nombre="Otra cuenta")
+        # La otra empresa personalizó; la mía sigue en el estándar
+        self.assertEqual(plan_de_empresa(otra)["gasto_honorarios"][0], "999999")
+        self.assertEqual(plan_de_empresa(self.empresa)["gasto_honorarios"][0], "5110")
+
+    def test_editar_el_plan_por_la_vista(self):
+        respuesta = self.client.post(reverse("causacion:plan_cuentas"), {
+            "codigo_gasto_honorarios": "511005",
+            "nombre_gasto_honorarios": "Honorarios propios"}, follow=True)
+        self.assertContains(respuesta, "Plan de cuentas guardado")
+        from .plan_cuentas import plan_de_empresa
+        self.assertEqual(plan_de_empresa(self.empresa)["gasto_honorarios"],
+                         ("511005", "Honorarios propios"))
+
+    def test_operador_no_edita_el_plan(self):
+        from django.contrib.auth import get_user_model
+        from core.models import Membresia
+        operador = get_user_model().objects.create_user(
+            username="op4@x.co", password="clave-larga-123")
+        Membresia.objects.create(usuario=operador, empresa=self.empresa, rol="operador")
+        self.client.force_login(operador)
+        respuesta = self.client.get(reverse("causacion:plan_cuentas"), follow=True)
+        self.assertContains(respuesta, "Solo el administrador")
 
 
 class PruebasConexionContable(CasoConEmpresa):

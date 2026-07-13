@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block titulo %}Plan de cuentas — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Plan de cuentas de {{ request.empresa.razon_social }}</h1>
+  <p class="suave">La app arma los asientos con estos roles. Ajusta el código y
+     el nombre para que calcen con el plan de cuentas de tu software contable.
+     Lo que dejes igual al estándar usa el PUC por defecto.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for grupo in grupos %}
+      <div class="tarjeta tabla-envoltura">
+        <h2>{{ grupo.titulo }}</h2>
+        <table>
+          <thead><tr><th>Uso</th><th>Código</th><th>Nombre</th></tr></thead>
+          <tbody>
+            {% for fila in grupo.filas %}
+              <tr>
+                <td>{{ fila.rol }}{% if fila.personalizada %} <span class="insignia insignia-manual">Personalizada</span>{% endif %}</td>
+                <td><input type="text" name="codigo_{{ fila.rol }}" value="{{ fila.codigo }}" style="width:100px"></td>
+                <td><input type="text" name="nombre_{{ fila.rol }}" value="{{ fila.nombre }}" style="width:100%; min-width:220px"></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endfor %}
+    <div class="acciones">
+      <button type="submit" class="boton">Guardar plan de cuentas</button>
+      <a class="boton boton-secundario" href="{% url 'core:configuracion' %}">Volver a configuración</a>
+    </div>
+  </form>
+{% endblock %}

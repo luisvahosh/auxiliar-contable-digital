@@ -28,11 +28,13 @@ from .forms import (
 )
 from .models import (
     ConexionContable,
+    CuentaContable,
     FacturaCompra,
     FacturaVenta,
     MapeoCuentaAlegra,
     Tercero,
 )
+from .plan_cuentas import plan_de_empresa
 from .parser import FacturaParseada, Linea
 from .servicios import procesar_xml, tercero_del_emisor
 from .siigo import generar_csv_siigo
@@ -229,10 +231,11 @@ def foto_causar(request):
         referencia_numero="",
         referencia_cufe="",
     )
+    plan = plan_de_empresa(empresa)
     tercero = tercero_del_emisor(empresa, datos)
-    propuesta = clasificar(datos)
-    retencion = calcular_retencion(datos, propuesta.concepto, tercero)
-    renglones = construir_asiento(datos, propuesta, retencion)
+    propuesta = clasificar(datos, plan)
+    retencion = calcular_retencion(datos, propuesta.concepto, tercero, plan)
+    renglones = construir_asiento(datos, propuesta, retencion, plan)
     try:
         factura = FacturaCompra.objects.create(
             empresa=empresa,
@@ -266,6 +269,48 @@ def foto_causar(request):
     messages.success(request, f"Factura física {factura.numero} causada como sugerida, "
                               "pendiente de tu aprobación.")
     return redirect("causacion:detalle", pk=factura.pk)
+
+
+# ---------- Plan de cuentas por empresa (consolidación multi-empresa) ----------
+
+def plan_cuentas_vista(request):
+    """El admin ajusta el código/nombre de cada rol de cuenta a SU plan."""
+    from core.tenancy import rol_en_empresa
+
+    from .plan_cuentas import CUENTAS_ESTANDAR, GRUPOS, plan_de_empresa
+    empresa = _empresa_activa(request)
+    if rol_en_empresa(request, empresa) != "admin":
+        messages.error(request, "Solo el administrador puede editar el plan de cuentas.")
+        return redirect("core:inicio")
+
+    if request.method == "POST":
+        personalizados = 0
+        for rol, (est_cod, est_nom) in CUENTAS_ESTANDAR.items():
+            codigo = request.POST.get(f"codigo_{rol}", "").strip()
+            nombre = request.POST.get(f"nombre_{rol}", "").strip() or est_nom
+            if codigo and (codigo, nombre) != (est_cod, est_nom):
+                CuentaContable.objects.update_or_create(
+                    empresa=empresa, rol=rol,
+                    defaults={"codigo": codigo, "nombre": nombre})
+                personalizados += 1
+            else:
+                # Volver al estándar: borrar el override si existía
+                CuentaContable.objects.de_empresa(empresa).filter(rol=rol).delete()
+        messages.success(request, f"Plan de cuentas guardado ({personalizados} "
+                                  "cuenta(s) personalizada(s); el resto usa el PUC estándar).")
+        return redirect("causacion:plan_cuentas")
+
+    plan = plan_de_empresa(empresa)
+    grupos = []
+    for titulo, roles in GRUPOS:
+        filas = []
+        for rol in roles:
+            codigo, nombre = plan[rol]
+            est_cod, est_nom = CUENTAS_ESTANDAR[rol]
+            filas.append({"rol": rol, "codigo": codigo, "nombre": nombre,
+                          "personalizada": (codigo, nombre) != (est_cod, est_nom)})
+        grupos.append({"titulo": titulo, "filas": filas})
+    return render(request, "causacion/plan_cuentas.html", {"grupos": grupos})
 
 
 # ---------- Conexiones contables por empresa (PLAN §4) ----------
@@ -314,12 +359,13 @@ def reclasificar(request, pk):
         FacturaCompra.objects.de_empresa(empresa), pk=pk,
         tipo="compra", estado__in=["pendiente", "rechazada"])
 
+    plan = plan_de_empresa(empresa)
     formulario = FormularioReclasificacion(
-        request.POST or None, initial={"cuenta": factura.cuenta_puc})
+        request.POST or None, plan=plan, initial={"cuenta": factura.cuenta_puc})
     if request.method == "POST" and formulario.is_valid():
         elegida = formulario.cleaned_data["cuenta"]
-        cuenta, nombre, concepto = next(
-            fila for fila in cuentas_reclasificables() if fila[0] == elegida)
+        cuenta, nombre, concepto, rol = next(
+            fila for fila in cuentas_reclasificables(plan) if fila[0] == elegida)
 
         # Reconstruir los datos mínimos para recalcular retención y asiento
         datos = FacturaParseada(
@@ -340,8 +386,8 @@ def reclasificar(request, pk):
         propuesta = Propuesta(
             cuenta, nombre, concepto, "manual",
             f"Reclasificada manualmente a {cuenta} ({nombre}) por el usuario: "
-            f"{motivo}.")
-        retencion = calcular_retencion(datos, concepto, tercero)
+            f"{motivo}.", rol=rol)
+        retencion = calcular_retencion(datos, concepto, tercero, plan)
         factura.cuenta_puc = cuenta
         factura.nombre_cuenta_puc = nombre
         factura.concepto_retencion = concepto
@@ -349,7 +395,7 @@ def reclasificar(request, pk):
         factura.nivel = "manual"
         factura.estado = "pendiente"
         factura.explicacion = f"{propuesta.explicacion}\n{retencion.porque}"
-        factura.asiento = construir_asiento(datos, propuesta, retencion)
+        factura.asiento = construir_asiento(datos, propuesta, retencion, plan)
         factura.save()
         messages.success(request, f"Factura {factura.numero} reclasificada a "
                                   f"{cuenta} y devuelta a la bandeja para tu aprobación.")

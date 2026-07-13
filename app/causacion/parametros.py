@@ -37,8 +37,7 @@ CONCEPTOS_RETENCION = {
         "tarifa_persona_natural": Decimal("10"),
         "tarifa_persona_juridica": Decimal("11"),
         "tarifa_no_declarante": Decimal("10"),
-        "cuenta": "236515",
-        "nombre_cuenta": "Retención en la fuente — honorarios",
+        "rol_cuenta": "retefuente_honorarios",
     },
     "servicios": {
         "nombre": "Servicios generales",
@@ -46,8 +45,7 @@ CONCEPTOS_RETENCION = {
         "tarifa_persona_natural": Decimal("4"),
         "tarifa_persona_juridica": Decimal("4"),
         "tarifa_no_declarante": Decimal("6"),
-        "cuenta": "236525",
-        "nombre_cuenta": "Retención en la fuente — servicios",
+        "rol_cuenta": "retefuente_servicios",
     },
     "compras": {
         "nombre": "Compras generales",
@@ -55,8 +53,7 @@ CONCEPTOS_RETENCION = {
         "tarifa_persona_natural": Decimal("2.5"),
         "tarifa_persona_juridica": Decimal("2.5"),
         "tarifa_no_declarante": Decimal("3.5"),
-        "cuenta": "236540",
-        "nombre_cuenta": "Retención en la fuente — compras",
+        "rol_cuenta": "retefuente_compras",
     },
     "arrendamiento_inmueble": {
         "nombre": "Arrendamiento de bienes inmuebles",
@@ -64,8 +61,7 @@ CONCEPTOS_RETENCION = {
         "tarifa_persona_natural": Decimal("3.5"),
         "tarifa_persona_juridica": Decimal("3.5"),
         "tarifa_no_declarante": Decimal("3.5"),
-        "cuenta": "236530",
-        "nombre_cuenta": "Retención en la fuente — arrendamientos",
+        "rol_cuenta": "retefuente_arrendamiento",
     },
 }
 
@@ -77,13 +73,5 @@ RESPONSABILIDADES_SIN_RETENCION = {
             "retención; el comprador no retiene.",
 }
 
-# Cuentas PUC fijas del asiento de causación (compras).
-CUENTA_IVA_DESCONTABLE = ("240802", "IVA descontable")
-CUENTA_PROVEEDORES = ("2205", "Proveedores nacionales")
-CUENTA_COSTOS_GASTOS_POR_PAGAR = ("2335", "Costos y gastos por pagar")
-
-# Cuentas PUC fijas del registro de ventas (P2).
-CUENTA_CLIENTES = ("1305", "Clientes nacionales")
-CUENTA_INGRESOS = ("4135", "Ingresos por ventas y servicios")
-CUENTA_IVA_GENERADO = ("240801", "IVA generado por pagar")
-CUENTA_RETEFUENTE_A_FAVOR = ("135515", "Anticipo de impuestos — retefuente a favor")
+# Las cuentas PUC del asiento ya no viven aquí: son roles resueltos contra el
+# plan de cuentas de cada empresa (plan_cuentas.CUENTAS_ESTANDAR + overrides).

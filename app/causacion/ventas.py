@@ -10,14 +10,13 @@ la factura original. Control P2.3: el consecutivo no puede tener huecos.
 import re
 from decimal import Decimal
 
-from .parametros import (
-    CUENTA_CLIENTES,
-    CUENTA_INGRESOS,
-    CUENTA_IVA_GENERADO,
-    CUENTA_RETEFUENTE_A_FAVOR,
-)
+from .plan_cuentas import CUENTAS_ESTANDAR
 
 _PATRON_CONSECUTIVO = re.compile(r"^(.*?)(\d+)$")
+
+
+def _c(plan, rol):
+    return plan.get(rol) or CUENTAS_ESTANDAR[rol]
 
 
 def _renglon(cuenta, nombre, debito=Decimal("0"), credito=Decimal("0")):
@@ -33,38 +32,41 @@ def _verificar_balance(renglones):
     return renglones
 
 
-def construir_asiento_venta(factura):
+def construir_asiento_venta(factura, plan):
     """Renglones del registro de una venta. Devuelve (renglones, explicación)."""
     retenido = factura.retefuente_practicada
+    ingreso_cod = _c(plan, "ingresos")[0]
+    iva_gen_cod = _c(plan, "iva_generado")[0]
     renglones = [
-        _renglon(*CUENTA_CLIENTES, debito=factura.total - retenido),
+        _renglon(*_c(plan, "clientes"), debito=factura.total - retenido),
     ]
     partes = [
         f"Venta {factura.numero} a {factura.nombre_adquiriente}: ingreso "
-        f"${factura.subtotal:,.0f} (4135) más IVA generado ${factura.iva:,.0f} (240801)."
+        f"${factura.subtotal:,.0f} ({ingreso_cod}) más IVA generado "
+        f"${factura.iva:,.0f} ({iva_gen_cod})."
     ]
     if retenido > 0:
-        renglones.append(_renglon(*CUENTA_RETEFUENTE_A_FAVOR, debito=retenido))
+        renglones.append(_renglon(*_c(plan, "retefuente_a_favor"), debito=retenido))
         partes.append(
             f"El cliente practica retefuente por ${retenido:,.0f} (viene en el XML): "
-            "queda en 135515 como anticipo a favor y la cartera se registra por el neto."
+            "queda como anticipo a favor y la cartera se registra por el neto."
         )
     else:
         partes.append("El cliente no practica retención: cartera por el total.")
-    renglones.append(_renglon(*CUENTA_INGRESOS, credito=factura.subtotal))
+    renglones.append(_renglon(*_c(plan, "ingresos"), credito=factura.subtotal))
     if factura.iva > 0:
-        renglones.append(_renglon(*CUENTA_IVA_GENERADO, credito=factura.iva))
+        renglones.append(_renglon(*_c(plan, "iva_generado"), credito=factura.iva))
     return _verificar_balance(renglones), " ".join(partes)
 
 
-def construir_asiento_nota_credito(nota, original):
+def construir_asiento_nota_credito(nota, original, plan):
     """Reversa (parcial o total) de una venta ya registrada."""
     renglones = [
-        _renglon(*CUENTA_INGRESOS, debito=nota.subtotal),
+        _renglon(*_c(plan, "ingresos"), debito=nota.subtotal),
     ]
     if nota.iva > 0:
-        renglones.append(_renglon(*CUENTA_IVA_GENERADO, debito=nota.iva))
-    renglones.append(_renglon(*CUENTA_CLIENTES, credito=nota.total))
+        renglones.append(_renglon(*_c(plan, "iva_generado"), debito=nota.iva))
+    renglones.append(_renglon(*_c(plan, "clientes"), credito=nota.total))
     alcance = "total" if nota.total == original.total else "parcial"
     explicacion = (
         f"Nota crédito {nota.numero}: reversa {alcance} de la venta "

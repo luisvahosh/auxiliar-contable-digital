@@ -105,13 +105,15 @@ class FormularioReclasificacion(forms.Form):
         label="¿Por qué la reclasificas? (queda en la explicación)",
         max_length=200, required=False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, plan=None, **kwargs):
         from .clasificacion import CONCEPTOS_RETENCION, cuentas_reclasificables
+        from .plan_cuentas import CUENTAS_ESTANDAR
         super().__init__(*args, **kwargs)
         self.fields["cuenta"].choices = [
             (cuenta, f"{cuenta} — {nombre} (retención: "
                      f"{CONCEPTOS_RETENCION[concepto]['nombre'].lower()})")
-            for cuenta, nombre, concepto in cuentas_reclasificables()
+            for cuenta, nombre, concepto, rol in cuentas_reclasificables(
+                plan or dict(CUENTAS_ESTANDAR))
         ]
 
 
