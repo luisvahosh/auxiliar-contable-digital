@@ -1,11 +1,27 @@
 # Auxiliar Contable Digital — despliegue beta en un VPS Docker (Hostinger).
-# La base (sqlite) y los soportes (fotos) viven en el volumen "datos":
-# sobreviven a los redespliegues. PostgreSQL llegará cambiando DATABASE_URL.
+# Producción usa PostgreSQL (servicio db). Los soportes (fotos) y respaldos
+# viven en el volumen "datos"; la base en el volumen "pgdata". Ambos
+# sobreviven a los redespliegues.
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auxiliar}
+      POSTGRES_USER: ${POSTGRES_USER:-auxiliar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auxiliar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   web:
     build: ./app
     ports:
-      # Puerto público configurable: PUERTO_WEB en el .env (p. ej. 80 u 8080
+      # Puerto público configurable: PUERTO_WEB en el .env (p. ej. 80 u 9500
       # si el 8000 del servidor ya está ocupado). El interno siempre es 8000.
       - "${PUERTO_WEB:-8000}:8000"
     environment:
@@ -14,14 +30,19 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
       DJANGO_CSRF_ORIGINS: ${DJANGO_CSRF_ORIGINS:-}
       DJANGO_TRAS_PROXY: ${DJANGO_TRAS_PROXY:-0}
-      DATABASE_URL: sqlite:////app/datos/db.sqlite3
+      # Base de datos: PostgreSQL del servicio db (12-factor, el código no cambia)
+      DATABASE_URL: postgres://${POSTGRES_USER:-auxiliar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-auxiliar}
       DJANGO_MEDIA_ROOT: /app/datos/media
       ALEGRA_EMAIL: ${ALEGRA_EMAIL:-}
       ALEGRA_TOKEN: ${ALEGRA_TOKEN:-}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
     volumes:
       - datos:/app/datos
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   datos:
+  pgdata:

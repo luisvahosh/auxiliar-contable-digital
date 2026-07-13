@@ -205,8 +205,14 @@ Toda funcionalidad de dominio se valida contra los casos de
     resolver por rol: causación (clasificacion/ventas/servicios), nómina
     (calculo), activos (calculo), conciliación (motor). UI en Configuración
     → Plan de cuentas (solo admin). 168 tests.
-  - **SIGUIENTE de la consolidación:** migración a PostgreSQL en contenedor
-    Hostinger (solo DATABASE_URL + compose, no toca código).
+  - **PostgreSQL HECHO (infra):** docker-compose con servicio `db`
+    (postgres:16-alpine, volumen pgdata, healthcheck); el `web` recibe
+    DATABASE_URL=postgres://… — el código NO cambió (dj_database_url).
+    Local sigue en sqlite por defecto (arrancar.bat). requirements con
+    psycopg[binary]. En el VPS: poner POSTGRES_PASSWORD en el .env, rebuild;
+    migrate al arrancar crea esquema+semillas; falta solo createsuperuser
+    (postgres arranca vacío). 168 tests.
+  - **CONSOLIDACIÓN MULTI-EMPRESA COMPLETA.**
 - **Sigue (después):** P8.9 pre-PILA/nómina electrónica; exógena 1001/1007;
   caja menor; validación mes real XML DIAN (P7.1); confirmar calendario y
   SMMLV contra decretos; CSV contra Siigo real; buzón IMAP; P6.3; forzar 2FA.
