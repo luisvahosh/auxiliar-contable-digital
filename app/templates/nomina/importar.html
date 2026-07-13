@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block titulo %}Importar empleados — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width:520px; margin:0 auto">
+    <h1>Cargar empleados por CSV</h1>
+    <div class="tarjeta">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="{{ formulario.archivo.id_for_label }}">{{ formulario.archivo.label }}</label>
+        <p class="ayuda">{{ formulario.archivo.help_text }}</p>
+        {{ formulario.archivo }}
+        {% if formulario.archivo.errors %}
+          <p class="ayuda" style="color: var(--error)">{{ formulario.archivo.errors|striptags }}</p>
+        {% endif %}
+        <button type="submit" class="boton">Importar</button>
+      </form>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Formato del archivo</h2>
+      <p class="ayuda">La primera línea es el encabezado. Una fila por empleado:</p>
+      <pre class="porque" style="overflow-x:auto">nombre;cedula;salario;fecha_ingreso
+Ana Pérez;52111222;1623500;2025-01-15
+Beto Gómez;79333444;3000000;15/03/2024</pre>
+      <p class="ayuda">El salario admite formato colombiano (1.623.500) y la fecha
+         AAAA-MM-DD o DD/MM/AAAA. Si una cédula ya existe, se actualizan sus
+         datos (no se duplica). Las filas con error se reportan y el resto sí
+         se importa.</p>
+    </div>
+    <div class="acciones">
+      <a class="boton boton-secundario" href="{% url 'nomina:panel' %}">Volver a nómina</a>
+    </div>
+  </div>
+{% endblock %}

@@ -65,6 +65,54 @@ class PruebasCalculo(CasoConEmpresa):
         self.assertEqual(parametros_del_anio(2027)["smmlv"], Decimal("1623500"))
 
 
+class PruebasImportarEmpleados(CasoConEmpresa):
+    """Carga masiva de la planta desde CSV."""
+
+    def csv(self, *filas):
+        cuerpo = "nombre;cedula;salario;fecha_ingreso\n" + "\n".join(filas)
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        return SimpleUploadedFile("empleados.csv", cuerpo.encode("utf-8"),
+                                  content_type="text/csv")
+
+    def importar(self, archivo):
+        return self.client.post(reverse("nomina:importar_empleados"),
+                                {"archivo": archivo}, follow=True)
+
+    def test_carga_varios_empleados(self):
+        respuesta = self.importar(self.csv(
+            "Ana Pérez;52111222;1623500;2025-01-15",
+            "Beto Gómez;79333444;3.000.000;15/03/2024"))
+        self.assertContains(respuesta, "2 empleado(s) nuevo(s)")
+        self.assertEqual(Empleado.objects.de_empresa(self.empresa).count(), 2)
+        beto = Empleado.objects.de_empresa(self.empresa).get(cedula="79333444")
+        self.assertEqual(beto.salario, Decimal("3000000"))
+        self.assertEqual(str(beto.fecha_ingreso), "2024-03-15")
+
+    def test_cedula_existente_se_actualiza(self):
+        empleado_de(self.empresa, cedula="52111222", salario="1000000")
+        respuesta = self.importar(self.csv("Ana Nueva;52111222;1623500;2025-01-15"))
+        self.assertContains(respuesta, "1 actualizado")
+        self.assertEqual(Empleado.objects.de_empresa(self.empresa).count(), 1)
+        ana = Empleado.objects.de_empresa(self.empresa).get()
+        self.assertEqual(ana.salario, Decimal("1623500"))  # actualizado
+
+    def test_filas_con_error_se_reportan_sin_frenar_el_resto(self):
+        respuesta = self.importar(self.csv(
+            "Buena;111;1623500;2025-01-15",
+            "Mala;abc;1623500;2025-01-15",       # cédula no numérica
+            "Fecha mala;222;1623500;32/13/2025"))  # fecha inválida
+        self.assertContains(respuesta, "1 empleado(s) nuevo(s)")
+        self.assertContains(respuesta, "no se importaron")
+        self.assertEqual(Empleado.objects.de_empresa(self.empresa).count(), 1)
+
+    def test_encabezado_incorrecto_se_rechaza(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        archivo = SimpleUploadedFile("x.csv", b"a;b;c;d\nX;1;2;3", content_type="text/csv")
+        respuesta = self.importar(archivo)
+        self.assertContains(respuesta, "No se pudo procesar")
+        self.assertEqual(Empleado.objects.de_empresa(self.empresa).count(), 0)
+
+
 class PruebasNovedades(CasoConEmpresa):
     """Caso P8.8: novedades del mes aplicadas a la liquidación."""
 

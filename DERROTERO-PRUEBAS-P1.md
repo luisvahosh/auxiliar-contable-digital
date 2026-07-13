@@ -418,8 +418,14 @@ contable) — las credenciales viven por tenant, no en el servidor.*
 *Escenario: fin de mes, hay que pagar a la gente. El auxiliar liquida,
 revisa y solo entonces se contabiliza.*
 
-- [ ] Abrir **Nómina** en el menú → **Agregar empleado**: registrar uno con
-  salario mínimo (1.623.500) y otro con 3 SMMLV.
+- [ ] Abrir **Nómina** en el menú. Fíjate en el encuadre: es **apoyo del
+  auxiliar** — prepara un **borrador** y su asiento contable; la liquidación
+  oficial, la nómina electrónica y la PILA van por tu software de nómina.
+- [ ] **Cargar por CSV** (carga masiva): subir `datos-prueba/P8-empleados.csv`
+  — carga varios empleados de una vez (una cédula ya existente se actualiza,
+  las filas con error se reportan y el resto se importa). O **Agregar
+  empleado** uno a uno: registrar uno con salario mínimo (1.623.500) y otro
+  con 3 SMMLV.
 - [ ] **Liquidar nómina** del mes: la app calcula por empleado el devengado
   (el de salario mínimo lleva **auxilio de transporte**; el de 3 SMMLV no),
   las deducciones (salud 4% + pensión 4%), el neto, los aportes del

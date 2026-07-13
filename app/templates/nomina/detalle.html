@@ -65,15 +65,18 @@
   </div>
 
   <div class="tarjeta">
-    <h2>Cómo se liquidó</h2>
+    <h2>Cómo se calculó (borrador de apoyo)</h2>
     <p class="porque">{{ liquidacion.explicacion }}</p>
+    <p class="ayuda">Cifras de referencia para contrastar con tu software de
+       nómina. La liquidación oficial, la nómina electrónica y la PILA van por
+       tu aplicativo; aquí se aprueba para registrar la causación contable.</p>
   </div>
 
   {% if liquidacion.estado == "pendiente" %}
     <div class="acciones">
       <form method="post" action="{% url 'nomina:decidir' liquidacion.pk 'aprobada' %}">
         {% csrf_token %}
-        <button type="submit" class="boton">Aprobar nómina</button>
+        <button type="submit" class="boton">Aprobar y causar</button>
       </form>
       <form method="post" action="{% url 'nomina:decidir' liquidacion.pk 'rechazada' %}">
         {% csrf_token %}

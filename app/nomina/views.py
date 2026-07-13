@@ -8,7 +8,13 @@ from django.views.decorators.http import require_POST
 from collections import defaultdict
 
 from .calculo import liquidar_mes
-from .forms import FormularioEmpleado, FormularioLiquidar, FormularioNovedad
+from .forms import (
+    FormularioEmpleado,
+    FormularioImportarEmpleados,
+    FormularioLiquidar,
+    FormularioNovedad,
+)
+from .importar import ImportacionInvalida, leer_empleados
 from .models import Empleado, LiquidacionNomina, NovedadNomina
 
 
@@ -70,6 +76,39 @@ def borrar_novedad(request, pk):
     novedad.delete()
     messages.info(request, "Novedad eliminada.")
     return redirect("nomina:novedades")
+
+
+def importar_empleados(request):
+    """Carga masiva de la planta desde CSV. Reentrante: la cédula ya
+    registrada se actualiza, no se duplica."""
+    empresa = request.empresa
+    formulario = FormularioImportarEmpleados(request.POST or None, request.FILES or None)
+    if request.method == "POST" and formulario.is_valid():
+        try:
+            validos, errores = leer_empleados(formulario.cleaned_data["archivo"].read())
+        except ImportacionInvalida as error:
+            messages.error(request, f"No se pudo procesar el archivo: {error}")
+            return render(request, "nomina/importar.html", {"formulario": formulario})
+
+        creados = actualizados = 0
+        for fila in validos:
+            _, nuevo = Empleado.objects.update_or_create(
+                empresa=empresa, cedula=fila["cedula"],
+                defaults={"nombre": fila["nombre"], "salario": fila["salario"],
+                          "fecha_ingreso": fila["fecha_ingreso"], "activo": True})
+            creados += nuevo
+            actualizados += not nuevo
+
+        if creados or actualizados:
+            messages.success(request, f"{creados} empleado(s) nuevo(s) y "
+                                      f"{actualizados} actualizado(s).")
+        for error in errores[:15]:
+            messages.warning(request, error)
+        if errores:
+            messages.info(request, f"{len(errores)} fila(s) con error no se importaron.")
+        if creados or actualizados:
+            return redirect("nomina:panel")
+    return render(request, "nomina/importar.html", {"formulario": formulario})
 
 
 @require_POST
@@ -150,9 +189,10 @@ def decidir(request, pk, decision):
     liquidacion.estado = decision
     liquidacion.save(update_fields=["estado", "actualizada"])
     if decision == "aprobada":
-        messages.success(request, f"Nómina {liquidacion.anio}-{liquidacion.mes:02d} "
-                                  "aprobada. PILA y nómina electrónica las presenta "
-                                  "el humano (v1 no presenta ante entidades).")
+        messages.success(request, f"Borrador {liquidacion.anio}-{liquidacion.mes:02d} "
+                                  "aprobado para la causación contable. La liquidación "
+                                  "oficial, la nómina electrónica y la PILA van por tu "
+                                  "software de nómina.")
     else:
         messages.info(request, "Liquidación rechazada: corrige la planta o los "
                                "parámetros y vuelve a liquidar (elimínala en el admin).")

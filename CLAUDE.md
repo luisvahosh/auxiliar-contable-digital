@@ -198,6 +198,10 @@ Toda funcionalidad de dominio se valida contra los casos de
   efecto por tipo (constitutivo/no constitutivo/reduce_base/descuento);
   el motor ajusta base de aportes/provisiones y neto; asiento cuadra con
   descuentos en 237010. Pantalla Nómina → Novedades. 144 tests.
+- **Hecho (día 6):** encuadre de nómina como APOYO del auxiliar (borrador +
+  causación contable, no reemplaza software de nómina — ver principio arriba)
+  en textos/botones/mensajes; carga masiva de empleados por CSV
+  (`nomina/importar.py`, reentrante por cédula). 181 tests.
 - **Hecho (día 6, P10):** activos fijos — app `activos/`: ActivoFijo por
   categoría (vida útil + cuentas PUC en parametros.py), DepreciacionMensual
   línea recta topada al valor depreciable (P10.2) y sin depreciar antes de

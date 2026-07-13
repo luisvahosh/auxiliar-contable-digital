@@ -3,10 +3,17 @@
 {% block titulo %}Nómina — Auxiliar Contable Digital{% endblock %}
 
 {% block contenido %}
-  <h1>Nómina</h1>
+  <h1>Nómina — apoyo del auxiliar</h1>
   <p class="suave">{{ empresa }} ·
      {% if empresa.exonerada_parafiscales %}exonerada de parafiscales (art. 114-1){% else %}NO exonerada de parafiscales{% endif %}
-     — se cambia en el admin de la empresa.</p>
+     — se cambia en Configuración de la empresa.</p>
+  <div class="tarjeta" style="border-left:4px solid var(--primario)">
+    <p class="ayuda" style="margin:0">Esta herramienta <strong>apoya</strong> al
+       auxiliar: prepara un <strong>borrador</strong> de la liquidación y su
+       <strong>asiento contable</strong> para revisión. No reemplaza tu software
+       de nómina: la liquidación oficial, la nómina electrónica y la PILA se
+       hacen en tu aplicativo de nómina. Todo aquí queda pendiente de tu aprobación.</p>
+  </div>
 
   <div class="tarjeta tabla-envoltura">
     <h2>Planta de personal</h2>
@@ -31,21 +38,23 @@
     {% endif %}
     <div class="acciones">
       <a class="boton boton-secundario" href="{% url 'nomina:empleado_nuevo' %}">Agregar empleado</a>
+      <a class="boton boton-secundario" href="{% url 'nomina:importar_empleados' %}">Cargar por CSV</a>
       <a class="boton boton-secundario" href="{% url 'nomina:novedades' %}">Novedades del mes</a>
     </div>
   </div>
 
   <div class="tarjeta">
-    <h2>Liquidar el mes</h2>
+    <h2>Borrador de liquidación del mes</h2>
     <form method="post" action="{% url 'nomina:liquidar' %}">
       {% csrf_token %}
       <label for="{{ formulario_liquidar.periodo.id_for_label }}">{{ formulario_liquidar.periodo.label }}</label>
       {{ formulario_liquidar.periodo }}
-      <button type="submit" class="boton" style="margin-left:8px">Liquidar nómina</button>
+      <button type="submit" class="boton" style="margin-left:8px">Preparar borrador</button>
     </form>
-    <p class="ayuda">Liquida a todos los empleados activos, aplicando las
-       novedades que hayas registrado para ese mes (horas extra, bonos,
-       descuentos). La liquidación queda pendiente de tu aprobación.</p>
+    <p class="ayuda">Prepara un borrador para todos los empleados activos,
+       aplicando las novedades del mes (horas extra, bonos, descuentos), como
+       apoyo para contrastar con tu software de nómina y registrar la causación
+       contable. Queda pendiente de tu aprobación.</p>
   </div>
 
   {% if liquidaciones %}

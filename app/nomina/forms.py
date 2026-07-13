@@ -54,6 +54,22 @@ class FormularioNovedad(forms.ModelForm):
         return valor
 
 
+class FormularioImportarEmpleados(forms.Form):
+    archivo = forms.FileField(
+        label="Archivo CSV de empleados",
+        help_text="Columnas: nombre;cedula;salario;fecha_ingreso (con encabezado). "
+                  "Máximo 2 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}))
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data["archivo"]
+        if not archivo.name.lower().endswith(".csv"):
+            raise forms.ValidationError("El archivo debe tener extensión .csv.")
+        if archivo.size > 2 * 1024 * 1024:
+            raise forms.ValidationError("El archivo supera el tamaño máximo de 2 MB.")
+        return archivo
+
+
 class FormularioLiquidar(forms.Form):
     periodo = forms.CharField(
         label="Mes a liquidar",
