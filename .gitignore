@@ -14,3 +14,6 @@ media/
 # SO / editor
 .DS_Store
 Thumbs.db
+
+# Config local de Claude Code (permisos personales, no del proyecto)
+.claude/settings.local.json
