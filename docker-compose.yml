@@ -36,6 +36,18 @@ services:
       ALEGRA_EMAIL: ${ALEGRA_EMAIL:-}
       ALEGRA_TOKEN: ${ALEGRA_TOKEN:-}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      # Correo saliente. Por defecto consola; en producción se define por .env
+      # (Microsoft Graph app-only, o SMTP como alternativa — ver .env.example).
+      DJANGO_EMAIL_BACKEND: ${DJANGO_EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      DJANGO_FROM_EMAIL: ${DJANGO_FROM_EMAIL:-alertas@auxiliar.local}
+      MS_GRAPH_TENANT_ID: ${MS_GRAPH_TENANT_ID:-}
+      MS_GRAPH_CLIENT_ID: ${MS_GRAPH_CLIENT_ID:-}
+      MS_GRAPH_CLIENT_SECRET: ${MS_GRAPH_CLIENT_SECRET:-}
+      DJANGO_EMAIL_HOST: ${DJANGO_EMAIL_HOST:-}
+      DJANGO_EMAIL_PORT: ${DJANGO_EMAIL_PORT:-587}
+      DJANGO_EMAIL_HOST_USER: ${DJANGO_EMAIL_HOST_USER:-}
+      DJANGO_EMAIL_HOST_PASSWORD: ${DJANGO_EMAIL_HOST_PASSWORD:-}
+      DJANGO_EMAIL_USE_TLS: ${DJANGO_EMAIL_USE_TLS:-1}
     volumes:
       - datos:/app/datos
     depends_on:
