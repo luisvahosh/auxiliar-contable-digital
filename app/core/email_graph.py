@@ -94,6 +94,10 @@ class GraphEmailBackend(BaseEmailBackend):
     def _enviar_uno(self, mensaje, token):
         nombre, remitente = _remitente(mensaje.from_email)
         cuerpo_html = _es_html(mensaje)
+        # from y sender identicos: si difieren, Exchange rellena sender con el
+        # display name real del buzon (compartido entre apps) y el cliente lo
+        # muestra como "en nombre de / via". Igualarlos evita ese texto.
+        buzon = {"emailAddress": {"name": nombre, "address": remitente}}
         graph_msg = {
             "message": {
                 "subject": mensaje.subject,
@@ -101,9 +105,8 @@ class GraphEmailBackend(BaseEmailBackend):
                     "contentType": "HTML" if cuerpo_html else "Text",
                     "content": mensaje.body,
                 },
-                # Explicito para que el nombre visible sea el de la app y no
-                # el display name configurado del buzon en Office 365.
-                "from": {"emailAddress": {"name": nombre, "address": remitente}},
+                "from": buzon,
+                "sender": buzon,
                 "toRecipients": _destinatarios(mensaje.to),
                 "ccRecipients": _destinatarios(mensaje.cc),
                 "bccRecipients": _destinatarios(mensaje.bcc),
