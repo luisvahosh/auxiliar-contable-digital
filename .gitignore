@@ -15,5 +15,7 @@ media/
 .DS_Store
 Thumbs.db
 
-# Config local de Claude Code (permisos personales, no del proyecto)
-.claude/settings.local.json
+# Herramientas y config local de Claude Code (no del proyecto)
+.claude/
+# Salida generada del grafo de conocimiento (graphify)
+graphify-out/
