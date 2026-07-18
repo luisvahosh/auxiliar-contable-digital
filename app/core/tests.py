@@ -6,7 +6,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -150,6 +150,7 @@ class PruebasPanelInicio(CasoConEmpresa):
         self.assertContains(respuesta, "Causar una factura")
 
 
+@override_settings(EXIGIR_2FA=True)  # independiente del .env local (DJANGO_EXIGIR_2FA)
 class Pruebas2FA(CasoConEmpresa):
     """§12: segundo factor TOTP — activación con QR y validación por sesión."""
 
@@ -206,6 +207,21 @@ class Pruebas2FA(CasoConEmpresa):
 
     def test_sin_2fa_activo_no_se_exige_codigo(self):
         self.assertEqual(self.client.get("/").status_code, 200)
+
+    def test_desactivado_por_config_no_exige_codigo_ni_avisa(self):
+        from django.test import override_settings
+        # Aunque el usuario tenga 2FA activo, con DJANGO_EXIGIR_2FA=0 no se pide
+        self.activar()
+        self.client.logout()
+        self.client.force_login(self.usuario)
+        with override_settings(EXIGIR_2FA=False):
+            respuesta = self.client.get("/")
+            self.assertEqual(respuesta.status_code, 200)  # no redirige a /verificar/
+
+    def test_desactivado_no_avisa_a_los_admins(self):
+        from django.test import override_settings
+        with override_settings(EXIGIR_2FA=False):
+            self.assertNotContains(self.client.get("/"), "segundo factor")
 
 
 class PruebasCifradoEnReposo(CasoConEmpresa):

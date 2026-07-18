@@ -83,6 +83,10 @@ LOGOUT_REDIRECT_URL = "core:login"
 
 # El nombre que muestra la app de autenticación junto a la llave 2FA
 OTP_TOTP_ISSUER = "Auxiliar Contable"
+# Segundo factor (§12): activado por defecto. Poner DJANGO_EXIGIR_2FA=0 lo
+# desactiva temporalmente (fase de pruebas) — no se pide el código ni se avisa
+# a los admins. Reactivar antes de clientes reales.
+EXIGIR_2FA = os.environ.get("DJANGO_EXIGIR_2FA", "1") == "1"
 
 # Detrás del proxy inverso del VPS (https): confiar en X-Forwarded-Proto/Host
 # para que Django sepa que la petición original fue segura (CSRF, cookies).

@@ -2,6 +2,7 @@
 Acceso cerrado por defecto (PLAN.md §12): no hay nada visible sin sesión,
 y toda vista de negocio corre con la empresa activa en request.empresa.
 """
+from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 from django_otp import user_has_device
@@ -26,9 +27,11 @@ class AccesoPorEmpresaMiddleware:
         if not request.user.is_authenticated:
             return redirect(f"{reverse('core:login')}?next={request.path}")
 
-        # 2FA (§12): quien lo tiene activo debe validar el código en cada sesión
+        # 2FA (§12): quien lo tiene activo debe validar el código en cada sesión.
+        # Se puede desactivar temporalmente con DJANGO_EXIGIR_2FA=0.
         ruta_verificar = reverse("core:verificar_2fa")
-        if (not request.user.is_verified()
+        if (settings.EXIGIR_2FA
+                and not request.user.is_verified()
                 and user_has_device(request.user, confirmed=True)
                 and request.path not in (ruta_verificar, reverse("core:logout"))):
             return redirect(ruta_verificar)

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.core.mail import send_mail
@@ -51,8 +52,10 @@ def inicio(request):
         cierre_mes = {"periodo": periodo,
                       "resumen": resumen_cierre(empresa, periodo.year, periodo.month)}
 
-    # §12: el 2FA es obligatorio para administradores — aviso hasta activarlo
-    aviso_2fa = (rol_en_empresa(request, empresa) == "admin"
+    # §12: el 2FA es obligatorio para administradores — aviso hasta activarlo.
+    # Si está desactivado por config (DJANGO_EXIGIR_2FA=0), no se avisa.
+    aviso_2fa = (settings.EXIGIR_2FA
+                 and rol_en_empresa(request, empresa) == "admin"
                  and not user_has_device(request.user, confirmed=True))
 
     return render(request, "core/inicio.html", {
