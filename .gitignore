@@ -19,3 +19,5 @@ Thumbs.db
 .claude/
 # Salida generada del grafo de conocimiento (graphify)
 graphify-out/
+# Entregables generados para el contador (PDF/HTML locales)
+entregables-contador/
