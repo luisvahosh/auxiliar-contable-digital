@@ -31,6 +31,12 @@
     </table>
   </div>
 
+  {% if puede_crear_empresa %}
+    <div class="acciones">
+      <a class="boton" href="{% url 'core:crear_empresa' %}">+ Crear empresa</a>
+    </div>
+  {% endif %}
+
   {% if es_admin %}
     <div class="acciones">
       <a class="boton" href="{% url 'core:configuracion' %}">Configuración de la empresa</a>

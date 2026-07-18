@@ -35,6 +35,7 @@ urlpatterns = [
     path("seguridad/2fa/codigos/", views.regenerar_codigos, name="regenerar_codigos"),
     path("verificar/", views.verificar_2fa, name="verificar_2fa"),
     path("empresas/", views.empresas, name="empresas"),
+    path("empresas/crear/", views.crear_empresa, name="crear_empresa"),
     path("empresas/cambiar/", views.cambiar, name="cambiar_empresa"),
     path("empresas/invitar/", views.invitar, name="invitar"),
     path("configuracion/", views.configuracion, name="configuracion"),

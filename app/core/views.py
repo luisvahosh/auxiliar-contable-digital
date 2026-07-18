@@ -9,12 +9,13 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from .forms import (
     FormularioConfiguracionEmpresa,
+    FormularioCrearEmpresa,
     FormularioInvitacion,
     FormularioRegistro,
     FormularioToken2FA,
 )
 from .models import ROLES, Invitacion, Membresia
-from .tenancy import cambiar_empresa, rol_en_empresa
+from .tenancy import CLAVE_SESION, cambiar_empresa, rol_en_empresa
 
 
 def inicio(request):
@@ -74,7 +75,28 @@ def inicio(request):
 
 def sin_empresa(request):
     """Usuario autenticado sin membresías: cuenta huérfana, no ve datos."""
-    return render(request, "core/sin_empresa.html")
+    return render(request, "core/sin_empresa.html",
+                  {"puede_crear_empresa": settings.PERMITIR_CREAR_EMPRESAS})
+
+
+def crear_empresa(request):
+    """Autoservicio de alta de empresa (§12): quien la crea queda como admin.
+    Solo disponible si DJANGO_PERMITIR_CREAR_EMPRESAS=1."""
+    if not settings.PERMITIR_CREAR_EMPRESAS:
+        messages.error(request, "La creación de empresas no está habilitada.")
+        return redirect("core:empresas")
+
+    formulario = FormularioCrearEmpresa(request.POST or None)
+    if request.method == "POST" and formulario.is_valid():
+        empresa = formulario.save()
+        Membresia.objects.create(usuario=request.user, empresa=empresa, rol="admin")
+        request.session[CLAVE_SESION] = str(empresa.id)  # queda como activa
+        messages.success(
+            request, f"Empresa «{empresa.razon_social}» creada. Completa sus datos "
+            "fiscales para empezar a causar.")
+        return redirect("core:configuracion")
+
+    return render(request, "core/crear_empresa.html", {"formulario": formulario})
 
 
 def registro(request, token):
@@ -203,6 +225,7 @@ def empresas(request):
     return render(request, "core/empresas.html", {
         "membresias": membresias,
         "es_admin": rol_en_empresa(request, request.empresa) == "admin",
+        "puede_crear_empresa": settings.PERMITIR_CREAR_EMPRESAS,
     })
 
 

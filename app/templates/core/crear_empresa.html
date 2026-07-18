@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block titulo %}Crear empresa — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <div style="max-width: 480px; margin: 24px auto">
+    <h1>Crear una empresa</h1>
+    <p class="suave">Registra la empresa con la que vas a trabajar. Quedarás como
+       su administrador. Los demás datos fiscales los completas después en
+       Configuración.</p>
+
+    <div class="tarjeta">
+      <form method="post">
+        {% csrf_token %}
+        {% for campo in formulario %}
+          <div style="margin-bottom:16px">
+            <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+            {{ campo }}
+            {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
+            {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <div class="acciones">
+          <button type="submit" class="boton">Crear empresa</button>
+          <a class="boton boton-secundario" href="{% url 'core:empresas' %}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

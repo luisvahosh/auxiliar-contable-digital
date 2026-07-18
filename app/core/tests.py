@@ -419,3 +419,35 @@ class PruebasMultiEmpresa(CasoConEmpresa):
         respuesta = self.client.get(reverse("core:invitar"), follow=True)
         self.assertContains(respuesta, "Solo el administrador")
         self.assertEqual(Invitacion.objects.count(), 0)
+
+
+@override_settings(PERMITIR_CREAR_EMPRESAS=True)
+class PruebasCrearEmpresa(CasoConEmpresa):
+    """Autoservicio de alta de empresa (bandera DJANGO_PERMITIR_CREAR_EMPRESAS)."""
+
+    def test_crea_la_empresa_y_queda_como_admin_activa(self):
+        antes = Empresa.objects.count()
+        self.client.post(reverse("core:crear_empresa"), {
+            "razon_social": "NUEVA SAS", "nit": "900999888",
+            "digito_verificacion": "1", "ciudad": "Cali"})
+        self.assertEqual(Empresa.objects.count(), antes + 1)
+        nueva = Empresa.objects.get(nit="900999888")
+        membresia = Membresia.objects.get(usuario=self.usuario, empresa=nueva)
+        self.assertEqual(membresia.rol, "admin")
+        # queda como empresa activa en la sesión
+        self.assertEqual(self.client.session["empresa_activa"], str(nueva.id))
+
+    def test_nit_duplicado_no_crea(self):
+        respuesta = self.client.post(reverse("core:crear_empresa"), {
+            "razon_social": "OTRA SAS", "nit": self.empresa.nit,
+            "digito_verificacion": "", "ciudad": ""})
+        self.assertContains(respuesta, "Ya existe una empresa con ese NIT")
+        self.assertFalse(Empresa.objects.filter(razon_social="OTRA SAS").exists())
+
+    @override_settings(PERMITIR_CREAR_EMPRESAS=False)
+    def test_apagado_no_permite_crear(self):
+        antes = Empresa.objects.count()
+        respuesta = self.client.post(reverse("core:crear_empresa"), {
+            "razon_social": "NO DEBE", "nit": "111222333"}, follow=True)
+        self.assertEqual(Empresa.objects.count(), antes)
+        self.assertContains(respuesta, "no está habilitada")

@@ -5,6 +5,18 @@ from django.contrib.auth.password_validation import validate_password
 from .models import ROLES, Empresa
 
 
+class FormularioCrearEmpresa(forms.ModelForm):
+    """Alta de empresa por autoservicio: lo mínimo para arrancar; el resto de
+    los datos fiscales se completan luego en Configuración."""
+
+    class Meta:
+        model = Empresa
+        fields = ["razon_social", "nit", "digito_verificacion", "ciudad"]
+        error_messages = {
+            "nit": {"unique": "Ya existe una empresa con ese NIT en la plataforma."},
+        }
+
+
 class FormularioConfiguracionEmpresa(forms.ModelForm):
     """Datos fiscales de la empresa (panel de configuración)."""
 

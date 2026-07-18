@@ -88,6 +88,12 @@ OTP_TOTP_ISSUER = "Auxiliar Contable"
 # a los admins. Reactivar antes de clientes reales.
 EXIGIR_2FA = os.environ.get("DJANGO_EXIGIR_2FA", "1") == "1"
 
+# Autoservicio de creación de empresas (§12: "sin registro abierto"). Apagado por
+# defecto: las empresas las crea el superusuario. Con DJANGO_PERMITIR_CREAR_EMPRESAS=1
+# cualquier usuario ya dentro puede crear una empresa y queda como su admin
+# (para la fase de pruebas; cerrar luego volviendo a 0).
+PERMITIR_CREAR_EMPRESAS = os.environ.get("DJANGO_PERMITIR_CREAR_EMPRESAS", "0") == "1"
+
 # Detrás del proxy inverso del VPS (https): confiar en X-Forwarded-Proto/Host
 # para que Django sepa que la petición original fue segura (CSRF, cookies).
 if os.environ.get("DJANGO_TRAS_PROXY", "0") == "1":
