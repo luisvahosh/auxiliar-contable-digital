@@ -15,8 +15,11 @@ mejorar contigo.
 ---
 
 ## Antes de empezar: ten a la mano
-- [ ] El **enlace de invitación** que te enviaron (vence en 72 horas).
-- [ ] Los **XML** de algunas facturas reales de la empresa (compras y ventas del
+- [ ] El **enlace de invitación** que te enviaron (vence en 72 horas) — es solo
+      para darte acceso a la plataforma.
+- [ ] La **razón social** y el **NIT** de la empresa que vas a registrar
+      (tú mismo la creas, en el paso 2).
+- [ ] Los **XML** de algunas facturas reales de esa empresa (compras y ventas del
       mes). Los descargas del **portal de la DIAN** (“Documentos electrónicos”) o
       de tu proveedor de facturación. *Si tienes facturas de papel, sirve una foto.*
 - [ ] Los **datos fiscales** de la empresa (responsable de IVA, RST,
@@ -25,21 +28,27 @@ mejorar contigo.
 
 ---
 
-## Paso 1 — Entrar
+## Paso 1 — Entrar a la plataforma
 - [ ] Abre el **enlace de invitación**.
-- [ ] Escribe tu **nombre** y crea una **contraseña**. Ya tienes cuenta.
-- [ ] Entras a la empresa que te asignaron. Arriba a la derecha ves su nombre.
+- [ ] Escribe tu **nombre** y crea una **contraseña**. Ya tienes tu cuenta.
+- [ ] Quedas dentro de la plataforma. Arriba a la derecha ves el menú.
 
-## Paso 2 — Confirmar los datos de la empresa
-- [ ] Entra a **⚙ Configuración**.
-- [ ] Revisa y ajusta: municipio, **responsable de IVA**, **Régimen Simple (RST)**,
-      **autorretenedor**, **agente de retención**, **tarifa de ICA** y
-      **exoneración de parafiscales (art. 114-1)**.
+## Paso 2 — Crea TU empresa
+- [ ] Arriba a la derecha, entra a **Mis empresas**.
+- [ ] Toca **“+ Crear empresa”**.
+- [ ] Escribe la **razón social** y el **NIT real** de tu empresa → **Crear empresa**.
+- [ ] Quedas como **administrador** de ella y se activa sola. Te lleva a la
+      configuración para el siguiente paso.
+
+## Paso 3 — Completa los datos de la empresa
+- [ ] En **⚙ Configuración**, revisa y ajusta: municipio, **responsable de IVA**,
+      **Régimen Simple (RST)**, **autorretenedor**, **agente de retención**,
+      **tarifa de ICA** y **exoneración de parafiscales (art. 114-1)**.
 - [ ] **Guarda.** *(La app usa esto para calcular bien las retenciones.)*
 - [ ] *(Opcional)* Revisa **Configuración → Plan de cuentas**: trae el PUC por
       defecto; ajusta un código si tu empresa usa otro.
 
-## Paso 3 — Causar una factura de COMPRA (lo más importante)
+## Paso 4 — Causar una factura de COMPRA (lo más importante)
 - [ ] Botón **Subir factura** → elige el **XML** de una compra real → **Procesar**.
 - [ ] Revisa la propuesta: la **cuenta**, la **retención** calculada y el **asiento**
       (débitos = créditos), con la explicación de **por qué** lo propone.
@@ -52,32 +61,32 @@ mejorar contigo.
 ¿La cuenta PUC es la que usarías? ¿Respeta el régimen del proveedor (a un RST no
 se le retiene)?
 
-## Paso 4 — Causar una factura de VENTA
+## Paso 5 — Causar una factura de VENTA
 - [ ] **Subir factura** → elige el **XML** de una venta emitida por la empresa.
 - [ ] Verifica el asiento de venta: ingreso, IVA generado y, si el cliente
       retuvo, la retención a favor. **Aprobar** si está bien.
 - [ ] Si te falta un número en la numeración, la app te **avisa del hueco**.
 
-## Paso 5 *(opcional)* — Factura de papel por foto
+## Paso 6 *(opcional)* — Factura de papel por foto
 - [ ] **Subir factura → Causar desde una foto** → toma/carga la foto → la app lee
       los campos → confírmalos → entra como **borrador** para tu aprobación.
 
-## Paso 6 *(opcional)* — Conciliación bancaria
+## Paso 7 *(opcional)* — Conciliación bancaria
 - [ ] Menú **Tesorería → Bancos** → sube el **extracto** (CSV o PDF).
 - [ ] Mira cómo cruza los pagos con las facturas y propone los gastos bancarios.
 
-## Paso 7 — Cierre del mes y paquete del contador
+## Paso 8 — Cierre del mes y paquete del contador
 - [ ] Menú **Cierre mensual**: revisa la lista de chequeo (qué falta, conciliación,
       **cuadre de retenciones**).
 - [ ] Descarga el **paquete del contador** (auxiliares por cuenta y por tercero,
       soportes). **Pregúntate:** ¿esto es lo que necesitarías para revisar y declarar?
 
-## Paso 8 — Informes
+## Paso 9 — Informes
 - [ ] Menú **Informes**: mira el **balance de comprobación** (verifica el cuadre),
       el **estado de resultados** y el **libro mayor**. ¿Las cifras te cuadran con
       lo que causaste?
 
-## Paso 9 *(opcional)* — Exógena y certificados
+## Paso 10 *(opcional)* — Exógena y certificados
 - [ ] **Tributario → Exógena**: revisa el pre-armado de 1001 / 1007 / 2276.
 - [ ] **Facturación → Terceros → Certificados**: certificado de retención por tercero.
 
