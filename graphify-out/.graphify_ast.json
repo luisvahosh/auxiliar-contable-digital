@@ -1,0 +1,520 @@
+{
+  "nodes": [
+    {
+      "id": "app_config_settings",
+      "label": "settings.py",
+      "file_type": "code",
+      "source_file": "app/config/settings.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_config_settings_rationale_1",
+      "label": "Configuración Django — Auxiliar Contable Digital. Regla 12-factor (PLAN.md §4):",
+      "file_type": "rationale",
+      "source_file": "app/config/settings.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph",
+      "label": "email_graph.py",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailerror",
+      "label": "GraphEmailError",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": "exception",
+      "label": "Exception",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend",
+      "label": "GraphEmailBackend",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "baseemailbackend",
+      "label": "BaseEmailBackend",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend_obtener_token",
+      "label": "._obtener_token()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend_token_valido",
+      "label": "._token_valido()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend_send_messages",
+      "label": ".send_messages()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L78",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "label": "._enviar_uno()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L94",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_remitente",
+      "label": "_remitente()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L135",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_destinatarios",
+      "label": "_destinatarios()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L150",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_es_html",
+      "label": "_es_html()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L154",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_adjuntos",
+      "label": "_adjuntos()",
+      "file_type": "code",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L165",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_rationale_1",
+      "label": "Backend de correo que envia via Microsoft Graph API (OAuth2 app-only).  Alternat",
+      "file_type": "rationale",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_rationale_34",
+      "label": "Falla al obtener token o al enviar por Graph.",
+      "file_type": "rationale",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L34",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_rationale_38",
+      "label": "Envia EmailMessage de Django a traves de Microsoft Graph sendMail.",
+      "file_type": "rationale",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L38",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_core_email_graph_rationale_136",
+      "label": "Separa 'Nombre <correo>' en (nombre, direccion).      Sin nombre explicito devue",
+      "file_type": "rationale",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L136",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "app_config_settings",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/config/settings.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "app_config_settings",
+      "target": "dj_database_url",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/config/settings.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "app_config_settings",
+      "target": "dotenv",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/config/settings.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "app_config_settings",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/config/settings.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "app_config_settings_rationale_1",
+      "target": "app_config_settings",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/config/settings.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "base64",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "threading",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "requests",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "django_core_mail_backends_base",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_graphemailerror",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailerror",
+      "target": "exception",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_graphemailbackend",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "baseemailbackend",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "app_core_email_graph_graphemailbackend_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "app_core_email_graph_graphemailbackend_obtener_token",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "app_core_email_graph_graphemailbackend_token_valido",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "app_core_email_graph_graphemailbackend_send_messages",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend",
+      "target": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_remitente",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_destinatarios",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_es_html",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph",
+      "target": "app_core_email_graph_adjuntos",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L165",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_obtener_token",
+      "target": "app_core_email_graph_graphemailerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_token_valido",
+      "target": "app_core_email_graph_graphemailbackend_obtener_token",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_send_messages",
+      "target": "app_core_email_graph_graphemailbackend_token_valido",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_send_messages",
+      "target": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "target": "app_core_email_graph_remitente",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "target": "app_core_email_graph_es_html",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "target": "app_core_email_graph_destinatarios",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L110",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "target": "app_core_email_graph_adjuntos",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_graphemailbackend_enviar_uno",
+      "target": "app_core_email_graph_graphemailerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_remitente",
+      "target": "app_core_email_graph_graphemailerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L142",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_rationale_1",
+      "target": "app_core_email_graph",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_rationale_34",
+      "target": "app_core_email_graph_graphemailerror",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_rationale_38",
+      "target": "app_core_email_graph_graphemailbackend",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "app_core_email_graph_rationale_136",
+      "target": "app_core_email_graph_remitente",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/email_graph.py",
+      "source_location": "L136",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
