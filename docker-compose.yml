@@ -30,6 +30,8 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
       DJANGO_CSRF_ORIGINS: ${DJANGO_CSRF_ORIGINS:-}
       DJANGO_TRAS_PROXY: ${DJANGO_TRAS_PROXY:-0}
+      # Segundo factor: por defecto activado; poner 0 en el .env lo desactiva
+      DJANGO_EXIGIR_2FA: ${DJANGO_EXIGIR_2FA:-1}
       # Base de datos: PostgreSQL del servicio db (12-factor, el código no cambia)
       DATABASE_URL: postgres://${POSTGRES_USER:-auxiliar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-auxiliar}
       DJANGO_MEDIA_ROOT: /app/datos/media
