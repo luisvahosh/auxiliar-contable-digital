@@ -437,6 +437,21 @@ class PruebasCrearEmpresa(CasoConEmpresa):
         # queda como empresa activa en la sesión
         self.assertEqual(self.client.session["empresa_activa"], str(nueva.id))
 
+    def test_la_empresa_nace_con_el_puc_estandar(self):
+        # Como los software contables: parametrizada de fábrica hasta subcuenta
+        from causacion.models import CuentaPUC
+        self.client.post(reverse("core:crear_empresa"), {
+            "razon_social": "CON PUC SAS", "nit": "900777666",
+            "digito_verificacion": "", "ciudad": ""})
+        nueva = Empresa.objects.get(nit="900777666")
+        catalogo = CuentaPUC.objects.de_empresa(nueva)
+        self.assertGreater(catalogo.count(), 150)
+        # Subcuentas clave presentes; nombres de la app mandan sobre el 2650
+        self.assertTrue(catalogo.filter(codigo="111005").exists())
+        self.assertTrue(catalogo.filter(codigo="511035").exists())
+        self.assertEqual(catalogo.get(codigo="236525").nombre,
+                         "Retención en la fuente — servicios")
+
     def test_nit_duplicado_no_crea(self):
         respuesta = self.client.post(reverse("core:crear_empresa"), {
             "razon_social": "OTRA SAS", "nit": self.empresa.nit,

@@ -4,23 +4,42 @@ contable (retroalimentación del contador: cada empresa —y cada sector: real,
 solidario, financiero, seguros…— tiene su propio plan de cuentas, y hay que
 poder subirlo para causar en la AUXILIAR correcta, no en la cuenta mayor).
 
-Acepta CSV (separador ; o ,) y Excel (.xlsx). Autodetecta las columnas de
-código y nombre por su encabezado (o, si no hay encabezado reconocible, toma
-la primera columna con pinta de código y la de al lado como nombre). Es
-REENTRANTE: vuelve a subir el mismo archivo y solo actualiza nombres, sin
-duplicar (clave: código por empresa).
+Acepta CSV (separador ; o ,) y Excel (.xlsx), incluido el **balance de prueba**
+que exporta Siigo/World Office ("al mayor nivel de cuentas, sin terceros" — el
+insumo de onboarding que definió el contador): tolera filas de título, reconoce
+encabezados tipo "Código cuenta contable", ignora las columnas de saldos y
+descarta filas cuyo código parece un NIT. Autodetecta las columnas de código y
+nombre por su encabezado (o, si no hay encabezado reconocible, toma la primera
+columna con pinta de código y la de al lado como nombre). Es REENTRANTE:
+vuelve a subir el mismo archivo y solo actualiza nombres, sin duplicar
+(clave: código por empresa).
 """
 import csv
 import io
 import re
 from dataclasses import dataclass, field
 
-ENCABEZADOS_CODIGO = {"codigo", "código", "cuenta", "cuenta contable", "code",
-                      "cta", "nro cuenta", "numero cuenta", "número cuenta"}
-ENCABEZADOS_NOMBRE = {"nombre", "descripcion", "descripción", "nombre cuenta",
-                      "nombre de cuenta", "detalle", "concepto", "name", "cuenta nombre"}
+# Encabezados por CONTENIDO (no igualdad exacta): así se reconocen también los
+# de los balances de prueba reales — "Código cuenta contable" (Siigo), etc.
+_CLAVES_NOMBRE = ("nombre", "descripcion", "descripción", "detalle", "name")
+_CLAVES_CODIGO = ("codigo", "código", "code", "cta")
 
 _SOLO_CODIGO = re.compile(r"^\d[\d.\-]{0,19}$")  # 5110, 5110.35, 51-10-35…
+_FILAS_ENCABEZADO = 15  # los balances traen filas de título (empresa, NIT, período)
+_LARGO_MAXIMO_CODIGO = 12  # más largo parece un NIT de tercero, no una cuenta
+
+
+def _es_encabezado_nombre(celda):
+    return any(clave in celda for clave in _CLAVES_NOMBRE)
+
+
+def _es_encabezado_codigo(celda):
+    if _es_encabezado_nombre(celda):  # "nombre cuenta contable" es nombre, no código
+        return False
+    return (any(clave in celda for clave in _CLAVES_CODIGO)
+            or celda == "cuenta" or celda.startswith("cuenta contable")
+            or celda.startswith("nro cuenta") or celda.startswith("numero cuenta")
+            or celda.startswith("número cuenta"))
 
 
 class PUCInvalido(Exception):
@@ -69,20 +88,31 @@ def _filas_de_xlsx(contenido):
     hoja = libro.active
     filas = []
     for fila in hoja.iter_rows(values_only=True):
-        filas.append(["" if celda is None else str(celda) for celda in fila])
+        filas.append([_celda_texto(celda) for celda in fila])
     libro.close()
     return filas
 
 
+def _celda_texto(celda):
+    """Celda de Excel → texto. Un código guardado como número (1105.0) debe
+    quedar '1105', no '1105.0' (que _limpiar_codigo volvería '11050')."""
+    if celda is None:
+        return ""
+    if isinstance(celda, float) and celda.is_integer():
+        return str(int(celda))
+    return str(celda)
+
+
 def _detectar_columnas(filas):
-    """→ (idx_codigo, idx_nombre, fila_inicio). Usa el encabezado si lo reconoce;
-    si no, deduce por el contenido (primera columna que parece código)."""
-    for i, fila in enumerate(filas[:5]):
+    """→ (idx_codigo, idx_nombre, fila_inicio). Usa el encabezado si lo reconoce
+    (tolerando las filas de título de un balance de prueba); si no, deduce por
+    el contenido (primera columna que parece código)."""
+    for i, fila in enumerate(filas[:_FILAS_ENCABEZADO]):
         normalizados = [_norm(c) for c in fila]
         idx_cod = next((j for j, c in enumerate(normalizados)
-                        if c in ENCABEZADOS_CODIGO), None)
+                        if c and _es_encabezado_codigo(c)), None)
         idx_nom = next((j for j, c in enumerate(normalizados)
-                        if c in ENCABEZADOS_NOMBRE), None)
+                        if c and _es_encabezado_nombre(c)), None)
         if idx_cod is not None and idx_nom is not None:
             return idx_cod, idx_nom, i + 1
 
@@ -118,6 +148,9 @@ def leer_filas_puc(nombre_archivo, contenido):
         codigo = _limpiar_codigo(fila[idx_cod])
         nombre = (fila[idx_nom].strip() if idx_nom < len(fila) else "").strip('"')
         if not codigo:
+            continue
+        if len(codigo) > _LARGO_MAXIMO_CODIGO:
+            # Parece el NIT de un tercero (el balance debe pedirse SIN terceros)
             continue
         cuentas.append((codigo, nombre or f"Cuenta {codigo}"))
     if not cuentas:

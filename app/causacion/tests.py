@@ -1707,3 +1707,110 @@ class PruebasCatalogoPUCPermiso(CasoConEmpresa):
         self.assertContains(respuesta, "Solo el administrador")
         self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 0)
 
+
+# ---------- PUC estándar de fábrica + edición manual + balance de prueba ----------
+
+from .puc_estandar import catalogo_estandar, sembrar_puc_estandar
+
+
+class PruebasPUCEstandar(CasoConEmpresa):
+    """El PUC del sector real viene de fábrica hasta subcuenta (feedback ronda 2)."""
+
+    def test_sembrar_carga_el_catalogo_y_es_reentrante(self):
+        creadas = sembrar_puc_estandar(self.empresa)
+        self.assertGreater(creadas, 150)
+        self.assertEqual(sembrar_puc_estandar(self.empresa), 0)  # segunda vez: nada
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), creadas)
+
+    def test_no_pisa_las_cuentas_ya_cargadas(self):
+        CuentaPUC.objects.create(empresa=self.empresa, codigo="111005",
+                                 nombre="Mi banco personalizado")
+        sembrar_puc_estandar(self.empresa)
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa)
+                         .get(codigo="111005").nombre, "Mi banco personalizado")
+
+    def test_catalogo_trae_los_ejemplos_del_contador_y_los_codigos_de_la_app(self):
+        codigos = dict(catalogo_estandar())
+        self.assertEqual(codigos["110510"], "Cajas menores")  # subcuenta 2650
+        self.assertEqual(codigos["511035"], "Asesoría técnica")
+        # 111005 es rol de la app ("bancos"): su nombre manda sobre el 2650
+        self.assertEqual(codigos["111005"], "Bancos — moneda nacional")
+        # Los códigos que la app usa en sus roles conservan el nombre de la app
+        self.assertEqual(codigos["240802"], "IVA descontable")
+        self.assertEqual(codigos["236515"], "Retención en la fuente — honorarios")
+
+    def test_boton_sembrar_en_la_vista(self):
+        respuesta = self.client.post(reverse("causacion:subir_puc"),
+                                     {"accion": "sembrar"}, follow=True)
+        self.assertContains(respuesta, "PUC estándar")
+        self.assertGreater(CuentaPUC.objects.de_empresa(self.empresa).count(), 150)
+
+
+class PruebasEdicionManualPUC(CasoConEmpresa):
+    """Agregar/corregir/eliminar cuentas una a una — "sí o sí tiene que estar"."""
+
+    def test_agregar_cuenta_a_mano(self):
+        self.client.post(reverse("causacion:subir_puc"),
+                         {"accion": "agregar", "codigo": "111006",
+                          "nombre": "Bancos cooperativos"}, follow=True)
+        cuenta = CuentaPUC.objects.de_empresa(self.empresa).get(codigo="111006")
+        self.assertEqual(cuenta.nombre, "Bancos cooperativos")
+
+    def test_agregar_codigo_existente_actualiza_el_nombre(self):
+        CuentaPUC.objects.create(empresa=self.empresa, codigo="111006", nombre="Viejo")
+        self.client.post(reverse("causacion:subir_puc"),
+                         {"accion": "agregar", "codigo": "111006",
+                          "nombre": "Bancos cooperativos"}, follow=True)
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 1)
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa)
+                         .get(codigo="111006").nombre, "Bancos cooperativos")
+
+    def test_eliminar_cuenta(self):
+        CuentaPUC.objects.create(empresa=self.empresa, codigo="111006", nombre="X")
+        self.client.post(reverse("causacion:subir_puc"),
+                         {"accion": "eliminar", "codigo": "111006"}, follow=True)
+        self.assertFalse(CuentaPUC.objects.de_empresa(self.empresa)
+                         .filter(codigo="111006").exists())
+
+    def test_eliminar_no_toca_otras_empresas(self):
+        otra = Empresa.objects.create(razon_social="OTRA SAS", nit="800111222")
+        CuentaPUC.objects.create(empresa=otra, codigo="111006", nombre="Ajena")
+        self.client.post(reverse("causacion:subir_puc"),
+                         {"accion": "eliminar", "codigo": "111006"}, follow=True)
+        self.assertTrue(CuentaPUC.objects.de_empresa(otra)
+                        .filter(codigo="111006").exists())
+
+
+class PruebasBalancePrueba(CasoConEmpresa):
+    """El insumo real de onboarding: el balance de prueba (formato Siigo)."""
+
+    def test_importa_el_balance_de_prueba_xlsx(self):
+        resumen = importar_puc(self.empresa, "P-balance-prueba.xlsx",
+                               contenido("P-balance-prueba.xlsx"))
+        catalogo = CuentaPUC.objects.de_empresa(self.empresa)
+        self.assertGreater(resumen.creadas, 50)
+        # Auxiliares del contador presentes; títulos y saldos ignorados
+        self.assertEqual(catalogo.get(codigo="51103505").nombre,
+                         "Asesoría técnica ingeniería")
+        self.assertEqual(catalogo.get(codigo="111006").nombre, "Bancos cooperativos")
+        self.assertFalse(catalogo.filter(codigo="2026").exists())
+        self.assertFalse(catalogo.filter(codigo="9005551113").exists())
+
+    def test_importa_el_balance_de_prueba_csv(self):
+        resumen = importar_puc(self.empresa, "P-balance-prueba.csv",
+                               contenido("P-balance-prueba.csv"))
+        self.assertGreater(resumen.creadas, 50)
+        self.assertTrue(CuentaPUC.objects.de_empresa(self.empresa)
+                        .filter(codigo="51353501").exists())
+
+    def test_codigo_numerico_de_excel_no_pierde_el_valor(self):
+        # Un código guardado como número (1105.0) debe quedar "1105", no "11050"
+        datos = _xlsx([["Codigo", "Nombre"], [1105.0, "Caja"], [511035.0, "Asesoria"]])
+        self.assertEqual(leer_filas_puc("p.xlsx", datos),
+                         [("1105", "Caja"), ("511035", "Asesoria")])
+
+    def test_fila_con_nit_de_tercero_se_ignora(self):
+        csv = (b"Codigo;Nombre\n5110;Honorarios\n"
+               b"9005551113001;TERCERO EJEMPLO SAS\n")
+        self.assertEqual(leer_filas_puc("b.csv", csv), [("5110", "Honorarios")])
+

@@ -20,11 +20,13 @@ Arriba a la derecha, entra a **⚙ Configuración** y confirma lo que ya conoces
   está **exonerada de parafiscales (art. 114-1)**.
 - Guarda. *(Estos datos son los que la app usa para calcular bien las retenciones.)*
 
-## 2b. Cargar tu PUC (recomendado, 2 min)
-En **Configuración → Plan de cuentas → "Cargar mi PUC"** sube el plan de cuentas de
-la empresa exportado de tu software contable (**Excel o CSV**: una columna con el
-código y otra con el nombre). Así la app causa en tus **cuentas auxiliares** reales
-(ej. 51103505) y no en cuentas mayores de 4 dígitos. Puedes subirlo cuando quieras.
+## 2b. Tu plan de cuentas (recomendado, 2 min)
+La empresa **ya viene con el PUC estándar del sector real** cargado hasta la
+subcuenta, como los software contables. Para tus **auxiliares** (ej. 51103505),
+en **Configuración → Plan de cuentas → "Cargar mi PUC"**:
+- Sube un **balance de prueba al mayor nivel de cuentas, sin terceros** (Excel o
+  CSV, como lo exporta tu software): la app toma código y nombre e ignora saldos.
+- O **agrega cuentas a mano**, una a una (código + nombre), y elimina las que no uses.
 
 ## 3. Causar tu primera factura (lo importante)
 1. Botón **Subir factura**.

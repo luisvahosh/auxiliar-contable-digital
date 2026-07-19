@@ -91,9 +91,14 @@ def crear_empresa(request):
         empresa = formulario.save()
         Membresia.objects.create(usuario=request.user, empresa=empresa, rol="admin")
         request.session[CLAVE_SESION] = str(empresa.id)  # queda como activa
+        # Como los software contables: la empresa nace con el PUC estándar del
+        # sector real hasta subcuenta; el contador agrega sus auxiliares.
+        from causacion.puc_estandar import sembrar_puc_estandar
+        sembradas = sembrar_puc_estandar(empresa)
         messages.success(
-            request, f"Empresa «{empresa.razon_social}» creada. Completa sus datos "
-            "fiscales para empezar a causar.")
+            request, f"Empresa «{empresa.razon_social}» creada con el plan de "
+            f"cuentas estándar ({sembradas} cuentas del PUC sector real). "
+            "Completa sus datos fiscales para empezar a causar.")
         return redirect("core:configuracion")
 
     return render(request, "core/crear_empresa.html", {"formulario": formulario})

@@ -340,16 +340,52 @@ def plan_cuentas_vista(request):
 
 
 def subir_puc(request):
-    """Carga del PUC completo de la empresa (CSV/Excel) — solo admin.
-    Es la base para causar en la cuenta auxiliar real, no en la mayor."""
+    """Catálogo PUC de la empresa — solo admin. Tres vías de carga: el PUC
+    estándar de fábrica (sector real), el archivo del contador (CSV/Excel,
+    incluido su balance de prueba) y cuenta por cuenta a mano — "esa opción
+    sí o sí tiene que estar" (feedback del contador)."""
     from core.tenancy import rol_en_empresa
     from .forms import FormularioSubirPUC
     from .importar_puc import PUCInvalido, importar_puc
+    from .puc_estandar import sembrar_puc_estandar
 
     empresa = _empresa_activa(request)
     if rol_en_empresa(request, empresa) != "admin":
         messages.error(request, "Solo el administrador puede cargar el plan de cuentas.")
         return redirect("core:inicio")
+
+    accion = request.POST.get("accion", "archivo")
+    if request.method == "POST" and accion == "sembrar":
+        sembradas = sembrar_puc_estandar(empresa)
+        if sembradas:
+            messages.success(request, f"PUC estándar (sector real) cargado: "
+                                      f"{sembradas} cuenta(s) nueva(s). Lo que ya "
+                                      "tenías cargado quedó intacto.")
+        else:
+            messages.info(request, "Nada que cargar: el PUC estándar ya está "
+                                   "completo en esta empresa.")
+        return redirect("causacion:subir_puc")
+
+    if request.method == "POST" and accion == "agregar":
+        codigo = re.sub(r"\D", "", request.POST.get("codigo", ""))
+        nombre = request.POST.get("nombre", "").strip()[:200]
+        if not codigo or not nombre:
+            messages.error(request, "Para agregar una cuenta escribe el código "
+                                    "(solo dígitos) y el nombre.")
+            return redirect("causacion:subir_puc")
+        _, creada = CuentaPUC.objects.update_or_create(
+            empresa=empresa, codigo=codigo, defaults={"nombre": nombre})
+        messages.success(request, f"Cuenta {codigo} «{nombre}» "
+                                  f"{'creada' if creada else 'actualizada'}.")
+        return redirect("causacion:subir_puc")
+
+    if request.method == "POST" and accion == "eliminar":
+        codigo = request.POST.get("codigo", "").strip()
+        borradas, _ = CuentaPUC.objects.de_empresa(empresa).filter(
+            codigo=codigo).delete()
+        if borradas:
+            messages.success(request, f"Cuenta {codigo} eliminada del catálogo.")
+        return redirect("causacion:subir_puc")
 
     formulario = FormularioSubirPUC(request.POST or None, request.FILES or None)
     if request.method == "POST" and formulario.is_valid():

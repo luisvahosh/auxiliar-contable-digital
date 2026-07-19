@@ -24,9 +24,10 @@ mejorar contigo.
       el XML que traen adentro). Los descargas del **portal de la DIAN**
       (“Documentos electrónicos”) o de tu proveedor de facturación. *Si tienes
       facturas de papel, sirve una foto.*
-- [ ] *(Muy recomendado)* El **PUC** de la empresa exportado de tu software
-      contable (Excel o CSV), para que la app cause en tus **cuentas auxiliares**
-      reales y no en cuentas mayores.
+- [ ] *(Muy recomendado)* Un **balance de prueba** de la empresa, **al mayor nivel
+      de cuentas que puedas y sin terceros** (Excel o CSV, como lo exporta tu
+      software). De ahí la app toma tus **cuentas auxiliares** reales. *(El PUC
+      estándar del sector real ya viene cargado de fábrica.)*
 - [ ] Los **datos fiscales** de la empresa (responsable de IVA, RST,
       autorretenedor, ICA, etc.) — los sabes de memoria.
 - [ ] *(Opcional)* el **extracto bancario** del mes en CSV o PDF.
@@ -51,14 +52,20 @@ mejorar contigo.
       **tarifa de ICA** y **exoneración de parafiscales (art. 114-1)**.
 - [ ] **Guarda.** *(La app usa esto para calcular bien las retenciones.)*
 
-## Paso 3b — Carga tu PUC (así causa en tus cuentas auxiliares) 🆕
-- [ ] Entra a **Configuración → Plan de cuentas → “Cargar mi PUC”**.
-- [ ] Sube tu plan de cuentas exportado del software contable (**Excel o CSV**: una
-      columna con el **código** y otra con el **nombre**). Puedes subirlo las veces
-      que quieras; solo actualiza lo que cambió.
-- [ ] Verás tu PUC cargado, con las cuentas marcadas como **mayor** o **auxiliar**.
-      *(Ahora, al causar o reclasificar, podrás elegir la auxiliar exacta —ej.
-      51103505— y no una cuenta mayor de 4 dígitos.)*
+## Paso 3b — Tu plan de cuentas (PUC) 🆕
+- [ ] Entra a **Configuración → Plan de cuentas → “Cargar mi PUC”**. Tu empresa
+      **ya viene con el PUC estándar del sector real** cargado hasta la subcuenta
+      (como Siigo): revísalo.
+- [ ] Sube tu **balance de prueba** (al mayor nivel de cuentas, **sin terceros**,
+      Excel o CSV): la app toma el código y el nombre de tus **auxiliares** e
+      ignora los saldos y los títulos. Puedes subirlo las veces que quieras; solo
+      actualiza lo que cambió.
+- [ ] Prueba **agregar una cuenta a mano** (ej. una auxiliar tuya como 111006
+      «Bancos cooperativos»): campo código + nombre → **Agregar cuenta**. También
+      puedes **eliminar** una del listado.
+- [ ] Verás el catálogo con cada cuenta marcada como **mayor** o **auxiliar**.
+      *(Al causar o reclasificar podrás elegir la auxiliar exacta —ej. 51103505—
+      y no una cuenta mayor de 4 dígitos.)*
 - [ ] *(Opcional)* En **Plan de cuentas** puedes fijar qué cuenta usa la app para
       cada uso (honorarios, IVA, retenciones…): al escribir el código te sugiere
       tus cuentas cargadas.
@@ -126,8 +133,9 @@ siguiente factura?
 
 ## Al terminar: cuéntame (esto es lo valioso)
 Anota, con tu criterio profesional:
-- [ ] ¿La **carga del PUC** tomó bien tus cuentas? ¿Pudiste causar en la **auxiliar**
-      correcta (no en la mayor)?
+- [ ] ¿El **PUC estándar de fábrica** te pareció completo? ¿El **balance de prueba**
+      cargó bien tus auxiliares? ¿Pudiste causar en la **auxiliar** correcta (no en
+      la mayor)?
 - [ ] ¿La **regla por tercero** funcionó? (le fijas cuenta+concepto a un proveedor y
       su siguiente factura sale sola así)
 - [ ] ¿La **edición del asiento a mano** te dio el control que necesitabas?

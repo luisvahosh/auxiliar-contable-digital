@@ -4,14 +4,42 @@
 
 {% block contenido %}
   <h1>Plan de cuentas (PUC) de {{ request.empresa.razon_social }}</h1>
-  <p class="suave">Sube el plan de cuentas de tu empresa tal como lo exporta tu
-     software contable. La app lo usa para causar en tus <strong>cuentas
-     auxiliares</strong> reales (ej. 51103505 «Asesoría técnica»), no en cuentas
-     mayores. El PUC cambia por empresa y por sector (comercial, solidario,
-     financiero, seguros), por eso cada empresa carga el suyo.</p>
+  <p class="suave">El plan de cuentas es el idioma contable: la app lo usa para
+     causar en tus <strong>cuentas auxiliares</strong> reales (ej. 51103505
+     «Asesoría técnica»), no en cuentas mayores. Hasta la <strong>subcuenta</strong>
+     (6 dígitos) el PUC es estándar; de ahí hacia abajo cada empresa tiene lo suyo —
+     agrégalo aquí, a mano o con tu archivo.</p>
 
   <div class="tarjeta">
-    <h2>Subir el archivo</h2>
+    <h2>PUC estándar de fábrica (sector real)</h2>
+    <p class="suave">Como los software contables: carga el PUC del sector real hasta
+       la subcuenta ({% if total_puc %}completa lo que falte; {% endif %}no toca lo
+       que ya tengas). Las empresas nuevas ya lo traen. Para otros sectores
+       (solidario, financiero, seguros), sube el archivo del PUC propio.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="sembrar">
+      <button type="submit" class="boton boton-secundario">Cargar PUC estándar (sector real)</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Agregar o corregir una cuenta a mano</h2>
+    <p class="suave">Para crear tus auxiliares una a una (ej. 111006 «Bancos
+       cooperativos»). Si el código ya existe, se actualiza el nombre.</p>
+    <form method="post" class="acciones">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="agregar">
+      <input type="text" name="codigo" placeholder="Código (ej. 51103505)"
+             inputmode="numeric" style="max-width:12rem" required>
+      <input type="text" name="nombre" placeholder="Nombre de la cuenta"
+             maxlength="200" style="max-width:22rem" required>
+      <button type="submit" class="boton boton-secundario">Agregar cuenta</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Subir el archivo (PUC o balance de prueba)</h2>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <p>
@@ -27,10 +55,11 @@
       </p>
       <button type="submit" class="boton">Cargar PUC</button>
     </form>
-    <p class="suave">Formato esperado: dos columnas, el <strong>código</strong> y el
-       <strong>nombre</strong> de la cuenta (con encabezados «Código» y «Nombre», o
-       simplemente esas dos columnas). Puedes subirlo las veces que quieras: solo
-       actualiza lo que cambió, no duplica.</p>
+    <p class="suave">Sirve el PUC exportado de tu software o un <strong>balance de
+       prueba al mayor nivel de cuentas, sin terceros</strong> (como el que exporta
+       Siigo): la app toma el código y el nombre e ignora los saldos y las filas de
+       título. Puedes subirlo las veces que quieras: solo actualiza lo que cambió,
+       no duplica.</p>
   </div>
 
   <div class="tarjeta tabla-envoltura">
@@ -42,13 +71,22 @@
     </form>
     {% if cuentas %}
       <table>
-        <thead><tr><th>Código</th><th>Nombre</th><th>Nivel</th></tr></thead>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Nivel</th><th></th></tr></thead>
         <tbody>
           {% for c in cuentas %}
             <tr>
               <td class="num">{{ c.codigo }}</td>
               <td>{{ c.nombre }}</td>
               <td>{% if c.es_auxiliar %}<span class="insignia">Auxiliar</span>{% else %}Mayor{% endif %}</td>
+              <td>
+                <form method="post" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="accion" value="eliminar">
+                  <input type="hidden" name="codigo" value="{{ c.codigo }}">
+                  <button type="submit" class="fila-enlace" style="background:none;border:none;cursor:pointer;color:var(--error)"
+                          title="Eliminar {{ c.codigo }} del catálogo">Eliminar</button>
+                </form>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

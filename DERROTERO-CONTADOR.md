@@ -10,7 +10,8 @@ solo el contador puede confirmar** — es lo más importante de la sesión.
 
 **Novedades para validar en esta sesión** (salieron del feedback del contador):
 1. **Subir factura** acepta **XML, ZIP, PDF y HTML** (saca el XML embebido).
-2. **PUC cargable por empresa** → causar en **cuentas auxiliares** reales (Bloque A / N).
+2. **PUC estándar de fábrica** (sector real, hasta subcuenta) + carga del
+   **balance de prueba** + **agregar cuentas a mano** (Bloque N).
 3. **Regla por tercero** → amarrar cuenta + concepto a un proveedor (Bloque A6 / C).
 4. **Editar el asiento a mano**, con cuadre obligado (Bloque A6).
 
@@ -194,15 +195,21 @@ la DIAN/PILA sin que una persona lo apruebe.
 
 ---
 
-## Bloque N — Plan de cuentas (PUC) cargable por empresa
-- [ ] **Configuración → Plan de cuentas → "Cargar mi PUC"** → subir el PUC de la
-  empresa en **Excel o CSV** (columna código + columna nombre). La app autodetecta
-  las columnas, normaliza el código y marca cada cuenta como **mayor** o **auxiliar**.
-- [ ] Es **reentrante**: volver a subirlo solo actualiza lo que cambió, no duplica.
-- [ ] **Validar con el contador:** que su PUC real (p. ej. de Ingeniería Cúbica) se
-  cargue bien y que al causar/reclasificar aparezcan las **auxiliares** correctas.
-  Recordarle que el PUC **cambia por sector** (comercial, solidario, financiero,
-  seguros): por eso cada empresa carga el suyo.
+## Bloque N — Plan de cuentas (PUC) por empresa
+- [ ] **PUC de fábrica:** una empresa nueva nace con el **PUC estándar del sector
+  real hasta subcuenta** (como Siigo). En una empresa existente, el botón
+  **"Cargar PUC estándar (sector real)"** lo completa sin pisar lo ya cargado.
+- [ ] **Balance de prueba:** subir `datos-prueba/P-balance-prueba.xlsx` (simulado
+  formato Siigo, con títulos y saldos) → carga las **auxiliares** (51103505
+  «Asesoría técnica ingeniería», 111006 «Bancos cooperativos») ignorando títulos
+  y saldos. Es **reentrante**: re-subirlo solo actualiza, no duplica.
+- [ ] **A mano:** agregar una cuenta (código + nombre), corregir un nombre
+  (re-agregar el mismo código) y eliminar una del listado.
+- [ ] **Validar con el contador:** que su balance de prueba real (IC3) cargue bien
+  las auxiliares y que al causar/reclasificar aparezcan las correctas. El
+  procedimiento de onboarding es pedirle: *"balance de prueba al mayor nivel de
+  cuentas, sin terceros"*. El PUC **cambia por sector** (comercial, solidario,
+  financiero, seguros): el de fábrica es sector real; otros sectores cargan el suyo.
 
 ---
 
