@@ -36,6 +36,7 @@ from .models import (
 )
 from .plan_cuentas import plan_de_empresa
 from .parser import FacturaParseada, Linea
+from .extraer import SinXml, extraer_xml
 from .servicios import procesar_xml, tercero_del_emisor
 from .siigo import generar_csv_siigo
 from .ventas import consecutivos_faltantes
@@ -57,7 +58,13 @@ def subir(request):
     formulario = FormularioSubirFactura(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and formulario.is_valid():
-        resultado = procesar_xml(empresa, formulario.cleaned_data["archivo"].read())
+        archivo = formulario.cleaned_data["archivo"]
+        try:
+            xml = extraer_xml(archivo.name, archivo.read())
+        except SinXml as error:
+            messages.error(request, str(error))
+            return render(request, "causacion/subir.html", {"formulario": formulario})
+        resultado = procesar_xml(empresa, xml)
         if resultado.estado == "error":
             messages.error(request, resultado.mensaje)
             return render(request, "causacion/subir.html", {"formulario": formulario})

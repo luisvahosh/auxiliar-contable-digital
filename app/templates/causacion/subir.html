@@ -3,7 +3,7 @@
 {% block titulo %}Subir factura — Auxiliar Contable Digital{% endblock %}
 
 {% block contenido %}
-  <h1>Subir factura electrónica</h1>
+  <h1>Subir factura</h1>
   <div class="tarjeta">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
@@ -30,7 +30,9 @@
     <a class="boton boton-secundario" href="{% url 'causacion:buzon' %}">Configurar buzón de correo</a>
   </div>
   {% endif %}
-  <p class="suave">Qué pasa al procesar: se valida el XML (seguridad y cálculos) y
+  <p class="suave">Puedes subir el <strong>XML</strong>, el <strong>ZIP</strong> de la
+     DIAN, o el <strong>PDF/HTML</strong> de la factura: la app saca el XML que traen
+     adentro. Qué pasa al procesar: se valida el XML (seguridad y cálculos) y
      la app detecta sola qué es — una <strong>compra</strong> (te la facturaron),
      una <strong>venta</strong> (la emitió tu empresa) o una <strong>nota
      crédito</strong> — y arma el asiento correspondiente: cuenta PUC y retefuente

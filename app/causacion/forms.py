@@ -30,22 +30,27 @@ class FormularioBuzon(forms.ModelForm):
             self.add_error("clave", "La contraseña es obligatoria al configurar el buzón.")
         return datos
 
-TAMANO_MAXIMO = 2 * 1024 * 1024  # las facturas UBL reales pesan pocos KB
+TAMANO_MAXIMO = 10 * 1024 * 1024  # el XML pesa poco, pero un PDF con logos sí crece
+
+# XML pelado, ZIP de la DIAN, o el PDF/HTML si trae el XML embebido dentro.
+from .extraer import EXTENSIONES as EXTENSIONES_FACTURA
 
 
 class FormularioSubirFactura(forms.Form):
     archivo = forms.FileField(
-        label="Archivo XML de la factura",
-        help_text="El XML descargado del portal DIAN o recibido del proveedor. Máximo 2 MB.",
-        widget=forms.ClearableFileInput(attrs={"accept": ".xml,text/xml,application/xml"}),
+        label="Archivo de la factura (XML, ZIP, PDF o HTML)",
+        help_text="El XML de la DIAN o del proveedor. También sirve el ZIP, o el "
+                  "PDF/HTML de la factura si trae el XML adentro. Máximo 10 MB.",
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".xml,.zip,.pdf,.html,.htm"}),
     )
 
     def clean_archivo(self):
         archivo = self.cleaned_data["archivo"]
-        if not archivo.name.lower().endswith(".xml"):
-            raise ValidationError("El archivo debe tener extensión .xml.")
+        if not archivo.name.lower().endswith(EXTENSIONES_FACTURA):
+            raise ValidationError("El archivo debe ser XML, ZIP, PDF o HTML.")
         if archivo.size > TAMANO_MAXIMO:
-            raise ValidationError("El archivo supera el tamaño máximo de 2 MB.")
+            raise ValidationError("El archivo supera el tamaño máximo de 10 MB.")
         return archivo
 
 

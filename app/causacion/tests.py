@@ -1227,3 +1227,154 @@ class PruebasMonitoreoDian(CasoConEmpresa):
         call_command("alertar_rechazos_dian")
         self.assertEqual(len(mail.outbox), 0)
 
+
+# ---------- Subir la factura en PDF/HTML/ZIP (no solo XML pelado) ----------
+
+import base64 as _base64
+import io as _io
+import zipfile as _zipfile
+
+from .extraer import SinXml, desenvolver_attached_document, extraer_xml
+
+
+def _envolver_attached_document(xml_factura):
+    """Simula el AttachedDocument de la DIAN: el Invoice va dentro de un CDATA."""
+    interno = xml_factura.decode("utf-8", errors="replace")
+    envoltura = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<AttachedDocument '
+        'xmlns="urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2" '
+        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:'
+        'CommonAggregateComponents-2" '
+        'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:'
+        'CommonBasicComponents-2">'
+        '<cbc:ID>1</cbc:ID>'
+        '<cac:Attachment><cac:ExternalReference>'
+        '<cbc:Description><![CDATA[' + interno + ']]></cbc:Description>'
+        '</cac:ExternalReference></cac:Attachment>'
+        '</AttachedDocument>')
+    return envoltura.encode("utf-8")
+
+
+def _pdf_con_adjunto(nombre_adjunto, datos):
+    from pypdf import PdfWriter
+    escritor = PdfWriter()
+    escritor.add_blank_page(width=200, height=200)
+    escritor.add_attachment(nombre_adjunto, datos)
+    buffer = _io.BytesIO()
+    escritor.write(buffer)
+    return buffer.getvalue()
+
+
+def _pdf_sin_adjunto():
+    from pypdf import PdfWriter
+    escritor = PdfWriter()
+    escritor.add_blank_page(width=200, height=200)
+    buffer = _io.BytesIO()
+    escritor.write(buffer)
+    return buffer.getvalue()
+
+
+def _zip_con(nombre_interno, datos):
+    buffer = _io.BytesIO()
+    with _zipfile.ZipFile(buffer, "w") as z:
+        z.writestr(nombre_interno, datos)
+    return buffer.getvalue()
+
+
+class PruebasExtraerXml(TestCase):
+    """El XML de la factura se saca del formato en que llega: ZIP, PDF, HTML o
+    envuelto en un AttachedDocument de la DIAN."""
+
+    def setUp(self):
+        self.xml = contenido("P1.1-factura-honorarios.xml")
+
+    def test_xml_pelado_pasa_igual(self):
+        self.assertEqual(extraer_xml("factura.xml", self.xml), self.xml)
+
+    def test_desenvuelve_attached_document(self):
+        envuelto = _envolver_attached_document(self.xml)
+        salida = extraer_xml("factura.xml", envuelto)
+        # El resultado ya es el Invoice, parseable por el motor real.
+        factura = parsear_factura(salida)
+        self.assertEqual(factura.numero, "FVS-847")
+
+    def test_attached_document_en_base64(self):
+        interno_b64 = _base64.b64encode(self.xml).decode()
+        envoltura = (
+            '<AttachedDocument '
+            'xmlns="urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2" '
+            'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:'
+            'CommonBasicComponents-2">'
+            '<cbc:Description>' + interno_b64 + '</cbc:Description>'
+            '</AttachedDocument>').encode("utf-8")
+        factura = parsear_factura(desenvolver_attached_document(envoltura))
+        self.assertEqual(factura.numero, "FVS-847")
+
+    def test_zip_con_xml_adentro(self):
+        paquete = _zip_con("factura.xml", self.xml)
+        self.assertEqual(parsear_factura(extraer_xml("dian.zip", paquete)).numero,
+                         "FVS-847")
+
+    def test_zip_sin_xml_avisa(self):
+        paquete = _zip_con("leeme.txt", b"nada util")
+        with self.assertRaises(SinXml) as ctx:
+            extraer_xml("dian.zip", paquete)
+        self.assertIn("no contiene", str(ctx.exception))
+
+    def test_pdf_con_xml_embebido(self):
+        pdf = _pdf_con_adjunto("factura.xml", self.xml)
+        self.assertEqual(parsear_factura(extraer_xml("repr.pdf", pdf)).numero,
+                         "FVS-847")
+
+    def test_pdf_con_attached_document_embebido(self):
+        pdf = _pdf_con_adjunto("ad.xml", _envolver_attached_document(self.xml))
+        self.assertEqual(parsear_factura(extraer_xml("repr.pdf", pdf)).numero,
+                         "FVS-847")
+
+    def test_pdf_sin_xml_guia_a_la_foto(self):
+        with self.assertRaises(SinXml) as ctx:
+            extraer_xml("escaneada.pdf", _pdf_sin_adjunto())
+        self.assertIn("foto", str(ctx.exception).lower())
+
+    def test_html_con_data_uri_base64(self):
+        b64 = _base64.b64encode(self.xml).decode()
+        html = ('<html><body><a download href="data:application/xml;base64,'
+                + b64 + '">Descargar XML</a></body></html>').encode("utf-8")
+        self.assertEqual(parsear_factura(extraer_xml("factura.html", html)).numero,
+                         "FVS-847")
+
+    def test_html_con_xml_incrustado(self):
+        html = (b"<html><body><pre>" + self.xml + b"</pre></body></html>")
+        self.assertEqual(parsear_factura(extraer_xml("factura.htm", html)).numero,
+                         "FVS-847")
+
+    def test_html_sin_xml_avisa(self):
+        with self.assertRaises(SinXml):
+            extraer_xml("factura.html", b"<html><body>Solo texto</body></html>")
+
+    def test_formato_no_soportado(self):
+        with self.assertRaises(SinXml):
+            extraer_xml("factura.docx", b"algo")
+
+
+class PruebasSubirPdfHtml(CasoConEmpresa):
+    """La vista de subida acepta PDF/HTML end-to-end (misma causación que el XML)."""
+
+    def _subir(self, nombre, datos, content_type):
+        archivo = SimpleUploadedFile(nombre, datos, content_type=content_type)
+        return self.client.post(reverse("causacion:subir"), {"archivo": archivo},
+                                follow=True)
+
+    def test_pdf_con_xml_se_causa(self):
+        pdf = _pdf_con_adjunto("factura.xml", contenido("P1.1-factura-honorarios.xml"))
+        respuesta = self._subir("factura.pdf", pdf, "application/pdf")
+        self.assertEqual(respuesta.status_code, 200)
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.assertEqual(factura.numero, "FVS-847")
+
+    def test_pdf_sin_xml_muestra_guia_sin_crear(self):
+        respuesta = self._subir("escaneada.pdf", _pdf_sin_adjunto(), "application/pdf")
+        self.assertContains(respuesta, "foto")
+        self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
+
