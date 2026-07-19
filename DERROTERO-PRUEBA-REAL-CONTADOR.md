@@ -19,9 +19,14 @@ mejorar contigo.
       para darte acceso a la plataforma.
 - [ ] La **razón social** y el **NIT** de la empresa que vas a registrar
       (tú mismo la creas, en el paso 2).
-- [ ] Los **XML** de algunas facturas reales de esa empresa (compras y ventas del
-      mes). Los descargas del **portal de la DIAN** (“Documentos electrónicos”) o
-      de tu proveedor de facturación. *Si tienes facturas de papel, sirve una foto.*
+- [ ] Las **facturas** reales de esa empresa (compras y ventas del mes). Sirve el
+      **XML**, el **ZIP** de la DIAN, o el **PDF/HTML** de la factura (la app saca
+      el XML que traen adentro). Los descargas del **portal de la DIAN**
+      (“Documentos electrónicos”) o de tu proveedor de facturación. *Si tienes
+      facturas de papel, sirve una foto.*
+- [ ] *(Muy recomendado)* El **PUC** de la empresa exportado de tu software
+      contable (Excel o CSV), para que la app cause en tus **cuentas auxiliares**
+      reales y no en cuentas mayores.
 - [ ] Los **datos fiscales** de la empresa (responsable de IVA, RST,
       autorretenedor, ICA, etc.) — los sabes de memoria.
 - [ ] *(Opcional)* el **extracto bancario** del mes en CSV o PDF.
@@ -45,21 +50,48 @@ mejorar contigo.
       **Régimen Simple (RST)**, **autorretenedor**, **agente de retención**,
       **tarifa de ICA** y **exoneración de parafiscales (art. 114-1)**.
 - [ ] **Guarda.** *(La app usa esto para calcular bien las retenciones.)*
-- [ ] *(Opcional)* Revisa **Configuración → Plan de cuentas**: trae el PUC por
-      defecto; ajusta un código si tu empresa usa otro.
+
+## Paso 3b — Carga tu PUC (así causa en tus cuentas auxiliares) 🆕
+- [ ] Entra a **Configuración → Plan de cuentas → “Cargar mi PUC”**.
+- [ ] Sube tu plan de cuentas exportado del software contable (**Excel o CSV**: una
+      columna con el **código** y otra con el **nombre**). Puedes subirlo las veces
+      que quieras; solo actualiza lo que cambió.
+- [ ] Verás tu PUC cargado, con las cuentas marcadas como **mayor** o **auxiliar**.
+      *(Ahora, al causar o reclasificar, podrás elegir la auxiliar exacta —ej.
+      51103505— y no una cuenta mayor de 4 dígitos.)*
+- [ ] *(Opcional)* En **Plan de cuentas** puedes fijar qué cuenta usa la app para
+      cada uso (honorarios, IVA, retenciones…): al escribir el código te sugiere
+      tus cuentas cargadas.
 
 ## Paso 4 — Causar una factura de COMPRA (lo más importante)
-- [ ] Botón **Subir factura** → elige el **XML** de una compra real → **Procesar**.
+- [ ] Botón **Subir factura** → elige el **XML, ZIP, PDF o HTML** de una compra
+      real → **Procesar**. *(La app saca el XML aunque venga dentro del PDF/ZIP.)*
 - [ ] Revisa la propuesta: la **cuenta**, la **retención** calculada y el **asiento**
       (débitos = créditos), con la explicación de **por qué** lo propone.
-- [ ] ¿Está bien según tu criterio? → **Aprobar**. ¿No? → **Reclasificar** y elige
-      la cuenta correcta (la app recalcula la retención).
+- [ ] ¿Está bien según tu criterio? → **Aprobar**.
+
+**Si NO está bien, tienes tres formas de corregir (de menor a mayor control):**
+- [ ] **Reclasificar cuenta** → ahora puedes elegir **cualquier cuenta auxiliar de
+      tu PUC** (ej. 51103505) y su **concepto de retención**; la app recalcula. 🆕
+- [ ] Marca **“Recordar esta cuenta y concepto para este proveedor”** 🆕 y, de ahí
+      en adelante, **todas** las facturas de ese tercero se causan solas así (sin
+      volver a corregir). *Así “instruyes” al sistema con las primeras facturas.*
+- [ ] **Editar asiento a mano** 🆕 → para casos donde ni la propuesta ni la
+      reclasificación bastan: cambias cuentas y montos, agregas o quitas renglones.
+      Solo te deja guardar **si cuadra** (débitos = créditos); la retención se
+      recalcula sola de los créditos a cuentas 2365.
 - [ ] Repite con **3–4 compras** distintas (honorarios, servicios, inventario…)
-      para ver cómo aplica cada retención.
+      para ver cómo aplica cada retención y cómo se “pega” la regla al tercero.
+
+> **Atajo del amarre por tercero:** también puedes fijar la regla desde
+> **Facturación → Terceros → Editar** un proveedor: su **cuenta de gasto fija** y su
+> **concepto de retención**. La columna **“Regla de causación”** te muestra a qué
+> proveedores ya se la fijaste.
 
 **Revisa como contador:** ¿la tarifa y la base de retención son las correctas?
-¿La cuenta PUC es la que usarías? ¿Respeta el régimen del proveedor (a un RST no
-se le retiene)?
+¿La cuenta PUC (auxiliar) es la que usarías? ¿Respeta el régimen del proveedor (a
+un RST no se le retiene)? ¿La regla que amarraste al tercero se aplicó en su
+siguiente factura?
 
 ## Paso 5 — Causar una factura de VENTA
 - [ ] **Subir factura** → elige el **XML** de una venta emitida por la empresa.
@@ -94,8 +126,12 @@ se le retiene)?
 
 ## Al terminar: cuéntame (esto es lo valioso)
 Anota, con tu criterio profesional:
+- [ ] ¿La **carga del PUC** tomó bien tus cuentas? ¿Pudiste causar en la **auxiliar**
+      correcta (no en la mayor)?
+- [ ] ¿La **regla por tercero** funcionó? (le fijas cuenta+concepto a un proveedor y
+      su siguiente factura sale sola así)
+- [ ] ¿La **edición del asiento a mano** te dio el control que necesitabas?
 - [ ] ¿Las **retenciones** (tarifas y bases) quedaron bien?
-- [ ] ¿Las **cuentas PUC** propuestas son las correctas?
 - [ ] ¿El **cuadre de retenciones** y el **paquete del contador** te sirven para declarar?
 - [ ] ¿Los **informes** cuadran con lo que registraste?
 - [ ] ¿Qué te **gustó**, qué te **estorbó** y qué le **falta** para que la usaras a diario?
