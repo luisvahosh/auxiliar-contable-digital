@@ -8,6 +8,26 @@
      el nombre para que calcen con el plan de cuentas de tu software contable.
      Lo que dejes igual al estándar usa el PUC por defecto.</p>
 
+  <div class="tarjeta">
+    <h2>Tu PUC completo</h2>
+    {% if total_puc %}
+      <p class="suave">Tienes <strong>{{ total_puc }}</strong> cuenta(s) cargadas de tu
+         plan. Al editar un código abajo, escribe y te sugiere tus cuentas (incluidas
+         las <strong>auxiliares</strong>, ej. 51103505).</p>
+    {% else %}
+      <p class="suave">Aún no has cargado tu PUC. Súbelo (CSV o Excel) para causar en
+         tus <strong>cuentas auxiliares</strong> reales, no en cuentas mayores.</p>
+    {% endif %}
+    <a class="boton boton-secundario" href="{% url 'causacion:subir_puc' %}">
+      {% if total_puc %}Ver / actualizar mi PUC{% else %}Cargar mi PUC{% endif %}</a>
+  </div>
+
+  {% if catalogo_puc %}
+    <datalist id="puc-codigos">
+      {% for c in catalogo_puc %}<option value="{{ c.codigo }}">{{ c.nombre }}</option>{% endfor %}
+    </datalist>
+  {% endif %}
+
   <form method="post">
     {% csrf_token %}
     {% for grupo in grupos %}
@@ -19,7 +39,7 @@
             {% for fila in grupo.filas %}
               <tr>
                 <td>{{ fila.rol }}{% if fila.personalizada %} <span class="insignia insignia-manual">Personalizada</span>{% endif %}</td>
-                <td><input type="text" name="codigo_{{ fila.rol }}" value="{{ fila.codigo }}" style="width:100px"></td>
+                <td><input type="text" name="codigo_{{ fila.rol }}" value="{{ fila.codigo }}" style="width:120px"{% if catalogo_puc %} list="puc-codigos"{% endif %}></td>
                 <td><input type="text" name="nombre_{{ fila.rol }}" value="{{ fila.nombre }}" style="width:100%; min-width:220px"></td>
               </tr>
             {% endfor %}

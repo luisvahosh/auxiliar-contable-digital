@@ -1378,3 +1378,120 @@ class PruebasSubirPdfHtml(CasoConEmpresa):
         self.assertContains(respuesta, "foto")
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
 
+
+# ---------- PUC de la empresa cargable a nivel auxiliar (feedback contador) ----------
+
+from .importar_puc import PUCInvalido, importar_puc, leer_filas_puc
+from .models import CuentaPUC
+
+
+def _xlsx(filas):
+    from openpyxl import Workbook
+    libro = Workbook()
+    hoja = libro.active
+    for fila in filas:
+        hoja.append(fila)
+    buffer = _io.BytesIO()
+    libro.save(buffer)
+    return buffer.getvalue()
+
+
+class PruebasLeerPUC(TestCase):
+    """Lectura del archivo del PUC (CSV/Excel) — parte pura, sin BD."""
+
+    def test_csv_con_encabezado(self):
+        csv = b"Codigo;Nombre\n5110;Honorarios\n51103505;Asesoria tecnica\n"
+        self.assertEqual(leer_filas_puc("puc.csv", csv),
+                         [("5110", "Honorarios"), ("51103505", "Asesoria tecnica")])
+
+    def test_csv_sin_encabezado_separado_por_coma(self):
+        csv = b"5135,Servicios\n513505,Aseo\n"
+        self.assertEqual(leer_filas_puc("x.csv", csv),
+                         [("5135", "Servicios"), ("513505", "Aseo")])
+
+    def test_codigo_con_puntos_o_guiones_se_normaliza_a_digitos(self):
+        csv = b'"51-10-35-05";"Asesoria"\n5110.35;Servicios\n'
+        self.assertEqual(leer_filas_puc("x.csv", csv),
+                         [("51103505", "Asesoria"), ("511035", "Servicios")])
+
+    def test_excel_xlsx(self):
+        datos = _xlsx([["Codigo", "Nombre"], ["5110", "Honorarios"],
+                       [51103505, "Asesoria tecnica"]])
+        self.assertEqual(leer_filas_puc("puc.xlsx", datos),
+                         [("5110", "Honorarios"), ("51103505", "Asesoria tecnica")])
+
+    def test_sin_columnas_reconocibles_avisa(self):
+        with self.assertRaises(PUCInvalido):
+            leer_filas_puc("x.csv", b"solo texto\nsin numeros\n")
+
+    def test_archivo_vacio_avisa(self):
+        with self.assertRaises(PUCInvalido):
+            leer_filas_puc("x.csv", b"")
+
+
+class PruebasCatalogoPUC(CasoConEmpresa):
+    """Carga del PUC por empresa: reentrante, reemplazable y aislada por tenant."""
+
+    def test_importar_crea_y_es_reentrante(self):
+        csv = b"Codigo;Nombre\n5110;Honorarios\n51103505;Asesoria\n"
+        r1 = importar_puc(self.empresa, "puc.csv", csv)
+        self.assertEqual(r1.creadas, 2)
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 2)
+
+        # Reentrante: mismo archivo → nada nuevo, sin duplicar
+        r2 = importar_puc(self.empresa, "puc.csv", csv)
+        self.assertEqual((r2.creadas, r2.sin_cambio), (0, 2))
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 2)
+
+        # Cambia un nombre → se actualiza, no se duplica
+        r3 = importar_puc(self.empresa, "puc.csv",
+                          b"Codigo;Nombre\n5110;Honorarios profesionales\n51103505;Asesoria\n")
+        self.assertEqual(r3.actualizadas, 1)
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).get(
+            codigo="5110").nombre, "Honorarios profesionales")
+
+    def test_reemplazar_borra_el_anterior(self):
+        importar_puc(self.empresa, "a.csv", b"Codigo;Nombre\n5110;Honorarios\n")
+        importar_puc(self.empresa, "b.csv", b"Codigo;Nombre\n5135;Servicios\n",
+                     reemplazar=True)
+        codigos = set(CuentaPUC.objects.de_empresa(self.empresa)
+                      .values_list("codigo", flat=True))
+        self.assertEqual(codigos, {"5135"})
+
+    def test_es_auxiliar_por_longitud(self):
+        importar_puc(self.empresa, "p.csv", b"Codigo;Nombre\n5110;Mayor\n51103505;Auxiliar\n")
+        cuentas = {c.codigo: c.es_auxiliar
+                   for c in CuentaPUC.objects.de_empresa(self.empresa)}
+        self.assertFalse(cuentas["5110"])
+        self.assertTrue(cuentas["51103505"])
+
+    def test_vista_carga_puc_y_lo_lista(self):
+        archivo = SimpleUploadedFile(
+            "puc.csv", b"Codigo;Nombre\n5110;Honorarios\n51103505;Asesoria tecnica\n",
+            content_type="text/csv")
+        respuesta = self.client.post(reverse("causacion:subir_puc"),
+                                     {"archivo": archivo}, follow=True)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "51103505")
+        self.assertContains(respuesta, "Asesoria tecnica")
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 2)
+
+    def test_puc_cargado_alimenta_el_datalist_del_plan(self):
+        importar_puc(self.empresa, "p.csv",
+                     b"Codigo;Nombre\n51103505;Asesoria tecnica\n")
+        respuesta = self.client.get(reverse("causacion:plan_cuentas"))
+        self.assertContains(respuesta, "puc-codigos")
+        self.assertContains(respuesta, "51103505")
+
+
+class PruebasCatalogoPUCPermiso(CasoConEmpresa):
+    rol = "lectura"
+
+    def test_solo_admin_carga_puc(self):
+        archivo = SimpleUploadedFile("p.csv", b"Codigo;Nombre\n5110;X\n",
+                                     content_type="text/csv")
+        respuesta = self.client.post(reverse("causacion:subir_puc"),
+                                     {"archivo": archivo}, follow=True)
+        self.assertContains(respuesta, "Solo el administrador")
+        self.assertEqual(CuentaPUC.objects.de_empresa(self.empresa).count(), 0)
+

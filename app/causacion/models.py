@@ -210,6 +210,41 @@ class CuentaContable(models.Model):
         return f"{self.rol}: {self.codigo} ({self.empresa_id})"
 
 
+class CuentaPUC(models.Model):
+    """Catálogo COMPLETO del plan de cuentas de la empresa, cargado por el
+    contador desde su software contable (retroalimentación real: el PUC baja a
+    auxiliares —51103505— y cambia por empresa y por sector económico).
+
+    A diferencia de CuentaContable (que mapea los ~45 ROLES de la app a un
+    código), esto es el listado plano de TODAS las cuentas de la empresa a
+    cualquier nivel; sirve de fuente para elegir la auxiliar exacta al ajustar
+    un rol, al reclasificar o al amarrar un tercero a su cuenta."""
+
+    empresa = models.ForeignKey("core.Empresa", on_delete=models.CASCADE,
+                                related_name="catalogo_puc")
+    codigo = models.CharField("código de cuenta", max_length=20)
+    nombre = models.CharField("nombre de cuenta", max_length=200)
+
+    objects = ConsultasPorEmpresa()
+
+    class Meta:
+        ordering = ["codigo"]
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "codigo"],
+                                    name="puc_codigo_unico_por_empresa"),
+        ]
+        verbose_name = "cuenta del PUC"
+        verbose_name_plural = "catálogo PUC"
+
+    @property
+    def es_auxiliar(self):
+        """Heurística: en el PUC colombiano las auxiliares tienen 6+ dígitos."""
+        return len(self.codigo) >= 6
+
+    def __str__(self):
+        return f"{self.codigo} {self.nombre}"
+
+
 class BuzonCorreo(models.Model):
     """Cuenta de correo de la empresa de la que se leen las facturas que
     envían los proveedores (PLAN §4). La contraseña se guarda CIFRADA.

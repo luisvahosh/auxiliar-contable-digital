@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cargar PUC — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Plan de cuentas (PUC) de {{ request.empresa.razon_social }}</h1>
+  <p class="suave">Sube el plan de cuentas de tu empresa tal como lo exporta tu
+     software contable. La app lo usa para causar en tus <strong>cuentas
+     auxiliares</strong> reales (ej. 51103505 «Asesoría técnica»), no en cuentas
+     mayores. El PUC cambia por empresa y por sector (comercial, solidario,
+     financiero, seguros), por eso cada empresa carga el suyo.</p>
+
+  <div class="tarjeta">
+    <h2>Subir el archivo</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <p>
+        <label for="{{ formulario.archivo.id_for_label }}">{{ formulario.archivo.label }}</label><br>
+        <span class="ayuda">{{ formulario.archivo.help_text }}</span><br>
+        {{ formulario.archivo }}
+        {% if formulario.archivo.errors %}
+          <span class="error">{{ formulario.archivo.errors|striptags }}</span>
+        {% endif %}
+      </p>
+      <p>
+        <label>{{ formulario.reemplazar }} {{ formulario.reemplazar.label }}</label>
+      </p>
+      <button type="submit" class="boton">Cargar PUC</button>
+    </form>
+    <p class="suave">Formato esperado: dos columnas, el <strong>código</strong> y el
+       <strong>nombre</strong> de la cuenta (con encabezados «Código» y «Nombre», o
+       simplemente esas dos columnas). Puedes subirlo las veces que quieras: solo
+       actualiza lo que cambió, no duplica.</p>
+  </div>
+
+  <div class="tarjeta tabla-envoltura">
+    <h2>Tu PUC cargado ({{ total_puc }} cuenta{{ total_puc|pluralize }})</h2>
+    <form method="get" class="acciones">
+      <input type="text" name="q" value="{{ consulta }}"
+             placeholder="Buscar por código o nombre" style="max-width:20rem">
+      <button type="submit" class="boton boton-secundario">Buscar</button>
+    </form>
+    {% if cuentas %}
+      <table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Nivel</th></tr></thead>
+        <tbody>
+          {% for c in cuentas %}
+            <tr>
+              <td class="num">{{ c.codigo }}</td>
+              <td>{{ c.nombre }}</td>
+              <td>{% if c.es_auxiliar %}<span class="insignia">Auxiliar</span>{% else %}Mayor{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if total_puc > cuentas|length %}
+        <p class="suave">Mostrando {{ cuentas|length }} de {{ total_puc }}. Usa el
+           buscador para acotar.</p>
+      {% endif %}
+    {% else %}
+      <p class="suave">{% if consulta %}Ninguna cuenta coincide con «{{ consulta }}».
+         {% else %}Todavía no hay cuentas cargadas.{% endif %}</p>
+    {% endif %}
+  </div>
+
+  <div class="acciones">
+    <a class="boton boton-secundario" href="{% url 'causacion:plan_cuentas' %}">Volver al plan de cuentas</a>
+  </div>
+{% endblock %}

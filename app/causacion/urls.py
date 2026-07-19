@@ -21,6 +21,7 @@ urlpatterns = [
     path("ventas/<uuid:pk>/enviar-alegra/", views.enviar_alegra_venta, name="enviar_alegra_venta"),
     # Plan de cuentas por empresa
     path("plan-cuentas/", views.plan_cuentas_vista, name="plan_cuentas"),
+    path("plan-cuentas/puc/", views.subir_puc, name="subir_puc"),
     # Buzón de correo (ingesta automática de facturas)
     path("buzon/", views.buzon, name="buzon"),
     # Conexiones contables por empresa

@@ -13,3 +13,4 @@ qrcode>=7.4      # QR de aprovisionamiento 2FA (SVG, sin pillow)
 pillow>=10       # preprocesar fotos de facturas (rotación EXIF, tamaño) P1.10
 cryptography>=42 # tokens de conexiones contables cifrados en reposo (PLAN §10)
 psycopg[binary]>=3.2  # driver PostgreSQL en producción (sqlite sigue por defecto en local)
+openpyxl>=3.1    # leer el PUC de la empresa exportado en Excel (.xlsx) por su software contable

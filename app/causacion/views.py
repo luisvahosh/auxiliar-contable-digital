@@ -29,6 +29,7 @@ from .forms import (
 from .models import (
     ConexionContable,
     CuentaContable,
+    CuentaPUC,
     FacturaCompra,
     FacturaVenta,
     MapeoCuentaAlegra,
@@ -330,7 +331,55 @@ def plan_cuentas_vista(request):
             filas.append({"rol": rol, "codigo": codigo, "nombre": nombre,
                           "personalizada": (codigo, nombre) != (est_cod, est_nom)})
         grupos.append({"titulo": titulo, "filas": filas})
-    return render(request, "causacion/plan_cuentas.html", {"grupos": grupos})
+    catalogo = CuentaPUC.objects.de_empresa(empresa)
+    return render(request, "causacion/plan_cuentas.html", {
+        "grupos": grupos,
+        "catalogo_puc": catalogo.order_by("codigo")[:1000],
+        "total_puc": catalogo.count(),
+    })
+
+
+def subir_puc(request):
+    """Carga del PUC completo de la empresa (CSV/Excel) — solo admin.
+    Es la base para causar en la cuenta auxiliar real, no en la mayor."""
+    from core.tenancy import rol_en_empresa
+    from .forms import FormularioSubirPUC
+    from .importar_puc import PUCInvalido, importar_puc
+
+    empresa = _empresa_activa(request)
+    if rol_en_empresa(request, empresa) != "admin":
+        messages.error(request, "Solo el administrador puede cargar el plan de cuentas.")
+        return redirect("core:inicio")
+
+    formulario = FormularioSubirPUC(request.POST or None, request.FILES or None)
+    if request.method == "POST" and formulario.is_valid():
+        archivo = formulario.cleaned_data["archivo"]
+        try:
+            resumen = importar_puc(
+                empresa, archivo.name, archivo.read(),
+                reemplazar=formulario.cleaned_data["reemplazar"])
+        except PUCInvalido as error:
+            messages.error(request, f"No se pudo cargar el PUC: {error}")
+            return redirect("causacion:subir_puc")
+        messages.success(
+            request,
+            f"PUC cargado: {resumen.creadas} cuenta(s) nueva(s), "
+            f"{resumen.actualizadas} actualizada(s), {resumen.sin_cambio} sin cambio"
+            + (f", {resumen.ignoradas} duplicada(s) en el archivo omitida(s)"
+               if resumen.ignoradas else "") + ".")
+        return redirect("causacion:subir_puc")
+
+    consulta = request.GET.get("q", "").strip()
+    catalogo = CuentaPUC.objects.de_empresa(empresa)
+    if consulta:
+        catalogo = catalogo.filter(codigo__startswith=consulta) | \
+            catalogo.filter(nombre__icontains=consulta)
+    return render(request, "causacion/subir_puc.html", {
+        "formulario": formulario,
+        "total_puc": CuentaPUC.objects.de_empresa(empresa).count(),
+        "cuentas": catalogo.order_by("codigo")[:300],
+        "consulta": consulta,
+    })
 
 
 # ---------- Buzón de correo: ingesta automática de facturas (PLAN §4) ----------

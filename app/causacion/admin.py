@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (BuzonCorreo, ConexionContable, CuentaContable,
+from .models import (BuzonCorreo, ConexionContable, CuentaContable, CuentaPUC,
                      FacturaCompra, FacturaVenta, MapeoCuentaAlegra, Tercero)
 
 
@@ -16,6 +16,13 @@ class CuentaContableAdmin(admin.ModelAdmin):
     list_display = ("empresa", "rol", "codigo", "nombre")
     list_filter = ("empresa",)
     search_fields = ("rol", "codigo", "nombre")
+
+
+@admin.register(CuentaPUC)
+class CuentaPUCAdmin(admin.ModelAdmin):
+    list_display = ("empresa", "codigo", "nombre")
+    list_filter = ("empresa",)
+    search_fields = ("codigo", "nombre")
 
 
 @admin.register(ConexionContable)

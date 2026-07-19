@@ -128,6 +128,27 @@ class FormularioConexionAlegra(forms.Form):
         widget=forms.TextInput(attrs={"autocomplete": "off"}))
 
 
+class FormularioSubirPUC(forms.Form):
+    """Carga del plan de cuentas completo de la empresa (CSV o Excel)."""
+
+    archivo = forms.FileField(
+        label="Archivo del PUC (CSV o Excel)",
+        help_text="Exporta el plan de cuentas desde tu software contable. Debe "
+                  "tener una columna con el código y otra con el nombre. Máx. 10 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv,.xlsx,.xlsm,.txt"}))
+    reemplazar = forms.BooleanField(
+        label="Reemplazar el PUC que ya está cargado (borra el anterior)",
+        required=False)
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data["archivo"]
+        if not archivo.name.lower().endswith((".csv", ".xlsx", ".xlsm", ".txt")):
+            raise ValidationError("El archivo debe ser CSV o Excel (.xlsx).")
+        if archivo.size > 10 * 1024 * 1024:
+            raise ValidationError("El archivo supera el tamaño máximo de 10 MB.")
+        return archivo
+
+
 class FormularioReclasificacion(forms.Form):
     """El usuario corrige la cuenta PUC propuesta; retención y asiento se
     recalculan (humano en el circuito, nivel manual)."""
