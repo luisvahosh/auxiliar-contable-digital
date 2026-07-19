@@ -1515,6 +1515,82 @@ class PruebasEditarTerceroRegla(CasoConEmpresa):
         self.assertEqual(self.tercero.cuenta_gasto, "")
 
 
+# ---------- Editar el asiento a mano (incremento 3 del feedback) ----------
+
+class PruebasEditarAsiento(CasoConEmpresa):
+    """El contador ajusta los renglones del asiento a mano, con cuadre obligado."""
+
+    def setUp(self):
+        super().setUp()
+        archivo = SimpleUploadedFile("P1.1.xml",
+                                     contenido("P1.1-factura-honorarios.xml"),
+                                     content_type="text/xml")
+        self.client.post(reverse("causacion:subir"), {"archivo": archivo})
+        self.factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+
+    def _fila(self, i, cuenta, nombre, debito="", credito=""):
+        return {f"cuenta_{i}": cuenta, f"nombre_{i}": nombre,
+                f"debito_{i}": debito, f"credito_{i}": credito}
+
+    def _post(self, filas, motivo="ajuste del contador"):
+        datos = {"motivo": motivo}
+        for i, f in enumerate(filas):
+            datos.update(self._fila(i, *f))
+        return self.client.post(
+            reverse("causacion:editar_asiento", args=[self.factura.pk]),
+            datos, follow=True)
+
+    def test_edita_y_recalcula_retencion_desde_2365(self):
+        # Asiento nuevo cuadrado: gasto 2.000.000 + IVA 380.000 = por pagar
+        # 2.180.000 + retención honorarios 200.000 (crédito a 236515).
+        respuesta = self._post([
+            ("51103505", "Asesoria tecnica", "2000000", ""),
+            ("240802", "IVA descontable", "380000", ""),
+            ("236515", "Retencion honorarios", "", "200000"),
+            ("233595", "Costos y gastos por pagar", "", "2180000"),
+        ])
+        self.assertEqual(respuesta.status_code, 200)
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.nivel, "manual")
+        self.assertEqual(self.factura.estado, "pendiente")
+        self.assertEqual(self.factura.retencion, Decimal("200000"))
+        # cuenta principal = mayor débito sin contar el IVA
+        self.assertEqual(self.factura.cuenta_puc, "51103505")
+        cuentas = {r["cuenta"] for r in self.factura.asiento}
+        self.assertEqual(cuentas, {"51103505", "240802", "236515", "233595"})
+
+    def test_no_deja_guardar_descuadrado(self):
+        respuesta = self._post([
+            ("51103505", "Asesoria", "2000000", ""),
+            ("233595", "Por pagar", "", "1000000"),
+        ])
+        self.assertContains(respuesta, "no cuadra")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.nivel, "automatica")  # no se aplicó
+
+    def test_renglon_con_debito_y_credito_a_la_vez_da_error(self):
+        respuesta = self._post([
+            ("51103505", "Asesoria", "2000000", "2000000"),
+            ("233595", "Por pagar", "", "2000000"),
+        ])
+        self.assertContains(respuesta, "débito O crédito")
+
+    def test_tolera_separadores_de_miles(self):
+        self._post([
+            ("51103505", "Asesoria", "2.000.000", ""),
+            ("233595", "Por pagar", "", "2.000.000"),
+        ])
+        self.factura.refresh_from_db()
+        por_cuenta = {r["cuenta"]: r for r in self.factura.asiento}
+        self.assertEqual(Decimal(por_cuenta["51103505"]["debito"]), Decimal("2000000"))
+
+    def test_una_aprobada_no_se_edita(self):
+        self.client.post(reverse("causacion:aprobar", args=[self.factura.pk]))
+        respuesta = self.client.get(
+            reverse("causacion:editar_asiento", args=[self.factura.pk]))
+        self.assertEqual(respuesta.status_code, 404)
+
+
 # ---------- PUC de la empresa cargable a nivel auxiliar (feedback contador) ----------
 
 from .importar_puc import PUCInvalido, importar_puc, leer_filas_puc

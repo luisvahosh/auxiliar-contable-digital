@@ -38,6 +38,7 @@ urlpatterns = [
     # Compras (P1)
     path("<uuid:pk>/", views.detalle, name="detalle"),
     path("<uuid:pk>/reclasificar/", views.reclasificar, name="reclasificar"),
+    path("<uuid:pk>/asiento/", views.editar_asiento, name="editar_asiento"),
     path("<uuid:pk>/aprobar/", views.aprobar, name="aprobar"),
     path("<uuid:pk>/rechazar/", views.rechazar, name="rechazar"),
     path("<uuid:pk>/siigo.csv", views.exportar_siigo, name="exportar_siigo"),

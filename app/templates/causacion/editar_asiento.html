@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar asiento {{ factura.numero }} — Auxiliar Contable Digital{% endblock %}
+
+{% block contenido %}
+  <h1>Editar el asiento de {{ factura.numero }}</h1>
+  <p class="suave">{{ factura.nombre_emisor }} · total ${{ factura.total|floatformat:"0g" }}.
+     Ajusta los renglones a mano: cambia cuentas o montos, agrega renglones (usa
+     las filas en blanco) o quita uno (deja su cuenta vacía). <strong>Débitos y
+     créditos deben quedar iguales.</strong> Al guardar, la factura vuelve a la
+     bandeja como propuesta <strong>manual</strong> para tu aprobación.</p>
+
+  {% if catalogo_puc %}
+    <datalist id="puc-codigos">
+      {% for c in catalogo_puc %}<option value="{{ c.codigo }}">{{ c.nombre }}</option>{% endfor %}
+    </datalist>
+  {% else %}
+    <p class="suave"><a href="{% url 'causacion:subir_puc' %}">Carga tu PUC</a> para
+       que los códigos te sugieran el nombre de cada cuenta.</p>
+  {% endif %}
+
+  <div class="tarjeta tabla-envoltura">
+    <form method="post">
+      {% csrf_token %}
+      <table>
+        <thead>
+          <tr><th>Cuenta</th><th>Nombre</th><th class="numero">Débito</th><th class="numero">Crédito</th></tr>
+        </thead>
+        <tbody>
+          {% for r in renglones %}
+            <tr>
+              <td><input type="text" name="cuenta_{{ forloop.counter0 }}" value="{{ r.cuenta }}"
+                         list="puc-codigos" style="width:110px" inputmode="numeric"></td>
+              <td><input type="text" name="nombre_{{ forloop.counter0 }}" value="{{ r.nombre }}"
+                         style="width:100%; min-width:200px"></td>
+              <td><input type="text" name="debito_{{ forloop.counter0 }}" value="{{ r.debito }}"
+                         class="numero" style="width:130px" inputmode="decimal"></td>
+              <td><input type="text" name="credito_{{ forloop.counter0 }}" value="{{ r.credito }}"
+                         class="numero" style="width:130px" inputmode="decimal"></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p style="margin-top:16px">
+        <label for="id_motivo">¿Por qué lo editas? (queda en la explicación)</label>
+        <input type="text" id="id_motivo" name="motivo" value="{{ motivo }}"
+               maxlength="200" style="width:100%; max-width:40rem">
+      </p>
+      <div class="acciones">
+        <button type="submit" class="boton">Guardar asiento y recalcular</button>
+        <a class="boton boton-secundario" href="{% url 'causacion:detalle' factura.pk %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+  <p class="suave">La retención se vuelve a tomar de los créditos a cuentas 2365, y
+     la cuenta principal del gasto/activo, del mayor débito (sin contar el IVA), para
+     que los certificados y los informes sigan cuadrando con lo que edites.</p>
+{% endblock %}

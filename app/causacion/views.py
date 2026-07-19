@@ -1,5 +1,5 @@
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from uuid import uuid4
 
@@ -548,6 +548,125 @@ def reclasificar(request, pk):
         "formulario": formulario,
         "catalogo_puc": catalogo_puc,
     })
+
+
+def editar_asiento(request, pk):
+    """Editor libre del asiento (incremento 3 del feedback): el contador ajusta
+    renglones a mano cuando ni la propuesta ni la reclasificación bastan. Se
+    exige el cuadre (débitos = créditos) y se re-derivan retención y cuenta
+    principal para que P9/informes sigan coherentes. Queda nivel manual."""
+    empresa = _empresa_activa(request)
+    factura = get_object_or_404(
+        FacturaCompra.objects.de_empresa(empresa), pk=pk,
+        estado__in=["pendiente", "rechazada"])
+    catalogo_puc = CuentaPUC.objects.de_empresa(empresa).order_by("codigo")
+
+    if request.method == "POST":
+        renglones, error = _leer_renglones(request.POST, catalogo_puc)
+        motivo = request.POST.get("motivo", "").strip()
+        if error:
+            messages.error(request, error)
+            return render(request, "causacion/editar_asiento.html", {
+                "factura": factura, "renglones": renglones,
+                "catalogo_puc": catalogo_puc, "motivo": motivo})
+
+        factura.asiento = renglones
+        # Re-derivar los campos estructurados que leen otros módulos.
+        retencion = sum((Decimal(r["credito"]) for r in renglones
+                         if r["cuenta"].startswith("2365")), Decimal("0"))
+        principal = max(
+            (r for r in renglones
+             if Decimal(r["debito"]) > 0 and not r["cuenta"].startswith("2408")),
+            key=lambda r: Decimal(r["debito"]), default=None)
+        factura.retencion = retencion
+        if principal is not None:
+            factura.cuenta_puc = principal["cuenta"]
+            factura.nombre_cuenta_puc = principal["nombre"]
+        factura.nivel = "manual"
+        factura.estado = "pendiente"
+        factura.explicacion = (
+            f"Asiento editado manualmente por el usuario"
+            + (f": {motivo}" if motivo else ".")
+            + f"\nRetención resultante: ${retencion:,.0f} (créditos a cuentas 2365).")
+        factura.save()
+        messages.success(request, f"Asiento de {factura.numero} actualizado y "
+                                  "devuelto a la bandeja para tu aprobación.")
+        return redirect("causacion:detalle", pk=factura.pk)
+
+    # GET: renglones actuales + filas en blanco para agregar
+    renglones = [dict(r) for r in factura.asiento]
+    renglones += [{"cuenta": "", "nombre": "", "debito": "", "credito": ""}
+                  for _ in range(4)]
+    return render(request, "causacion/editar_asiento.html", {
+        "factura": factura, "renglones": renglones,
+        "catalogo_puc": catalogo_puc, "motivo": ""})
+
+
+def _monto(texto):
+    """Convierte lo escrito por el usuario en Decimal, tolerando $, espacios y
+    separadores de miles colombianos (1.234.567 o 1,234,567; coma decimal)."""
+    limpio = (texto or "").strip().replace("$", "").replace(" ", "")
+    if not limpio:
+        return Decimal("0")
+    limpio = re.sub(r"[.,](?=\d{3}(\D|$))", "", limpio)  # quita separador de miles
+    limpio = limpio.replace(",", ".")                    # coma decimal → punto
+    return Decimal(limpio)
+
+
+def _leer_renglones(post, catalogo_puc):
+    """Lee las filas del formulario del asiento. → (renglones, error|None).
+    Valida cuadre, montos y que cada renglón tenga un solo lado."""
+    nombres_puc = {c.codigo: c.nombre for c in catalogo_puc}
+    renglones, indices = [], []
+    for clave in post:
+        if clave.startswith("cuenta_"):
+            indices.append(clave.split("_", 1)[1])
+    for i in sorted(indices, key=lambda x: int(x) if x.isdigit() else 0):
+        cuenta = post.get(f"cuenta_{i}", "").strip()
+        if not cuenta:
+            continue
+        nombre = post.get(f"nombre_{i}", "").strip() or nombres_puc.get(
+            cuenta, f"Cuenta {cuenta}")
+        try:
+            debito = _monto(post.get(f"debito_{i}", ""))
+            credito = _monto(post.get(f"credito_{i}", ""))
+        except (InvalidOperation, ValueError):
+            return _renglones_crudos(post, indices), (
+                f"El renglón de la cuenta {cuenta} tiene un monto que no es un "
+                "número válido.")
+        if debito < 0 or credito < 0:
+            return _renglones_crudos(post, indices), "Los montos no pueden ser negativos."
+        if (debito > 0) == (credito > 0):
+            return _renglones_crudos(post, indices), (
+                f"El renglón de la cuenta {cuenta} debe tener débito O crédito "
+                "(uno de los dos, no ambos ni ninguno).")
+        renglones.append({"cuenta": cuenta, "nombre": nombre,
+                          "debito": str(debito), "credito": str(credito)})
+
+    if len(renglones) < 2:
+        return renglones or _renglones_crudos(post, indices), (
+            "El asiento necesita al menos dos renglones.")
+    debitos = sum(Decimal(r["debito"]) for r in renglones)
+    creditos = sum(Decimal(r["credito"]) for r in renglones)
+    if debitos != creditos:
+        return renglones, (
+            f"El asiento no cuadra: débitos ${debitos:,.0f} ≠ créditos "
+            f"${creditos:,.0f}. Corrige antes de guardar.")
+    return renglones, None
+
+
+def _renglones_crudos(post, indices):
+    """Filas tal como las escribió el usuario, para repintar el formulario con error."""
+    filas = []
+    for i in sorted(indices, key=lambda x: int(x) if x.isdigit() else 0):
+        filas.append({
+            "cuenta": post.get(f"cuenta_{i}", "").strip(),
+            "nombre": post.get(f"nombre_{i}", "").strip(),
+            "debito": post.get(f"debito_{i}", "").strip(),
+            "credito": post.get(f"credito_{i}", "").strip(),
+        })
+    filas += [{"cuenta": "", "nombre": "", "debito": "", "credito": ""}]
+    return filas
 
 
 def _resolver_cuenta_reclasificada(codigo, concepto_elegido, sugeridas, catalogo_puc):
