@@ -12,19 +12,29 @@
     <p class="porque">{{ factura.explicacion }}</p>
   </div>
 
+  <datalist id="puc-codigos">
+    {% for cuenta, nombre, concepto, rol in formulario.sugeridas %}<option value="{{ cuenta }}">{{ nombre }}</option>{% endfor %}
+    {% for c in catalogo_puc %}<option value="{{ c.codigo }}">{{ c.nombre }}</option>{% endfor %}
+  </datalist>
+
   <div class="tarjeta">
     <form method="post">
       {% csrf_token %}
       {% for campo in formulario %}
         <div style="margin-bottom:16px">
           <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+          {% if campo.help_text %}<p class="ayuda">{{ campo.help_text }}</p>{% endif %}
           {{ campo }}
           {% if campo.errors %}<p class="ayuda" style="color: var(--error)">{{ campo.errors|striptags }}</p>{% endif %}
         </div>
       {% endfor %}
-      <p class="ayuda">Al guardar se recalculan la retención (según el concepto de
-         la cuenta y la matriz de terceros) y el asiento completo, y la factura
-         vuelve a la bandeja como propuesta <strong>manual</strong> para tu aprobación.</p>
+      {% if not catalogo_puc %}
+        <p class="ayuda">¿Quieres elegir una cuenta auxiliar exacta (ej. 51103505)?
+           <a href="{% url 'causacion:subir_puc' %}">Carga tu PUC</a> primero.</p>
+      {% endif %}
+      <p class="ayuda">Al guardar se recalculan la retención (según el concepto y la
+         matriz de terceros) y el asiento completo, y la factura vuelve a la bandeja
+         como propuesta <strong>manual</strong> para tu aprobación.</p>
       <div class="acciones">
         <button type="submit" class="boton">Reclasificar y recalcular</button>
         <a class="boton boton-secundario" href="{% url 'causacion:detalle' factura.pk %}">Cancelar</a>

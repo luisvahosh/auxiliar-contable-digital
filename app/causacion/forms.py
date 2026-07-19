@@ -151,29 +151,53 @@ class FormularioSubirPUC(forms.Form):
 
 class FormularioReclasificacion(forms.Form):
     """El usuario corrige la cuenta PUC propuesta; retención y asiento se
-    recalculan (humano en el circuito, nivel manual)."""
+    recalculan (humano en el circuito, nivel manual). Puede elegir CUALQUIER
+    cuenta auxiliar de su PUC y, si quiere, dejar la regla amarrada al tercero."""
 
-    cuenta = forms.ChoiceField(label="Cuenta PUC correcta")
+    cuenta = forms.CharField(
+        label="Cuenta PUC correcta (código)", max_length=20,
+        help_text="Escribe el código; te sugiere las cuentas de tu PUC "
+                  "(incluidas las auxiliares, ej. 51103505).")
+    concepto = forms.ChoiceField(
+        label="Concepto de retención", required=False,
+        help_text="Déjalo en «según la cuenta» si eliges una de las cuentas "
+                  "sugeridas por la app; para una auxiliar de tu PUC, elígelo.")
+    recordar = forms.BooleanField(
+        label="Recordar esta cuenta y concepto para este proveedor "
+              "(las próximas facturas suyas se causarán así)",
+        required=False)
     motivo = forms.CharField(
         label="¿Por qué la reclasificas? (queda en la explicación)",
         max_length=200, required=False)
 
-    def __init__(self, *args, plan=None, **kwargs):
-        from .clasificacion import CONCEPTOS_RETENCION, cuentas_reclasificables
-        from .plan_cuentas import CUENTAS_ESTANDAR
+    def __init__(self, *args, plan=None, sugeridas=None, **kwargs):
+        from .parametros import CONCEPTOS_RETENCION
         super().__init__(*args, **kwargs)
-        self.fields["cuenta"].choices = [
-            (cuenta, f"{cuenta} — {nombre} (retención: "
-                     f"{CONCEPTOS_RETENCION[concepto]['nombre'].lower()})")
-            for cuenta, nombre, concepto, rol in cuentas_reclasificables(
-                plan or dict(CUENTAS_ESTANDAR))
-        ]
+        self.sugeridas = sugeridas or []
+        self.fields["cuenta"].widget.attrs["list"] = "puc-codigos"
+        self.fields["concepto"].choices = [("", "— según la cuenta sugerida —")] + [
+            (clave, datos["nombre"]) for clave, datos in CONCEPTOS_RETENCION.items()]
 
 
 class FormularioTercero(forms.ModelForm):
-    """Edición de la calidad tributaria de un tercero, cotejada con su RUT."""
+    """Edición de la calidad tributaria de un tercero y de la regla de causación
+    que el contador le amarra (cuenta de gasto fija + concepto de retención)."""
 
     class Meta:
         model = Tercero
         fields = ["razon_social", "tipo_persona", "declarante",
-                  "autorretenedor", "regimen_simple", "verificado"]
+                  "autorretenedor", "regimen_simple", "verificado",
+                  "cuenta_gasto", "concepto_retencion"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["cuenta_gasto"].widget.attrs["list"] = "puc-codigos"
+
+    def clean(self):
+        datos = super().clean()
+        # La cuenta fija no sirve de nada sin concepto de retención: avisar.
+        if datos.get("cuenta_gasto") and not datos.get("concepto_retencion"):
+            self.add_error("concepto_retencion",
+                           "Si fijas una cuenta para el proveedor, elige también "
+                           "el concepto de retención con el que se causa.")
+        return datos

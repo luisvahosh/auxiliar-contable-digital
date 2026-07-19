@@ -1379,6 +1379,142 @@ class PruebasSubirPdfHtml(CasoConEmpresa):
         self.assertEqual(FacturaCompra.objects.de_empresa(self.empresa).count(), 0)
 
 
+# ---------- Memoria por tercero: el contador amarra cuenta+concepto al proveedor ----------
+
+class PruebasMemoriaTercero(CasoConEmpresa):
+    """El motor `clasificar` consulta la regla del tercero antes de adivinar por
+    el texto (feedback: caso Angélica María «servicios/asesoría» → honorarios)."""
+
+    def setUp(self):
+        super().setUp()
+        from .plan_cuentas import CUENTAS_ESTANDAR
+        self.plan = dict(CUENTAS_ESTANDAR)
+        # P1.7 "asesoría/instalación" — el texto lo vuelve ambiguo/honorarios.
+        self.factura = parsear_factura(contenido("P1.7-factura-concepto-ambiguo.xml"))
+
+    def test_regla_del_tercero_manda_sobre_el_texto(self):
+        from .clasificacion import clasificar
+        tercero = Tercero(empresa=self.empresa, nit="1", razon_social="Angelica Maria",
+                          concepto_retencion="servicios", cuenta_gasto="51103505",
+                          nombre_cuenta_gasto="Asesoria tecnica")
+        prop = clasificar(self.factura, self.plan, tercero)
+        self.assertEqual(prop.cuenta, "51103505")
+        self.assertEqual(prop.concepto, "servicios")
+        self.assertEqual(prop.nivel, "automatica")
+        self.assertIn("Angelica Maria", prop.explicacion)
+
+    def test_sin_regla_clasifica_por_texto_como_siempre(self):
+        from .clasificacion import clasificar
+        tercero = Tercero(empresa=self.empresa, nit="1", razon_social="X")
+        con = clasificar(self.factura, self.plan, tercero)
+        sin = clasificar(self.factura, self.plan, None)
+        self.assertEqual(con.cuenta, sin.cuenta)
+
+    def test_solo_concepto_usa_el_texto_para_la_cuenta(self):
+        from .clasificacion import clasificar, _clasificar_por_texto
+        tercero = Tercero(empresa=self.empresa, nit="1", razon_social="X",
+                          concepto_retencion="servicios")  # sin cuenta_gasto
+        prop = clasificar(self.factura, self.plan, tercero)
+        self.assertEqual(prop.concepto, "servicios")
+        self.assertEqual(prop.cuenta,
+                         _clasificar_por_texto(self.factura, self.plan).cuenta)
+
+
+class PruebasCausarConReglaDeTercero(CasoConEmpresa):
+    """End-to-end: una factura de un proveedor con regla se causa por la regla."""
+
+    def test_factura_de_proveedor_con_regla_se_causa_por_la_regla(self):
+        datos = parsear_factura(contenido("P1.7-factura-concepto-ambiguo.xml"))
+        Tercero.objects.create(
+            empresa=self.empresa, nit=datos.nit_emisor, razon_social="Angelica Maria",
+            concepto_retencion="servicios", cuenta_gasto="51103505",
+            nombre_cuenta_gasto="Asesoria tecnica")
+        archivo = SimpleUploadedFile("P1.7.xml",
+                                     contenido("P1.7-factura-concepto-ambiguo.xml"),
+                                     content_type="text/xml")
+        self.client.post(reverse("causacion:subir"), {"archivo": archivo}, follow=True)
+        factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.assertEqual(factura.cuenta_puc, "51103505")
+        self.assertEqual(factura.concepto_retencion, "servicios")
+        self.assertEqual(factura.nivel, "automatica")
+        # Retención de SERVICIOS 4% (no honorarios ni compras): crédito a 236525
+        self.assertIn("236525", {r["cuenta"] for r in factura.asiento})
+
+
+class PruebasReclasificarRecuerdaTercero(CasoConEmpresa):
+    """Al reclasificar, el contador puede dejar la regla amarrada al tercero."""
+
+    def setUp(self):
+        super().setUp()
+        archivo = SimpleUploadedFile("P1.7.xml",
+                                     contenido("P1.7-factura-concepto-ambiguo.xml"),
+                                     content_type="text/xml")
+        self.client.post(reverse("causacion:subir"), {"archivo": archivo})
+        self.factura = FacturaCompra.objects.de_empresa(self.empresa).get()
+        self.tercero = Tercero.objects.de_empresa(self.empresa).get(
+            nit=self.factura.nit_emisor)
+
+    def test_recordar_amarra_cuenta_y_concepto_al_tercero(self):
+        importar_puc(self.empresa, "p.csv",
+                     b"Codigo;Nombre\n51103505;Asesoria tecnica\n")
+        self.client.post(
+            reverse("causacion:reclasificar", args=[self.factura.pk]),
+            {"cuenta": "51103505", "concepto": "servicios", "recordar": "on",
+             "motivo": "es asesoria tecnica"}, follow=True)
+        self.tercero.refresh_from_db()
+        self.assertEqual(self.tercero.concepto_retencion, "servicios")
+        self.assertEqual(self.tercero.cuenta_gasto, "51103505")
+        self.assertEqual(self.tercero.nombre_cuenta_gasto, "Asesoria tecnica")
+        self.factura.refresh_from_db()
+        self.assertEqual(self.factura.cuenta_puc, "51103505")
+        self.assertEqual(self.factura.concepto_retencion, "servicios")
+
+    def test_auxiliar_del_puc_sin_concepto_pide_el_concepto(self):
+        importar_puc(self.empresa, "p.csv", b"Codigo;Nombre\n51103505;Asesoria\n")
+        respuesta = self.client.post(
+            reverse("causacion:reclasificar", args=[self.factura.pk]),
+            {"cuenta": "51103505", "concepto": "", "motivo": ""}, follow=True)
+        self.assertContains(respuesta, "concepto de retención")
+
+    def test_sin_recordar_no_toca_al_tercero(self):
+        self.client.post(
+            reverse("causacion:reclasificar", args=[self.factura.pk]),
+            {"cuenta": "5145", "motivo": "solo esta vez"}, follow=True)
+        self.tercero.refresh_from_db()
+        self.assertEqual(self.tercero.concepto_retencion, "")
+
+
+class PruebasEditarTerceroRegla(CasoConEmpresa):
+    """Fijar la regla de causación desde la ficha del tercero."""
+
+    def setUp(self):
+        super().setUp()
+        self.tercero = Tercero.objects.create(
+            empresa=self.empresa, nit="900111222", razon_social="Proveedor X")
+
+    def _post(self, extra):
+        datos = {"razon_social": "Proveedor X", "tipo_persona": "1",
+                 "declarante": "on"}
+        datos.update(extra)
+        return self.client.post(
+            reverse("causacion:editar_tercero", args=[self.tercero.pk]),
+            datos, follow=True)
+
+    def test_fijar_cuenta_y_concepto_resuelve_nombre_del_puc(self):
+        importar_puc(self.empresa, "p.csv",
+                     b"Codigo;Nombre\n51103505;Asesoria tecnica\n")
+        self._post({"cuenta_gasto": "51103505", "concepto_retencion": "servicios"})
+        self.tercero.refresh_from_db()
+        self.assertEqual(self.tercero.concepto_retencion, "servicios")
+        self.assertEqual(self.tercero.nombre_cuenta_gasto, "Asesoria tecnica")
+
+    def test_cuenta_sin_concepto_da_error_y_no_guarda(self):
+        respuesta = self._post({"cuenta_gasto": "51103505", "concepto_retencion": ""})
+        self.assertContains(respuesta, "elige también")
+        self.tercero.refresh_from_db()
+        self.assertEqual(self.tercero.cuenta_gasto, "")
+
+
 # ---------- PUC de la empresa cargable a nivel auxiliar (feedback contador) ----------
 
 from .importar_puc import PUCInvalido, importar_puc, leer_filas_puc

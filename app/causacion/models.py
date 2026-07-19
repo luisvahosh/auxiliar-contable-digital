@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 
 from core.cifrado import CampoCifrado
+from .parametros import CONCEPTOS_RETENCION
 
 
 class ConsultasPorEmpresa(models.Manager):
@@ -342,6 +343,20 @@ class Tercero(models.Model):
         "verificado contra el RUT", default=False,
         help_text="Marcar cuando la información se haya cotejado con el RUT del tercero")
 
+    # Memoria por tercero (feedback contador): el contador "instruye" al sistema
+    # con las primeras facturas — a qué cuenta auxiliar y con qué concepto de
+    # retención causar a este proveedor. Manda sobre lo que adivine el texto.
+    cuenta_gasto = models.CharField(
+        "cuenta de gasto/costo fija", max_length=20, blank=True,
+        help_text="Código de la cuenta (auxiliar) a la que van SIEMPRE las compras "
+                  "de este proveedor. Vacío = la app la propone por el texto.")
+    nombre_cuenta_gasto = models.CharField(max_length=200, blank=True)
+    concepto_retencion = models.CharField(
+        "concepto de retención fijo", max_length=30, blank=True,
+        choices=[(k, v["nombre"]) for k, v in CONCEPTOS_RETENCION.items()],
+        help_text="Concepto de retefuente con el que se causa a este proveedor "
+                  "(honorarios, servicios…). Vacío = la app lo decide por el texto.")
+
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
@@ -355,6 +370,11 @@ class Tercero(models.Model):
         ]
         verbose_name = "tercero"
         verbose_name_plural = "terceros"
+
+    @property
+    def tiene_regla(self):
+        """El contador ya le fijó concepto de retención a este proveedor."""
+        return bool(self.concepto_retencion)
 
     def __str__(self):
         return f"{self.razon_social} (NIT {self.nit})"

@@ -141,7 +141,7 @@ def _compra(empresa, datos, contenido):
 
     plan = plan_de_empresa(empresa)
     tercero = tercero_del_emisor(empresa, datos)
-    propuesta = clasificar(datos, plan)
+    propuesta = clasificar(datos, plan, tercero)
     retencion = calcular_retencion(datos, propuesta.concepto, tercero, plan)
     renglones = construir_asiento(datos, propuesta, retencion, plan)
     try:

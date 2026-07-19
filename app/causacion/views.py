@@ -481,12 +481,22 @@ def reclasificar(request, pk):
         tipo="compra", estado__in=["pendiente", "rechazada"])
 
     plan = plan_de_empresa(empresa)
+    sugeridas = cuentas_reclasificables(plan)
+    catalogo_puc = CuentaPUC.objects.de_empresa(empresa).order_by("codigo")
     formulario = FormularioReclasificacion(
-        request.POST or None, plan=plan, initial={"cuenta": factura.cuenta_puc})
+        request.POST or None, plan=plan, sugeridas=sugeridas,
+        initial={"cuenta": factura.cuenta_puc})
     if request.method == "POST" and formulario.is_valid():
-        elegida = formulario.cleaned_data["cuenta"]
-        cuenta, nombre, concepto, rol = next(
-            fila for fila in cuentas_reclasificables(plan) if fila[0] == elegida)
+        elegida = formulario.cleaned_data["cuenta"].strip()
+        concepto_elegido = formulario.cleaned_data["concepto"]
+        cuenta, nombre, concepto, rol = _resolver_cuenta_reclasificada(
+            elegida, concepto_elegido, sugeridas, catalogo_puc)
+        if concepto is None:
+            messages.error(request, "Esa cuenta no es una de las sugeridas: elige "
+                                    "el concepto de retención con el que se causa.")
+            return render(request, "causacion/reclasificar.html", {
+                "factura": factura, "formulario": formulario,
+                "catalogo_puc": catalogo_puc})
 
         # Reconstruir los datos mínimos para recalcular retención y asiento
         datos = FacturaParseada(
@@ -518,14 +528,42 @@ def reclasificar(request, pk):
         factura.explicacion = f"{propuesta.explicacion}\n{retencion.porque}"
         factura.asiento = construir_asiento(datos, propuesta, retencion, plan)
         factura.save()
+
+        aviso = ""
+        if formulario.cleaned_data["recordar"] and tercero is not None:
+            tercero.cuenta_gasto = cuenta
+            tercero.nombre_cuenta_gasto = nombre
+            tercero.concepto_retencion = concepto
+            tercero.save(update_fields=["cuenta_gasto", "nombre_cuenta_gasto",
+                                        "concepto_retencion", "actualizado"])
+            aviso = (f" De ahora en adelante las facturas de {tercero.razon_social} "
+                     f"se causarán en {cuenta} por {concepto}.")
         messages.success(request, f"Factura {factura.numero} reclasificada a "
-                                  f"{cuenta} y devuelta a la bandeja para tu aprobación.")
+                                  f"{cuenta} y devuelta a la bandeja para tu aprobación."
+                                  + aviso)
         return redirect("causacion:detalle", pk=factura.pk)
 
     return render(request, "causacion/reclasificar.html", {
         "factura": factura,
         "formulario": formulario,
+        "catalogo_puc": catalogo_puc,
     })
+
+
+def _resolver_cuenta_reclasificada(codigo, concepto_elegido, sugeridas, catalogo_puc):
+    """→ (código, nombre, concepto, rol). Si el usuario eligió una cuenta
+    sugerida por la app, hereda su concepto; si eligió una auxiliar de su PUC,
+    usa el concepto que él escogió (obligatorio). concepto=None → falta elegirlo."""
+    fila = next((f for f in sugeridas if f[0] == codigo), None)
+    if fila:
+        cuenta, nombre, concepto_rol, rol = fila
+        return cuenta, nombre, (concepto_elegido or concepto_rol), rol
+    # Cuenta arbitraria del PUC de la empresa (o un código escrito a mano)
+    puc = catalogo_puc.filter(codigo=codigo).first()
+    nombre = puc.nombre if puc else f"Cuenta {codigo}"
+    if not concepto_elegido:
+        return codigo, nombre, None, ""
+    return codigo, nombre, concepto_elegido, ""
 
 
 # ---------- Cartera (P5.1) ----------
@@ -585,18 +623,33 @@ def terceros(request):
 def editar_tercero(request, pk):
     empresa = _empresa_activa(request)
     tercero = get_object_or_404(Tercero.objects.de_empresa(empresa), pk=pk)
+    catalogo_puc = CuentaPUC.objects.de_empresa(empresa).order_by("codigo")
     formulario = FormularioTercero(request.POST or None, instance=tercero)
     if request.method == "POST" and formulario.is_valid():
-        formulario.save()
+        tercero = formulario.save(commit=False)
+        # El nombre de la cuenta fija se resuelve contra el PUC cargado.
+        if tercero.cuenta_gasto:
+            puc = catalogo_puc.filter(codigo=tercero.cuenta_gasto).first()
+            tercero.nombre_cuenta_gasto = puc.nombre if puc else ""
+        else:
+            tercero.nombre_cuenta_gasto = ""
+        tercero.save()
+        extra = ""
+        if tercero.concepto_retencion:
+            extra = (f" Sus compras se causarán por "
+                     f"{tercero.get_concepto_retencion_display().lower()}"
+                     + (f" en la cuenta {tercero.cuenta_gasto}."
+                        if tercero.cuenta_gasto else "."))
         messages.success(
             request,
             f"Tercero {tercero.razon_social} actualizado. Las próximas facturas "
-            "de este proveedor usarán esta calidad tributaria.",
+            "de este proveedor usarán esta calidad tributaria." + extra,
         )
         return redirect("causacion:terceros")
     return render(request, "causacion/tercero_form.html", {
         "formulario": formulario,
         "tercero": tercero,
+        "catalogo_puc": catalogo_puc,
     })
 
 

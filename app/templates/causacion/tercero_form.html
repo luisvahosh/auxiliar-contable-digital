@@ -7,6 +7,17 @@
   <p class="suave">NIT {{ tercero.nit }} · Coteja estos datos con el RUT del
      proveedor (casillas 53–57, responsabilidades). Lo que marques aquí define
      la retención de sus próximas facturas.</p>
+  <p class="suave">La <strong>cuenta de gasto fija</strong> y el <strong>concepto
+     de retención</strong> son opcionales: fíjalos para que TODAS las compras de
+     este proveedor se causen igual sin volver a corregir a mano.
+     {% if not catalogo_puc %}<a href="{% url 'causacion:subir_puc' %}">Carga tu PUC</a>
+     para elegir la cuenta auxiliar exacta.{% endif %}</p>
+
+  {% if catalogo_puc %}
+    <datalist id="puc-codigos">
+      {% for c in catalogo_puc %}<option value="{{ c.codigo }}">{{ c.nombre }}</option>{% endfor %}
+    </datalist>
+  {% endif %}
 
   <div class="tarjeta">
     <form method="post">

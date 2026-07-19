@@ -71,7 +71,41 @@ class Retencion:
     porque: str
 
 
-def clasificar(factura, plan):
+def clasificar(factura, plan, tercero=None):
+    """Propone la cuenta PUC del gasto/activo y el concepto de retención.
+
+    Si el contador ya le fijó una regla al tercero (memoria por tercero — su
+    retroalimentación: "a este proveedor cáusalo siempre por servicios en tal
+    cuenta"), esa regla MANDA sobre lo que adivine el texto. Si no, se clasifica
+    por el texto de la factura como siempre."""
+    if tercero is not None and tercero.concepto_retencion:
+        return _clasificar_por_tercero(factura, plan, tercero)
+    return _clasificar_por_texto(factura, plan)
+
+
+def _clasificar_por_tercero(factura, plan, tercero):
+    """Regla fija que el contador amarró al proveedor."""
+    concepto = tercero.concepto_retencion
+    nombre_concepto = CONCEPTOS_RETENCION[concepto]["nombre"]
+    if tercero.cuenta_gasto:
+        codigo, nombre = tercero.cuenta_gasto, (tercero.nombre_cuenta_gasto
+                                                or f"Cuenta {tercero.cuenta_gasto}")
+        detalle_cuenta = f"cuenta {codigo} ({nombre}) fijada para este proveedor"
+    else:
+        # El contador fijó el concepto pero no la cuenta: se propone por el texto.
+        base = _clasificar_por_texto(factura, plan)
+        codigo, nombre = base.cuenta, base.nombre_cuenta
+        detalle_cuenta = f"cuenta {codigo} ({nombre}) propuesta por el texto"
+    return Propuesta(
+        codigo, nombre, concepto, "automatica",
+        f"Regla del contador para {tercero.razon_social}: causar por "
+        f"{nombre_concepto} — {detalle_cuenta}. (Puedes reclasificar si este "
+        "documento es una excepción.)",
+        rol="",
+    )
+
+
+def _clasificar_por_texto(factura, plan):
     """Propone la cuenta PUC del gasto/activo a partir del texto de la factura,
     usando el plan de cuentas de la empresa."""
     texto = factura.texto_clasificable

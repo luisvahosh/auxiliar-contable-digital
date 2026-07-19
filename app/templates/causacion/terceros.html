@@ -22,6 +22,7 @@
             <th>NIT</th>
             <th>Tipo</th>
             <th>Calidad tributaria</th>
+            <th>Regla de causación</th>
             <th>RUT verificado</th>
             <th></th>
           </tr>
@@ -36,6 +37,13 @@
                 {% for calidad in tercero.calidades %}
                   <span class="insignia insignia-manual">{{ calidad }}</span>
                 {% endfor %}
+              </td>
+              <td>
+                {% if tercero.tiene_regla %}
+                  <span class="insignia insignia-aprobada">{{ tercero.get_concepto_retencion_display }}{% if tercero.cuenta_gasto %} → {{ tercero.cuenta_gasto }}{% endif %}</span>
+                {% else %}
+                  <span class="suave">Por el texto</span>
+                {% endif %}
               </td>
               <td>
                 {% if tercero.verificado %}
