@@ -8,6 +8,12 @@ solo el contador puede confirmar** — es lo más importante de la sesión.
 **Dónde probar:** producción **https://auxcontable.learnway.co** (o local
 `http://127.0.0.1:8000`). Datos de ejemplo en `datos-prueba/`.
 
+**Novedades para validar en esta sesión** (salieron del feedback del contador):
+1. **Subir factura** acepta **XML, ZIP, PDF y HTML** (saca el XML embebido).
+2. **PUC cargable por empresa** → causar en **cuentas auxiliares** reales (Bloque A / N).
+3. **Regla por tercero** → amarrar cuenta + concepto a un proveedor (Bloque A6 / C).
+4. **Editar el asiento a mano**, con cuadre obligado (Bloque A6).
+
 **Principio a recordarle al contador:** la app **ASISTE al auxiliar, no
 reemplaza** a Alegra/Siigo ni al software de nómina. Todo lo que propone es un
 **borrador con humano en el circuito** — nada se contabiliza ni se presenta ante
@@ -52,10 +58,19 @@ la DIAN/PILA sin que una persona lo apruebe.
 - [ ] `P1.6a` (XML corrupto) y `P1.6b` (XML con XXE) → **rechazados con mensaje claro**
   (defensa de seguridad; el contador no ve datos financieros expuestos).
 
-### A6. Concepto ambiguo (`P1.7-factura-concepto-ambiguo.xml`)
-- [ ] Sale como **Sugerida** (no Automática) porque el concepto no es claro.
-- [ ] Se puede **Reclasificar** eligiendo la cuenta correcta → recalcula retención y
-  vuelve como **Manual** con el motivo. **Validar:** el criterio de reclasificación.
+### A6. Concepto ambiguo + las 3 formas de corregir (`P1.7-factura-concepto-ambiguo.xml`)
+- [ ] Sale como **Sugerida** (no Automática) porque el concepto no es claro (caso real:
+  "servicios, asesoría y trámites" — ¿honorarios o servicios? lo decide el contador).
+- [ ] **Reclasificar cuenta:** elige la cuenta correcta. Si cargaste el PUC (Bloque N),
+  puedes elegir **cualquier auxiliar** (ej. 51103505) + su **concepto de retención**;
+  recalcula la retención y vuelve como **Manual**. **Validar:** el criterio.
+- [ ] **Recordar la regla del proveedor:** marca *"recordar esta cuenta y concepto para
+  este proveedor"* → las **próximas** facturas de ese tercero se causan solas así.
+  **Validar:** que se aplique en la siguiente factura del mismo NIT (Bloque C).
+- [ ] **Editar el asiento a mano:** botón *"Editar asiento a mano"* → cambia cuentas y
+  montos, agrega o quita renglones; solo deja guardar **si cuadra** (débitos =
+  créditos) y la retención se recalcula de los créditos a **2365**. **Validar:** que
+  el control de cuadre y el recálculo son correctos.
 
 ### A7. Nota crédito de proveedor (`P1-nc-proveedor.xml`)
 - [ ] Reversa vinculada a su factura original; **advierte el ajuste de retefuente**.
@@ -76,11 +91,16 @@ la DIAN/PILA sin que una persona lo apruebe.
 
 ---
 
-## Bloque C — Matriz de terceros (P3)
+## Bloque C — Matriz de terceros (P3) y regla de causación por proveedor
 - [ ] `/causacion/terceros/` — cada proveedor se creó solo con su primera factura,
   con su calidad tributaria (declarante / autorretenedor / RST / verificado).
 - [ ] `P3.2-factura-autorretenedor.xml` → al autorretenedor **no se le practica**
   retención (la matriz manda sobre el XML). **Validar** el criterio.
+- [ ] **Terceros → Editar** un proveedor: fija su **cuenta de gasto** (auxiliar del
+  PUC) y su **concepto de retención**. La columna **"Regla de causación"** muestra a
+  qué proveedores ya se les fijó. **Validar:** que al causar la siguiente factura de
+  ese tercero, la app usa esa cuenta y concepto sin adivinar por el texto — es la
+  forma de "instruir" al sistema con las primeras facturas de cada proveedor.
 
 ---
 
@@ -174,6 +194,18 @@ la DIAN/PILA sin que una persona lo apruebe.
 
 ---
 
+## Bloque N — Plan de cuentas (PUC) cargable por empresa
+- [ ] **Configuración → Plan de cuentas → "Cargar mi PUC"** → subir el PUC de la
+  empresa en **Excel o CSV** (columna código + columna nombre). La app autodetecta
+  las columnas, normaliza el código y marca cada cuenta como **mayor** o **auxiliar**.
+- [ ] Es **reentrante**: volver a subirlo solo actualiza lo que cambió, no duplica.
+- [ ] **Validar con el contador:** que su PUC real (p. ej. de Ingeniería Cúbica) se
+  cargue bien y que al causar/reclasificar aparezcan las **auxiliares** correctas.
+  Recordarle que el PUC **cambia por sector** (comercial, solidario, financiero,
+  seguros): por eso cada empresa carga el suyo.
+
+---
+
 ## ⭐ Decisiones que necesito que el contador confirme (lo esencial)
 
 1. **Criterios de retención en la fuente** (Bloques A–C): tarifas, bases mínimas en
@@ -187,8 +219,9 @@ la DIAN/PILA sin que una persona lo apruebe.
 5. **Aportes y parámetros de nómina** (P8): porcentajes de salud/pensión/parafiscales,
    exoneración 114-1, y confirmar SMMLV/auxilio 2026.
 6. **Conceptos y casillas de exógena** 1001/1007/2276 (P12) contra la resolución anual.
-7. **Plan de cuentas PUC**: revisar que las cuentas por defecto coincidan con el plan
-   que usan los clientes (es personalizable por empresa).
+7. **Plan de cuentas PUC** (Bloque N): que su PUC real se cargue bien y que la app
+   cause en las **auxiliares** correctas. ¿La **regla por tercero** (Bloque A6/C) y la
+   **edición del asiento** le dan el control que necesita para el día a día?
 
 > Anota junto a cada punto la respuesta del contador. Cada corrección entra como
 > ajuste del producto — con eso la herramienta queda lista para clientes reales.

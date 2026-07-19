@@ -20,14 +20,25 @@ Arriba a la derecha, entra a **⚙ Configuración** y confirma lo que ya conoces
   está **exonerada de parafiscales (art. 114-1)**.
 - Guarda. *(Estos datos son los que la app usa para calcular bien las retenciones.)*
 
+## 2b. Cargar tu PUC (recomendado, 2 min)
+En **Configuración → Plan de cuentas → "Cargar mi PUC"** sube el plan de cuentas de
+la empresa exportado de tu software contable (**Excel o CSV**: una columna con el
+código y otra con el nombre). Así la app causa en tus **cuentas auxiliares** reales
+(ej. 51103505) y no en cuentas mayores de 4 dígitos. Puedes subirlo cuando quieras.
+
 ## 3. Causar tu primera factura (lo importante)
 1. Botón **Subir factura**.
-2. Elige el **XML** de una factura de compra (el que descargas de la DIAN o tu
-   facturador). *Si es una factura de papel, usa **"Causar desde una foto"**.*
+2. Elige el archivo de una factura de compra: sirve el **XML**, el **ZIP** de la
+   DIAN, o el **PDF/HTML** de la factura (la app saca el XML de adentro). *Si es una
+   factura de papel, usa **"Causar desde una foto"**.*
 3. La app te muestra: la **cuenta** propuesta, la **retención** calculada y el
    **asiento** (débitos = créditos), con una explicación de **por qué** lo propone.
-4. Revisa como lo harías siempre. Si está bien, **Aprobar**. Si no, puedes
-   **Reclasificar** y elegir la cuenta correcta.
+4. Revisa como lo harías siempre. Si está bien, **Aprobar**. Si no, tienes tres
+   formas de corregir, de la más simple a la de más control:
+   - **Reclasificar** y elegir la cuenta correcta (cualquier auxiliar de tu PUC).
+   - **"Recordar para este proveedor"**: la regla se pega al tercero y sus próximas
+     facturas se causan solas así, sin que las corrijas de nuevo.
+   - **Editar el asiento a mano** (te deja guardar solo si cuadra).
 5. Repite con tus compras y ventas del mes. La app detecta sola si es compra,
    venta o nota crédito.
 
